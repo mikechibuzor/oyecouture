@@ -30,6 +30,7 @@ Wait for user authorization, then begin Milestone A step A.4 only: build the Nux
 - Go API scaffolded in `api/` with config, PostgreSQL pool, CORS, graceful shutdown, and `GET /healthz`.
 - Verified: `go test ./...`, Go build, `npm run typecheck`, and `npm run build` all pass.
 - Runtime verified: `/healthz` returns HTTP 200 with API/database `ok`; Nuxt SSR renders web/API/PostgreSQL as connected.
+- **Claude review sign-off (2026-07-29):** A.1–A.3 independently reviewed and re-verified (`go vet`/`build`/`test` all pass). Approved with no changes. Claude's three earlier design-token findings (display font, champagne `#e0cf9c`, type scale) were already resolved by Codex in `576ee77`; no fix commit needed. Golden invariants confirmed (integer `priceKobo`, hidden `R2Key`, validated inputs, active-only reads, RTW/bespoke split).
 
 ## In progress (exact state)
 - Local PostgreSQL, product-enabled Go API, and Nuxt dev services are running for review. No A.4 work is in progress.
