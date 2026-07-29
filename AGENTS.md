@@ -30,6 +30,9 @@ Two AI engineers build this project in alternation: **Codex** (ChatGPT) and **Cl
 - **Ask the user before anything irreversible** (deploys, deleting data, spending money, sending real messages/emails, live payment charges).
 - **Keep the ghost admin unlinked and unmentioned to the client** (see `01-PROJECT-BRIEF.md`).
 - **Golden invariants:** money in kobo (int64, never floats); an order is `paid` only after server-side verify/verified webhook; mobile-first; guest checkout only in phase 1.
+- **Frontend typing:** strict TypeScript at all times. Define shared types and runtime values in dedicated modules and import them wherever reused.
+- **Frontend constants:** centralize domain statuses, API paths, configuration defaults, and reusable UI copy. Prefer `as const` + inferred literal unions; use enums when runtime enum semantics improve clarity.
+- **Code quality:** use descriptive names and optimize for simplicity, readability, scalability, and maintainability.
 
 ## Project map (what to read)
 
