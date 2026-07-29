@@ -58,6 +58,7 @@ export const PRODUCT_COPY = {
     piecePlural: 'pieces',
     sortLabel: 'Sort by',
   },
+  categoryCollectionSuffix: 'Collection',
   categoryTilesHeading: 'Shop By Category',
   galleryLabel: 'Product gallery',
   home: {

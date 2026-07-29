@@ -1,82 +1,71 @@
 <script setup lang="ts">
+import type { IconNode } from 'lucide'
+import { ArrowRight } from 'lucide'
 import {
-  ASYNC_REQUEST_STATUS,
-  FOUNDATION_PAGE_COPY,
-} from '~/constants/foundation'
-import { ServiceHealthStatus } from '~/types/health'
+  CATEGORY_TILES,
+  HOME_HERO_IMAGES,
+  PRODUCT_COPY,
+} from '~/constants/products'
+import type { Product } from '~/types/product'
+import { StorefrontRoute } from '~/types/storefront'
+import { getProductErrorMessage } from '~/utils/product'
 
-const { data, error, refresh, status } = await useApiHealth()
+const { data, error, status } = await useProductList()
+const HERO_ACTION_ICON: IconNode = ArrowRight
 
-// Reports whether the Go API is currently reachable.
-const apiConnected = computed(
-  () => data.value?.services.api === ServiceHealthStatus.Available,
+// Returns all API products while preserving a stable empty array during loading.
+const products = computed<readonly Product[]>(() => data.value?.products ?? [])
+// Maps a structured API failure to safe customer-facing copy.
+const errorMessage = computed(() =>
+  getProductErrorMessage(error.value, PRODUCT_COPY.catalogue.error),
 )
-// Reports whether PostgreSQL is reachable through the API.
-const databaseConnected = computed(
-  () => data.value?.services.database === ServiceHealthStatus.Available,
-)
-// Reports whether a health request is currently running.
-const isChecking = computed(
-  () => status.value === ASYNC_REQUEST_STATUS.pending,
-)
-// Maps the API health result to its display label.
-const apiStatusLabel = computed(() =>
-  apiConnected.value
-    ? FOUNDATION_PAGE_COPY.connected
-    : FOUNDATION_PAGE_COPY.unavailable,
-)
-// Maps the database health result to its display label.
-const databaseStatusLabel = computed(() =>
-  databaseConnected.value
-    ? FOUNDATION_PAGE_COPY.connected
-    : FOUNDATION_PAGE_COPY.unavailable,
-)
-
-// Requests a fresh health snapshot from the API.
-const refreshHealth = async (): Promise<void> => {
-  await refresh()
-}
 </script>
 
 <template>
-  <main class="foundation-page">
-    <header class="foundation-header">
-      <span class="brand-mark">{{ FOUNDATION_PAGE_COPY.brandMark }}</span>
-      <div>
-        <p class="eyebrow">{{ FOUNDATION_PAGE_COPY.brand }}</p>
-        <h1>{{ FOUNDATION_PAGE_COPY.heading }}</h1>
+  <div class="home-page">
+    <section class="home-hero" aria-labelledby="home-hero-title">
+      <div class="home-hero-content">
+        <h1 id="home-hero-title">{{ PRODUCT_COPY.home.heroHeading }}</h1>
+        <p>{{ PRODUCT_COPY.home.heroDescription }}</p>
+        <NuxtLink :to="StorefrontRoute.Collection">
+          <span>{{ PRODUCT_COPY.home.heroAction }}</span>
+          <StorefrontIcon
+            :icon-node="HERO_ACTION_ICON"
+            :size="17"
+            :stroke-width="1.5"
+            aria-hidden="true"
+          />
+        </NuxtLink>
       </div>
-    </header>
 
-    <section class="service-status" aria-labelledby="service-status-title">
-      <h2 id="service-status-title">{{ FOUNDATION_PAGE_COPY.servicesHeading }}</h2>
-
-      <dl>
-        <div>
-          <dt>{{ FOUNDATION_PAGE_COPY.webService }}</dt>
-          <dd class="status-ok">{{ FOUNDATION_PAGE_COPY.connected }}</dd>
-        </div>
-        <div>
-          <dt>{{ FOUNDATION_PAGE_COPY.apiService }}</dt>
-          <dd :class="apiConnected ? 'status-ok' : 'status-error'">
-            {{ apiStatusLabel }}
-          </dd>
-        </div>
-        <div>
-          <dt>{{ FOUNDATION_PAGE_COPY.databaseService }}</dt>
-          <dd :class="databaseConnected ? 'status-ok' : 'status-error'">
-            {{ databaseStatusLabel }}
-          </dd>
-        </div>
-      </dl>
-
-      <p v-if="error" class="connection-error" role="status">
-        {{ error.message }}
-      </p>
-
-      <button type="button" :disabled="isChecking" @click="refreshHealth">
-        {{ isChecking ? FOUNDATION_PAGE_COPY.checking : FOUNDATION_PAGE_COPY.checkAgain }}
-      </button>
+      <div class="home-hero-media" aria-hidden="true">
+        <img
+          v-for="heroImage in HOME_HERO_IMAGES"
+          :key="heroImage.source"
+          :src="heroImage.source"
+          :alt="heroImage.alt"
+        >
+      </div>
     </section>
-  </main>
+
+    <section class="category-tiles-section" aria-labelledby="category-tiles-title">
+      <header>
+        <p class="eyebrow">{{ PRODUCT_COPY.home.categoryEyebrow }}</p>
+        <h2 id="category-tiles-title">{{ PRODUCT_COPY.categoryTilesHeading }}</h2>
+      </header>
+      <div class="category-tile-grid">
+        <CatalogueCategoryTile
+          v-for="category in CATEGORY_TILES"
+          :key="category.to"
+          :category="category"
+        />
+      </div>
+    </section>
+
+    <CatalogueCollection
+      :products="products"
+      :status="status"
+      :error-message="errorMessage"
+    />
+  </div>
 </template>
