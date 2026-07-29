@@ -28,6 +28,7 @@ export const PRODUCT_ASYNC_DATA_KEYS = {
 
 export const PRODUCT_ROUTE_PREFIX = '/product' as const
 export const PRODUCT_MEDIA_PLACEHOLDER_COUNT = 3 as const
+export const PRODUCT_BUTTON_FIZZ_PARTICLE_COUNT = 8 as const
 
 export const PRODUCT_PRICE_FORMAT = {
   currency: 'NGN',

@@ -31,7 +31,7 @@ const errorMessage = computed(() =>
           {{ PRODUCT_COPY.home.heroHeading.tail }}
         </h1>
         <p>{{ PRODUCT_COPY.home.heroDescription }}</p>
-        <NuxtLink :to="StorefrontRoute.Collection">
+        <NuxtLink class="home-hero-action" :to="StorefrontRoute.Collection">
           <span>{{ PRODUCT_COPY.home.heroAction }}</span>
           <StorefrontIcon
             :icon-node="HERO_ACTION_ICON"

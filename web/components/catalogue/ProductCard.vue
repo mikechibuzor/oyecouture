@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { IconNode } from 'lucide'
-import { ArrowUpRight, ChevronLeft, ChevronRight, Heart, ShoppingBag } from 'lucide'
+import { ArrowUpRight, ChevronLeft, ChevronRight, Heart } from 'lucide'
 import { PRODUCT_COPY, getProductRoute } from '~/constants/products'
 import type { Product, ProductMediaItem } from '~/types/product'
 import { formatProductPrice } from '~/utils/product'
@@ -19,7 +19,6 @@ const CARD_ICONS = {
   previous: ChevronLeft,
   view: ArrowUpRight,
   wishlist: Heart,
-  bag: ShoppingBag,
 } as const satisfies Readonly<Record<string, IconNode>>
 
 // Returns the media item selected in this card carousel.
@@ -150,13 +149,7 @@ const getMediaButtonLabel = (mediaIndex: number): string =>
           />
         </NuxtLink>
         <button class="product-add-button" type="button" disabled>
-          <StorefrontIcon
-            :icon-node="CARD_ICONS.bag"
-            :size="15"
-            :stroke-width="1.5"
-            aria-hidden="true"
-          />
-          <span>{{ PRODUCT_COPY.actions.addToBag }}</span>
+          <CatalogueAddToBagButtonContent :icon-size="15" />
         </button>
       </div>
     </div>

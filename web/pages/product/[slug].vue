@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import type { IconNode } from 'lucide'
-import { ShoppingBag } from 'lucide'
 import {
   DEFAULT_PRODUCT_SIZE,
   PRODUCT_COPY,
@@ -21,7 +19,6 @@ const productSlug = computed(() => {
 
 const { data, error, status } = await useProductBySlug(productSlug.value)
 const selectedSize = ref<ProductSize>(DEFAULT_PRODUCT_SIZE)
-const ADD_TO_BAG_ICON: IconNode = ShoppingBag
 
 // Returns the loaded product when the detail request succeeds.
 const product = computed<Product | null>(() => data.value?.product ?? null)
@@ -81,13 +78,7 @@ const formattedPrice = computed(() =>
           />
 
           <button class="product-detail-add-button" type="button" disabled>
-            <StorefrontIcon
-              :icon-node="ADD_TO_BAG_ICON"
-              :size="18"
-              :stroke-width="1.5"
-              aria-hidden="true"
-            />
-            <span>{{ PRODUCT_COPY.actions.addToBag }}</span>
+            <CatalogueAddToBagButtonContent />
           </button>
 
           <CatalogueBespokeNote v-if="!product.hasSizes" />

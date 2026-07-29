@@ -3,11 +3,9 @@ import type { IconNode } from 'lucide'
 import {
   ChevronDown,
   Heart,
-  Menu,
   Search,
   ShoppingBag,
   UserRound,
-  X,
 } from 'lucide'
 import {
   MOBILE_HEADER_ACTIONS,
@@ -196,20 +194,7 @@ const handleTriggerClick = (
           :title="isMobileMenuOpen ? STOREFRONT_COPY.closeMenu : STOREFRONT_COPY.openMenu"
           @click="toggleMobileMenu"
         >
-          <StorefrontIcon
-            v-if="isMobileMenuOpen"
-            :icon-node="X"
-            :size="23"
-            :stroke-width="1.5"
-            aria-hidden="true"
-          />
-          <StorefrontIcon
-            v-else
-            :icon-node="Menu"
-            :size="23"
-            :stroke-width="1.5"
-            aria-hidden="true"
-          />
+          <StorefrontMenuToggleIcon :is-open="isMobileMenuOpen" />
         </button>
       </div>
 
