@@ -20,6 +20,7 @@ $catalogue-content-width: 90rem;
     color: var(--color-gold);
     font-size: var(--text-xs);
     font-weight: var(--font-weight-medium);
+    letter-spacing: var(--tracking-eyebrow);
     text-transform: uppercase;
   }
 
@@ -28,6 +29,7 @@ $catalogue-content-width: 90rem;
     font-family: var(--font-family-display);
     font-size: var(--text-2xl);
     font-weight: var(--font-weight-heavy);
+    letter-spacing: var(--tracking-tight);
     text-transform: uppercase;
   }
 }
@@ -60,6 +62,7 @@ $catalogue-content-width: 90rem;
     color: var(--color-taupe);
     background: transparent;
     font-size: var(--text-xs);
+    letter-spacing: var(--tracking-wider);
     text-transform: uppercase;
 
     &:hover,
@@ -81,6 +84,7 @@ $catalogue-content-width: 90rem;
   > span {
     color: var(--color-taupe);
     font-size: var(--text-xs);
+    letter-spacing: var(--tracking-wide);
     text-transform: uppercase;
     white-space: nowrap;
   }
@@ -165,6 +169,7 @@ $catalogue-content-width: 90rem;
     margin-top: var(--space-xs);
     color: var(--color-taupe);
     font-size: var(--text-xs);
+    letter-spacing: var(--tracking-label);
     text-transform: uppercase;
   }
 }
@@ -179,6 +184,7 @@ $catalogue-content-width: 90rem;
   background: var(--color-champagne);
   font-size: 0.625rem;
   font-weight: var(--font-weight-semibold);
+  letter-spacing: var(--tracking-wider);
   text-transform: uppercase;
 }
 
@@ -277,6 +283,7 @@ $catalogue-content-width: 90rem;
 .product-category {
   color: var(--color-taupe);
   font-size: 0.625rem;
+  letter-spacing: var(--tracking-wider);
   text-transform: uppercase;
 }
 
@@ -301,6 +308,7 @@ $catalogue-content-width: 90rem;
   gap: var(--space-xs);
   font-size: 0.625rem;
   font-weight: var(--font-weight-medium);
+  letter-spacing: var(--tracking-wider);
   text-align: center;
   text-decoration: none;
   text-transform: uppercase;
@@ -362,11 +370,13 @@ $catalogue-content-width: 90rem;
 
   small {
     font-size: var(--text-xs);
+    letter-spacing: var(--tracking-label);
   }
 
   strong {
     margin-top: var(--space-xs);
     font-size: var(--text-xl);
+    letter-spacing: var(--tracking-tight);
   }
 
   svg {

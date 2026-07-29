@@ -1,0 +1,33 @@
+// Self-hosted Gilmer (the approved design typeface). Weight ranges mirror Gilmer's
+// real family structure: Regular 300-400, Medium 500-600, Bold 700, Heavy 800.
+@font-face {
+  font-family: 'Gilmer';
+  font-style: normal;
+  font-weight: 300 400;
+  font-display: swap;
+  src: url('/fonts/GilmerRegular.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Gilmer';
+  font-style: normal;
+  font-weight: 500 600;
+  font-display: swap;
+  src: url('/fonts/GilmerMedium.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Gilmer';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/GilmerBold.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Gilmer';
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url('/fonts/GilmerHeavy.woff2') format('woff2');
+}

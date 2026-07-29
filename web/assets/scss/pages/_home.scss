@@ -30,6 +30,7 @@ $home-content-width: 90rem;
     font-size: var(--text-2xl);
     font-weight: var(--font-weight-heavy);
     line-height: 1.06;
+    letter-spacing: var(--tracking-tight);
     text-transform: uppercase;
   }
 
@@ -52,6 +53,7 @@ $home-content-width: 90rem;
     background: var(--color-champagne);
     font-size: var(--text-xs);
     font-weight: var(--font-weight-medium);
+    letter-spacing: var(--tracking-widest);
     text-decoration: none;
     text-transform: uppercase;
 
@@ -92,12 +94,14 @@ $home-content-width: 90rem;
       color: var(--color-gold);
       font-size: var(--text-xs);
       font-weight: var(--font-weight-medium);
+      letter-spacing: var(--tracking-eyebrow);
       text-transform: uppercase;
     }
 
     h2 {
       margin-bottom: 0;
       font-size: var(--text-2xl);
+      letter-spacing: var(--tracking-tight);
       text-transform: uppercase;
     }
   }

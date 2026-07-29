@@ -26,6 +26,7 @@ $storefront-footer-width: 90rem;
     color: var(--color-champagne);
     font-size: var(--text-xs);
     font-weight: var(--font-weight-medium);
+    letter-spacing: var(--tracking-eyebrow);
     text-transform: uppercase;
   }
 }
@@ -106,6 +107,7 @@ $storefront-footer-width: 90rem;
   a {
     color: var(--color-white);
     font-size: var(--text-xs);
+    letter-spacing: var(--tracking-label);
     text-decoration: none;
     text-transform: uppercase;
 

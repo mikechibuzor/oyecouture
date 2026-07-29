@@ -1,6 +1,18 @@
 :root {
-  --font-family-body: 'Jost Variable', Jost, Poppins, Montserrat, Arial, sans-serif;
-  --font-family-display: 'Jost Variable', Jost, Poppins, Montserrat, Arial, sans-serif;
+  --font-family-body: 'Gilmer', 'Helvetica Neue', Arial, sans-serif;
+  --font-family-display: 'Gilmer', 'Helvetica Neue', Arial, sans-serif;
+
+  // Letter-spacing (tracking) scale extracted from the approved design.
+  --tracking-tight: 0.01em; // large display headings
+  --tracking-snug: 0.03em; // sub-headings, prices
+  --tracking-normal: 0.04em; // subtle body accents
+  --tracking-wide: 0.08em; // count labels
+  --tracking-label: 0.14em; // nav links, uppercase links
+  --tracking-wider: 0.16em; // small uppercase labels, tags, chips
+  --tracking-widest: 0.2em; // uppercase CTA buttons
+  --tracking-eyebrow: 0.24em; // eyebrows / section kickers
+  --tracking-ultra: 0.28em; // announcement bar
+
   --text-xs: 0.75rem;
   --text-sm: 0.875rem;
   --text-md: 1rem;

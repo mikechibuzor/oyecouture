@@ -8,7 +8,7 @@ export default defineNuxtConfig({
   experimental: {
     appManifest: false,
   },
-  css: ['@fontsource-variable/jost', '~/assets/scss/main.scss'],
+  css: ['~/assets/scss/main.scss'],
   runtimeConfig: {
     public: {
       apiBase: process.env.API_BASE_URL || DEFAULT_API_BASE_URL,
