@@ -11,6 +11,10 @@ import {
   ProductSortId,
 } from '~/types/product'
 
+const casualProductSectionSet: ReadonlySet<ProductSection> = new Set(
+  CASUAL_PRODUCT_SECTIONS,
+)
+
 // Coordinates client-side catalogue filtering, sorting, and result counts.
 export const useCatalogueProducts = (
   products: MaybeRefOrGetter<readonly Product[]>,
@@ -26,7 +30,7 @@ export const useCatalogueProducts = (
       case CatalogueFilterId.AsoOke:
         return product.category === PRODUCT_FILTER_CATEGORIES.asoOke
       case CatalogueFilterId.Casuals:
-        return CASUAL_PRODUCT_SECTIONS.includes(product.section as never)
+        return casualProductSectionSet.has(product.section)
       case CatalogueFilterId.Kaftans:
         return product.category === PRODUCT_FILTER_CATEGORIES.kaftans
       case CatalogueFilterId.All:

@@ -2,6 +2,7 @@ import type {
   CatalogueFilterOption,
   CategoryPageConfig,
   CategoryTileConfig,
+  ProductSectionNavigation,
   ProductSortOption,
 } from '~/types/product'
 import {
@@ -161,7 +162,7 @@ export const PRODUCT_SECTION_NAVIGATION = {
     label: CATEGORY_PAGE_BY_SECTION[ProductSection.CasualsWomen].heading,
     to: StorefrontRoute.CasualsWomen,
   },
-} as const
+} as const satisfies Readonly<Record<ProductSection, ProductSectionNavigation>>
 
 export const CATEGORY_TILES = [
   {

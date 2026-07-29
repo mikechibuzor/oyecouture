@@ -1,3 +1,5 @@
+import type { StorefrontRoute } from '~/types/storefront'
+
 export enum ProductSection {
   Suits = 'suits',
   Trad = 'trad',
@@ -107,12 +109,12 @@ export interface CategoryTileConfig {
   readonly heading: string
   readonly imagePath: string
   readonly imageAlt: string
-  readonly to: string
+  readonly to: StorefrontRoute
 }
 
 export interface ProductSectionNavigation {
   readonly label: string
-  readonly to: string
+  readonly to: StorefrontRoute
 }
 
 export interface ProductMediaItem {

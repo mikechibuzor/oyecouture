@@ -148,6 +148,10 @@ export const INTERNAL_STOREFRONT_ROUTES = [
   StorefrontRoute.Collection,
 ] as const
 
+const internalStorefrontRouteSet: ReadonlySet<StorefrontRoute> = new Set(
+  INTERNAL_STOREFRONT_ROUTES,
+)
+
 // Reports whether a completed route should use Nuxt client-side navigation.
 export const isInternalStorefrontRoute = (storefrontRoute: StorefrontRoute): boolean =>
-  INTERNAL_STOREFRONT_ROUTES.includes(storefrontRoute as never)
+  internalStorefrontRouteSet.has(storefrontRoute)

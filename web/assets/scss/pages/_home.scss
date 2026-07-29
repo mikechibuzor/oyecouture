@@ -4,7 +4,7 @@ $home-content-width: 90rem;
 
 .home-hero {
   display: grid;
-  height: clamp(31rem, calc(100svh - 9rem), 39rem);
+  height: clamp(31rem, calc(100svh - 11rem), 39rem);
   overflow: hidden;
   color: var(--color-white);
   background: var(--color-ink);
