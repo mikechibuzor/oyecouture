@@ -4,7 +4,7 @@ export enum StorefrontRoute {
   Suits = '/suits',
   CasualsMen = '/casuals/men',
   CasualsWomen = '/casuals/women',
-  Collection = '/collection',
+  Collection = '/#collection',
   DearGroom = '/collection/dear-groom',
   WeiXin = '/collection/wei-xin',
   ManOfLegacy = '/collection/man-of-legacy',

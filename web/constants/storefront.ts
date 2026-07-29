@@ -138,3 +138,16 @@ export const STOREFRONT_LEGAL_LINKS = [
   { label: 'Legal & Privacy', to: StorefrontRoute.Legal },
   { label: 'Terms', to: StorefrontRoute.Terms },
 ] as const
+
+export const INTERNAL_STOREFRONT_ROUTES = [
+  StorefrontRoute.Home,
+  StorefrontRoute.TradAttires,
+  StorefrontRoute.Suits,
+  StorefrontRoute.CasualsMen,
+  StorefrontRoute.CasualsWomen,
+  StorefrontRoute.Collection,
+] as const
+
+// Reports whether a completed route should use Nuxt client-side navigation.
+export const isInternalStorefrontRoute = (storefrontRoute: StorefrontRoute): boolean =>
+  INTERNAL_STOREFRONT_ROUTES.includes(storefrontRoute as never)

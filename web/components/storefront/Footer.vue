@@ -6,6 +6,7 @@ import {
   STOREFRONT_FOOTER_GROUPS,
   STOREFRONT_LEGAL_LINKS,
   STOREFRONT_SOCIAL_LINKS,
+  isInternalStorefrontRoute,
 } from '~/constants/storefront'
 import { StorefrontSocialPlatform } from '~/types/storefront'
 
@@ -52,7 +53,10 @@ const SOCIAL_ICONS: Readonly<Record<StorefrontSocialPlatform, IconNode>> = {
         <h2>{{ footerGroup.heading }}</h2>
         <ul>
           <li v-for="footerLink in footerGroup.links" :key="footerLink.to">
-            <NuxtLink :to="footerLink.to" external>
+            <NuxtLink
+              :to="footerLink.to"
+              :external="!isInternalStorefrontRoute(footerLink.to)"
+            >
               {{ footerLink.label }}
             </NuxtLink>
           </li>

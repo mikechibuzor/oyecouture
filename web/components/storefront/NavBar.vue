@@ -15,8 +15,9 @@ import {
   STOREFRONT_ACTION_BY_ID,
   STOREFRONT_COPY,
   STOREFRONT_NAVIGATION,
+  isInternalStorefrontRoute,
 } from '~/constants/storefront'
-import { StorefrontActionId, StorefrontRoute } from '~/types/storefront'
+import { StorefrontActionId } from '~/types/storefront'
 
 const emit = defineEmits<{
   action: [storefrontActionId: StorefrontActionId]
@@ -64,7 +65,7 @@ const handleStorefrontAction = (storefrontActionId: StorefrontActionId): void =>
             class="desktop-navigation-link"
             :class="{ 'is-active': isNavigationItemActive(navigationItem) }"
             :to="navigationItem.to"
-            :external="navigationItem.to !== StorefrontRoute.Home"
+            :external="!isInternalStorefrontRoute(navigationItem.to)"
           >
             {{ navigationItem.label }}
           </NuxtLink>
@@ -98,7 +99,7 @@ const handleStorefrontAction = (storefrontActionId: StorefrontActionId): void =>
                 v-for="navigationChild in navigationItem.children"
                 :key="navigationChild.to"
                 :to="navigationChild.to"
-                external
+                :external="!isInternalStorefrontRoute(navigationChild.to)"
                 @click="closeNavigation"
               >
                 {{ navigationChild.label }}
@@ -188,7 +189,7 @@ const handleStorefrontAction = (storefrontActionId: StorefrontActionId): void =>
                 class="mobile-navigation-link"
                 :class="{ 'is-active': isNavigationItemActive(navigationItem) }"
                 :to="navigationItem.to"
-                :external="navigationItem.to !== StorefrontRoute.Home"
+                :external="!isInternalStorefrontRoute(navigationItem.to)"
                 @click="closeNavigation"
               >
                 {{ navigationItem.label }}
@@ -222,7 +223,7 @@ const handleStorefrontAction = (storefrontActionId: StorefrontActionId): void =>
                     v-for="navigationChild in navigationItem.children"
                     :key="navigationChild.to"
                     :to="navigationChild.to"
-                    external
+                    :external="!isInternalStorefrontRoute(navigationChild.to)"
                     @click="closeNavigation"
                   >
                     {{ navigationChild.label }}
