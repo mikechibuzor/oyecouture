@@ -4,7 +4,7 @@ Full-custom Oyecouture storefront: Nuxt 3, Go, and PostgreSQL.
 
 ## Local development
 
-Requirements: Node.js 20+, Go 1.23+, and Docker with Compose.
+Requirements: Node.js 20.19+ or 22.12+, Go 1.23+, and Docker with Compose.
 
 ```bash
 cp .env.example .env
