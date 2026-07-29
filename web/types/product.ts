@@ -40,6 +40,8 @@ export enum AsyncDataStatus {
   Error = 'error',
 }
 
+export type AsyncDataStatusValue = `${AsyncDataStatus}`
+
 export interface ProductImage {
   readonly id: string
   readonly url: string
