@@ -1,0 +1,21 @@
+.DS_Store
+.env
+.env.*
+!.env.example
+
+# Nuxt
+web/.nuxt/
+web/.output/
+web/node_modules/
+
+# Go
+api/bin/
+api/coverage.out
+
+# Local services
+.postgres-data/
+
+# Editor and logs
+.idea/
+.vscode/
+*.log
