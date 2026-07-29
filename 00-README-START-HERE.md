@@ -27,6 +27,7 @@ Bespoke customers **pay only after their measurements are known.** Get this bran
 4. **[04-DATA-MODEL.md](04-DATA-MODEL.md)** — tables, order state machine, money handling.
 5. **[05-BUILD-ROADMAP.md](05-BUILD-ROADMAP.md)** — the actual build order, step by step, toward the 31 July demo.
 6. **[06-SETUP-AND-ENV.md](06-SETUP-AND-ENV.md)** — accounts, env vars, local dev, free-tier deploy.
+7. **[07-MOTION-AND-MICROINTERACTIONS.md](07-MOTION-AND-MICROINTERACTIONS.md)** — the motion system: tokens, per-component animation spec, accessibility and performance rules. **Read before adding any animation.**
 
 ## What's in the other folders
 
