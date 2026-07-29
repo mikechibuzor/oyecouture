@@ -1,0 +1,9 @@
+.storefront-shell {
+  display: flex;
+  min-height: 100vh;
+  flex-direction: column;
+}
+
+.storefront-main {
+  flex: 1;
+}

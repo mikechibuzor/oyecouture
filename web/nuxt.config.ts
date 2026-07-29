@@ -4,7 +4,10 @@ import { DEFAULT_API_BASE_URL } from './constants/config'
 
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
-  devtools: { enabled: true },
+  devtools: { enabled: false },
+  experimental: {
+    appManifest: false,
+  },
   css: ['@fontsource-variable/jost', '~/assets/scss/main.scss'],
   runtimeConfig: {
     public: {

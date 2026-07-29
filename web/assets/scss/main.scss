@@ -2,4 +2,9 @@
 @use 'design-system/spacing';
 @use 'design-system/typography';
 @use 'globals';
+@use 'layouts/storefront-shell';
+@use 'components/announcement-bar';
+@use 'components/brand-logo';
+@use 'components/nav-bar';
+@use 'components/footer';
 @use 'pages/foundation';

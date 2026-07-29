@@ -1,0 +1,29 @@
+@use '../design-system/breakpoints' as *;
+
+.announcement-bar {
+  display: grid;
+  min-height: 3.625rem;
+  padding: var(--space-xs) var(--space-md);
+  place-items: center;
+  color: var(--color-champagne);
+  background: var(--color-ink);
+
+  p {
+    max-width: 18rem;
+    margin: 0;
+    font-size: 0.625rem;
+    font-weight: var(--font-weight-medium);
+    line-height: 1.45;
+    text-align: center;
+    text-transform: uppercase;
+  }
+
+  @include breakpoint-min('tablet') {
+    min-height: 2.5rem;
+
+    p {
+      max-width: none;
+      font-size: var(--text-xs);
+    }
+  }
+}

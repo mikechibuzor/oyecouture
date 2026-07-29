@@ -16,7 +16,9 @@ export const STOREFRONT_COPY = {
     'COMPLIMENTARY TAILORING CONSULTATION · WORLDWIDE DELIVERY · BE EXCLUSIVE',
   announcementLabel: 'Store announcement',
   brandAlt: 'Oyecouture Bespoke',
+  brandLogoPath: '/images/brand/oyecouture-logo.png',
   navigationLabel: 'Primary navigation',
+  mobileMenuId: 'mobile-navigation-menu',
   openMenu: 'Open navigation menu',
   closeMenu: 'Close navigation menu',
   footer: {
@@ -24,10 +26,11 @@ export const STOREFRONT_COPY = {
     description:
       'Oyecouture Bespoke — where confidence, simplicity, and class become clothing.',
     copyright: '© 2026 Oyecouture. All rights reserved.',
+    legalNavigationLabel: 'Legal navigation',
   },
 } as const
 
-export const STOREFRONT_NAVIGATION = [
+export const STOREFRONT_NAVIGATION: readonly StorefrontNavigationItem[] = [
   {
     id: StorefrontNavigationItemId.Home,
     label: 'Home',
@@ -63,14 +66,26 @@ export const STOREFRONT_NAVIGATION = [
       { label: 'OYE — Man of Legacy', to: StorefrontRoute.ManOfLegacy },
     ],
   },
-] as const satisfies readonly StorefrontNavigationItem[]
+]
 
-export const STOREFRONT_ACTIONS = [
-  { id: StorefrontActionId.Search, label: 'Search' },
-  { id: StorefrontActionId.Account, label: 'Account' },
-  { id: StorefrontActionId.Wishlist, label: 'Wishlist' },
-  { id: StorefrontActionId.Cart, label: 'Bag' },
-] as const satisfies readonly StorefrontAction[]
+export const STOREFRONT_ACTION_BY_ID = {
+  [StorefrontActionId.Search]: {
+    id: StorefrontActionId.Search,
+    label: 'Search',
+  },
+  [StorefrontActionId.Account]: {
+    id: StorefrontActionId.Account,
+    label: 'Account',
+  },
+  [StorefrontActionId.Wishlist]: {
+    id: StorefrontActionId.Wishlist,
+    label: 'Wishlist',
+  },
+  [StorefrontActionId.Cart]: {
+    id: StorefrontActionId.Cart,
+    label: 'Bag',
+  },
+} as const satisfies Readonly<Record<StorefrontActionId, StorefrontAction>>
 
 export const MOBILE_HEADER_ACTIONS = [
   StorefrontActionId.Wishlist,

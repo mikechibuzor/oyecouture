@@ -1,0 +1,23 @@
+@use '../design-system/breakpoints' as *;
+
+.brand-logo {
+  display: flex;
+  width: 8.75rem;
+  min-width: 0;
+  align-items: center;
+  color: inherit;
+
+  img {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  @media (min-width: 375px) {
+    width: 9.75rem;
+  }
+
+  @include breakpoint-min('desktop') {
+    width: 10.75rem;
+  }
+}

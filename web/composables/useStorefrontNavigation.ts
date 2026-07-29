@@ -2,6 +2,7 @@ import type { Ref } from 'vue'
 import type { StorefrontNavigationItem } from '~/types/storefront'
 import { StorefrontNavigationItemId } from '~/types/storefront'
 
+// Coordinates responsive storefront menu state and dismissal behavior.
 export const useStorefrontNavigation = (
   navigationRoot: Readonly<Ref<HTMLElement | null>>,
 ) => {

@@ -7,26 +7,32 @@ import { ServiceHealthStatus } from '~/types/health'
 
 const { data, error, refresh, status } = await useApiHealth()
 
+// Reports whether the Go API is currently reachable.
 const apiConnected = computed(
   () => data.value?.services.api === ServiceHealthStatus.Available,
 )
+// Reports whether PostgreSQL is reachable through the API.
 const databaseConnected = computed(
   () => data.value?.services.database === ServiceHealthStatus.Available,
 )
+// Reports whether a health request is currently running.
 const isChecking = computed(
   () => status.value === ASYNC_REQUEST_STATUS.pending,
 )
+// Maps the API health result to its display label.
 const apiStatusLabel = computed(() =>
   apiConnected.value
     ? FOUNDATION_PAGE_COPY.connected
     : FOUNDATION_PAGE_COPY.unavailable,
 )
+// Maps the database health result to its display label.
 const databaseStatusLabel = computed(() =>
   databaseConnected.value
     ? FOUNDATION_PAGE_COPY.connected
     : FOUNDATION_PAGE_COPY.unavailable,
 )
 
+// Requests a fresh health snapshot from the API.
 const refreshHealth = async (): Promise<void> => {
   await refresh()
 }
