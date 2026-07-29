@@ -43,8 +43,9 @@ const STOREFRONT_ACTION_ICONS: Readonly<Record<StorefrontActionId, IconNode>> = 
   [StorefrontActionId.Cart]: ShoppingBag,
 }
 
-// Forwards shell actions to the future search, account, wishlist, and cart features.
+// Closes mobile navigation and forwards shell actions to their owning features.
 const handleStorefrontAction = (storefrontActionId: StorefrontActionId): void => {
+  closeNavigation()
   emit('action', storefrontActionId)
 }
 
@@ -153,6 +154,7 @@ const handleTriggerClick = (
           :key="storefrontAction.id"
           class="header-action-button"
           type="button"
+          :data-product-search-trigger="storefrontAction.id === StorefrontActionId.Search || undefined"
           :aria-label="storefrontAction.label"
           :title="storefrontAction.label"
           @click="handleStorefrontAction(storefrontAction.id)"
@@ -187,6 +189,7 @@ const handleTriggerClick = (
         <button
           class="header-action-button"
           type="button"
+          data-product-search-focus-fallback
           :aria-controls="STOREFRONT_COPY.mobileMenuId"
           :aria-expanded="isMobileMenuOpen"
           :aria-label="isMobileMenuOpen ? STOREFRONT_COPY.closeMenu : STOREFRONT_COPY.openMenu"
@@ -276,6 +279,7 @@ const handleTriggerClick = (
               v-for="storefrontActionId in MOBILE_MENU_ACTIONS"
               :key="storefrontActionId"
               type="button"
+              :data-product-search-trigger="storefrontActionId === StorefrontActionId.Search || undefined"
               @click="handleStorefrontAction(storefrontActionId)"
             >
               <StorefrontIcon
