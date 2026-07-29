@@ -110,6 +110,11 @@ export interface CategoryTileConfig {
   readonly to: string
 }
 
+export interface ProductSectionNavigation {
+  readonly label: string
+  readonly to: string
+}
+
 export interface ProductMediaItem {
   readonly id: string
   readonly source: string | null

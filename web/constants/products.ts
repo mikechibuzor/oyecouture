@@ -144,6 +144,25 @@ export const CATEGORY_PAGE_BY_SECTION = {
   },
 } as const satisfies Readonly<Record<ProductSection, CategoryPageConfig>>
 
+export const PRODUCT_SECTION_NAVIGATION = {
+  [ProductSection.Suits]: {
+    label: CATEGORY_PAGE_BY_SECTION[ProductSection.Suits].heading,
+    to: StorefrontRoute.Suits,
+  },
+  [ProductSection.Trad]: {
+    label: CATEGORY_PAGE_BY_SECTION[ProductSection.Trad].heading,
+    to: StorefrontRoute.TradAttires,
+  },
+  [ProductSection.CasualsMen]: {
+    label: CATEGORY_PAGE_BY_SECTION[ProductSection.CasualsMen].heading,
+    to: StorefrontRoute.CasualsMen,
+  },
+  [ProductSection.CasualsWomen]: {
+    label: CATEGORY_PAGE_BY_SECTION[ProductSection.CasualsWomen].heading,
+    to: StorefrontRoute.CasualsWomen,
+  },
+} as const
+
 export const CATEGORY_TILES = [
   {
     label: 'Shop',
