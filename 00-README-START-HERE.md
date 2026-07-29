@@ -31,7 +31,7 @@ Bespoke customers **pay only after their measurements are known.** Get this bran
 ## What's in the other folders
 
 - **`design-source/`** — the 7 approved design pages as self-contained `.dc.html` files. **Open any of them directly in a browser** to see the exact target (images are embedded; no server needed). The product page is `Oyecouture Product.dc.html?id=<slug>` (e.g. `?id=agbada`, `?id=linen`). See [design-source/HOW-TO-VIEW.md](design-source/HOW-TO-VIEW.md).
-- **`catalogue/`** — `product-data.js` is the **real, canonical catalogue** used by the design (28 products, prices, the `hasSizes` flag). `CATALOGUE.md` is the human-readable version. Seed the database from this.
+- **`catalogue/`** — `product-data.js` is the **real, canonical catalogue** used by the design (27 products, prices, the `hasSizes` flag). `CATALOGUE.md` is the human-readable version. Seed the database from this.
 - **`reference-docs/`** — the internal PRD/FRD and the client quotation, verbatim, if you want the primary source.
 
 ## Ground rules carried over from planning

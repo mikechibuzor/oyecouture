@@ -103,4 +103,4 @@ admin_users(id uuid pk, email text unique, password_hash text, role text)  -- gh
 
 ## Seeding from product-data.js
 
-`catalogue/product-data.js` exports `products[]` (28 items) with `{id, name, cat, section, price, tag, hasSizes, description}` and helper `sections`, `sizeOptions = ['S','M','L','XL']`, `fmt()` (₦ formatter). Map: `slug=id`, `category=cat`, `price_kobo=price*100`, `has_sizes=hasSizes`. Images are placeholders for most items — insert `product_images` rows as real photos arrive; use `active=false` to hide items lacking photos at launch if desired.
+`catalogue/product-data.js` exports `products[]` (27 items) with `{id, name, cat, section, price, tag, hasSizes, description}` and helper `sections`, `sizeOptions = ['S','M','L','XL']`, `fmt()` (₦ formatter). Map: `slug=id`, `category=cat`, `price_kobo=price*100`, `has_sizes=hasSizes`. Images are placeholders for most items — insert `product_images` rows as real photos arrive; use `active=false` to hide items lacking photos at launch if desired.

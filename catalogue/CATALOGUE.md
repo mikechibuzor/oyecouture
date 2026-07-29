@@ -1,6 +1,6 @@
 # Catalogue (human-readable)
 
-Canonical data: [`product-data.js`](product-data.js) (28 products). Prices in naira; store as kobo (×100). **`Sizes` column = the critical RTW vs bespoke split** — `hasSizes:false` = bespoke (WhatsApp-first, pay-after-measurement); `hasSizes:true` = ready-to-wear (size picker, pay-now).
+Canonical data: [`product-data.js`](product-data.js) (27 products). Prices in naira; store as kobo (×100). **`Sizes` column = the critical RTW vs bespoke split** — `hasSizes:false` = bespoke (WhatsApp-first, pay-after-measurement); `hasSizes:true` = ready-to-wear (size picker, pay-now).
 
 ## Suits — section `suits` (all bespoke, no sizes)
 | slug | Name | Category | Price | Tag |

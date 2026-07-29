@@ -1,0 +1,8 @@
+{
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "generate:seed": "node generate-product-seed.mjs",
+    "check:seed": "node generate-product-seed.mjs --check"
+  }
+}

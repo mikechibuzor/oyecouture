@@ -18,6 +18,16 @@ cd api
 go run ./cmd/server
 ```
 
+API startup applies the embedded PostgreSQL migrations and seeds the canonical
+catalogue once. After intentionally changing `catalogue/product-data.js`, refresh
+and verify the generated seed migrations:
+
+```bash
+cd catalogue
+npm run generate:seed
+npm run check:seed
+```
+
 Run the web app in another terminal:
 
 ```bash
