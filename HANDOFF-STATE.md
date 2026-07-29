@@ -7,13 +7,13 @@
 ## Current status
 - **Phase:** 1 (MVP). First 40% milestone **paid**; build authorized.
 - **Milestone:** A — Foundations & catalogue (see `05-BUILD-ROADMAP.md`).
-- **Step:** A.2 complete and verified. Stop boundary reached; A.3 has not started.
+- **Step:** A.3 complete and verified. Stop boundary reached; A.4 has not started.
 - **Last worked by:** Codex · 2026-07-29.
 - **Repo / branch:** `/Users/chibuzoriwuagwu/Downloads/share/oyecouture` · `main`.
-- **Last implementation commits:** `bc20818` (catalogue seed), `2e66fbc` (database migrations), `576ee77` (design tokens/Jost), `21d6f8f` (Nuxt), `822419f` (Go API).
+- **Last implementation commits:** `b42bb60` (product HTTP endpoints), `36f40bc` (product read service), `bc20818` (catalogue seed), `2e66fbc` (database migrations), `576ee77` (design tokens/Jost).
 
 ## ▶ Next action (the ONE thing to do next)
-Wait for user authorization, then begin Milestone A step A.3 only: implement `GET /products` with `section`/`q` filters and `GET /products/:slug`. Do not start A.4 storefront-shell work in the same step.
+Wait for user authorization, then begin Milestone A step A.4 only: build the Nuxt storefront shell from `02-DESIGN-SPEC.md` (`AnnouncementBar`, `NavBar` with dropdowns/mobile menu, and `Footer`) using the existing SCSS tokens. Do not start A.5 storefront pages in the same step.
 
 ## Done & verified
 - Handoff docs `00`–`06`, `catalogue/`, `design-source/`, `reference-docs/` are complete and current.
@@ -26,12 +26,13 @@ Wait for user authorization, then begin Milestone A step A.3 only: implement `GE
 - Collaboration rules require one-line intent comments above functions and computed properties, with concise walkthrough comments at meaningful transitions inside multi-step functions.
 - Embedded versioned migrations create `products`, `product_images`, `settings`, and `delivery_zones` with money, section, image-position, and uniqueness constraints; API startup applies pending versions before serving.
 - A deterministic validated generator seeds the 27 canonical products from `catalogue/product-data.js`, mapping naira to integer kobo and preserving RTW/bespoke `has_sizes` behavior and catalogue sort order.
+- Public product endpoints return active products only: `GET /products` supports validated `section` and literal `q` search filters, while `GET /products/{slug}` provides detail lookup with stable JSON errors and ordered image arrays.
 - Go API scaffolded in `api/` with config, PostgreSQL pool, CORS, graceful shutdown, and `GET /healthz`.
 - Verified: `go test ./...`, Go build, `npm run typecheck`, and `npm run build` all pass.
 - Runtime verified: `/healthz` returns HTTP 200 with API/database `ok`; Nuxt SSR renders web/API/PostgreSQL as connected.
 
 ## In progress (exact state)
-- Local PostgreSQL, migrated Go API, and Nuxt dev services are running for review. No A.3 work is in progress.
+- Local PostgreSQL, product-enabled Go API, and Nuxt dev services are running for review. No A.4 work is in progress.
 
 ## How to run / verify current state
 ```bash
@@ -46,9 +47,10 @@ cd ../web && npm install && npm run dev
 - Web: `http://localhost:3000`
 - API health: `http://localhost:8080/healthz`
 - Verify API: `curl -sS http://localhost:8080/healthz`
+- Verify products: `curl -sS 'http://localhost:8080/products?section=casuals-men&q=linen'`
 
 ## Blockers / waiting on the user (client deliverables)
-- Nomba credentials (sandbox first), WhatsApp business number, delivery-fee amounts per zone, product photography, customer-care page copy, domain DNS access. None block A.2, but they gate later steps.
+- Nomba credentials (sandbox first), WhatsApp business number, delivery-fee amounts per zone, product photography, customer-care page copy, domain DNS access. None block A.4, but they gate later steps.
 
 ## Decisions / deviations from the numbered docs
 - Health proof uses `/healthz` rather than `/health`; it reports both API and PostgreSQL state.
@@ -59,6 +61,9 @@ cd ../web && npm install && npm run dev
 - Database migrations use embedded `golang-migrate` v4.18.3, pinned to preserve the established Go 1.23 baseline.
 - The canonical source contains 27 products (17 bespoke, 10 RTW), correcting the stale exact count of 28 in the handoff catalogue prose; approximate “~28” scope references remain valid.
 - `product_images`, `settings`, and `delivery_zones` start empty because R2 keys, delivery fees, and client settings have not been supplied; schema constraints are ready for those later inputs.
+- Product responses use camelCase fields, integer `priceKobo`, `images: []` for missing photography, and `{products,count}` / `{product}` envelopes for strict frontend contracts.
+- Storefront queries reject unsupported sections, malformed slugs, and searches over 100 characters; `%`, `_`, and backslashes are escaped as literal search characters.
+- Product image URLs are derived server-side from `R2_PUBLIC_BASE`, keeping storage keys out of public JSON.
 
 ## Reminders (non-negotiable)
 Money in kobo (int64, no floats) · `paid` only after server-side verify · guest checkout only in phase 1 · mobile-first · ghost admin stays unlinked/unmentioned to client · commits as `mikechibuzor`, no `Co-Authored-By`.

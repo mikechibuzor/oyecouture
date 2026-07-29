@@ -38,3 +38,11 @@ npm run dev
 
 The web app is available at `http://localhost:3000`. It calls the API health
 endpoint at `http://localhost:8080/healthz`, which also checks PostgreSQL.
+
+Public product reads are available from the Go API:
+
+```bash
+curl -sS http://localhost:8080/products
+curl -sS 'http://localhost:8080/products?section=casuals-men&q=linen'
+curl -sS http://localhost:8080/products/agbada
+```
