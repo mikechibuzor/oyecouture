@@ -1,0 +1,30 @@
+@use 'sass:map';
+
+$breakpoints: (
+  'tablet': 640px,
+  'desktop': 1024px,
+) !default;
+
+@mixin breakpoint-min($breakpoint-name) {
+  $breakpoint-value: map.get($breakpoints, $breakpoint-name);
+
+  @if $breakpoint-value == null {
+    @error 'Unknown breakpoint: #{$breakpoint-name}';
+  }
+
+  @media (min-width: $breakpoint-value) {
+    @content;
+  }
+}
+
+@mixin breakpoint-max($breakpoint-name) {
+  $breakpoint-value: map.get($breakpoints, $breakpoint-name);
+
+  @if $breakpoint-value == null {
+    @error 'Unknown breakpoint: #{$breakpoint-name}';
+  }
+
+  @media (max-width: $breakpoint-value) {
+    @content;
+  }
+}

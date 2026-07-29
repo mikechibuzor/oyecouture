@@ -32,6 +32,7 @@ Two AI engineers build this project in alternation: **Codex** (ChatGPT) and **Cl
 - **Golden invariants:** money in kobo (int64, never floats); an order is `paid` only after server-side verify/verified webhook; mobile-first; guest checkout only in phase 1.
 - **Frontend typing:** strict TypeScript at all times. Define shared types and runtime values in dedicated modules and import them wherever reused.
 - **Frontend constants:** centralize domain statuses, API paths, configuration defaults, and reusable UI copy. Prefer `as const` + inferred literal unions; use enums when runtime enum semantics improve clarity.
+- **Frontend styling:** use SCSS, not plain CSS. Keep shared tokens and mixins in `web/assets/scss/design-system/`, global element rules in `_globals.scss`, and page-specific rules in page partials or scoped Vue `<style lang="scss">` blocks.
 - **Code quality:** use descriptive names and optimize for simplicity, readability, scalability, and maintainability.
 
 ## Project map (what to read)
