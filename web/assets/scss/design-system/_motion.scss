@@ -1,0 +1,28 @@
+// Motion tokens. Authority: 07-MOTION-AND-MICROINTERACTIONS.md.
+// Never write a raw ms value or cubic-bezier() in a component file — add a token here instead.
+:root {
+  // Duration
+  --duration-instant: 90ms; // tap/press feedback, colour-only shifts
+  --duration-quick: 160ms; // hover states, chevrons, focus rings, chips
+  --duration-base: 240ms; // dropdowns, small reveals, exits
+  --duration-slow: 380ms; // cart drawer, mobile menu, gallery crossfade
+  --duration-editorial: 620ms; // scroll reveals, hero headline, section entrances
+  --duration-ceremony: 800ms; // bespoke-only moments
+
+  // Easing. No spring/bounce/elastic on this project — see principle P1.
+  --ease-settle: cubic-bezier(0.16, 1, 0.3, 1); // signature: long quiet tail, for entrances
+  --ease-fine: cubic-bezier(0.33, 1, 0.68, 1); // finer settle for small elements
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1); // exits accelerate away
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1); // colour/opacity with no spatial meaning
+
+  // Displacement. Luxury is short travel; reveals never exceed --lift-lg.
+  --lift-sm: 0.25rem;
+  --lift-md: 0.5rem;
+  --lift-lg: 1rem;
+
+  // Choreography
+  --stagger-tight: 40ms;
+  --stagger-loose: 80ms;
+  --zoom-image: 1.03; // the only scale permitted on product photography
+  --press-scale: 0.97; // tap feedback on controls
+}

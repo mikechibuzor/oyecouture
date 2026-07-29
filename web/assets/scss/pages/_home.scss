@@ -70,6 +70,18 @@ $home-content-width: 92.5rem;
 .home-hero-media {
   overflow: hidden;
   margin-top: var(--space-2xl);
+
+  // Touch devices cannot hover to pause, so the rail carries no auto-motion
+  // there: it becomes a swipeable strip the user controls. Satisfies WCAG 2.2.2
+  // on the majority-mobile audience and saves battery on mid-range Android.
+  @media (hover: none) {
+    overflow-x: auto;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
 }
 
 .home-hero-media-track {
@@ -77,8 +89,17 @@ $home-content-width: 92.5rem;
   width: max-content;
   align-items: flex-end;
   gap: 0.875rem;
-  animation: home-hero-carousel 30s linear infinite;
-  will-change: transform;
+
+  // Pointer devices only: auto-scroll, pausable on hover/focus (WCAG 2.2.2).
+  @media (hover: hover) {
+    animation: home-hero-carousel 30s linear infinite;
+    will-change: transform;
+
+    &:hover,
+    &:focus-within {
+      animation-play-state: paused;
+    }
+  }
 
   img {
     width: 17.5rem;

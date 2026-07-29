@@ -125,7 +125,7 @@ $storefront-navigation-width: 92.5rem;
 
 .navigation-chevron {
   flex: 0 0 auto;
-  transition: transform 160ms ease;
+  transition: transform var(--duration-quick) var(--ease-fine);
 
   &.is-open {
     transform: rotate(180deg);
@@ -159,15 +159,23 @@ $storefront-navigation-width: 92.5rem;
   }
 }
 
-.mobile-navigation-enter-active,
+// Enters settling, leaves faster — exits are ~0.6x the entrance (07 §2).
+.mobile-navigation-enter-active {
+  transition:
+    opacity var(--duration-slow) var(--ease-settle),
+    transform var(--duration-slow) var(--ease-settle);
+}
+
 .mobile-navigation-leave-active {
-  transition: opacity 150ms ease, transform 150ms ease;
+  transition:
+    opacity var(--duration-base) var(--ease-exit),
+    transform var(--duration-base) var(--ease-exit);
 }
 
 .mobile-navigation-enter-from,
 .mobile-navigation-leave-to {
   opacity: 0;
-  transform: translateY(-0.5rem);
+  transform: translateY(calc(var(--lift-md) * -1));
 }
 
 @include breakpoint-min('desktop') {

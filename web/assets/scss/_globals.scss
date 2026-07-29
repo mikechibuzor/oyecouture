@@ -26,16 +26,32 @@ button {
   border-radius: 0;
   font: inherit;
   cursor: pointer;
+  transition:
+    scale var(--duration-instant) var(--ease-standard),
+    color var(--duration-quick) var(--ease-standard),
+    background-color var(--duration-quick) var(--ease-standard),
+    border-color var(--duration-quick) var(--ease-standard);
 
   &:disabled {
     cursor: wait;
     opacity: 0.65;
+  }
+
+  // Press feedback. Touch devices have no hover, so :active is the only
+  // confirmation a tap registered. `scale` (not `transform: scale()`) composes
+  // with elements that already carry a transform, e.g. translateY(-50%).
+  &:not(:disabled):active {
+    scale: var(--press-scale);
   }
 }
 
 a,
 button {
   -webkit-tap-highlight-color: transparent;
+}
+
+a {
+  transition: color var(--duration-quick) var(--ease-standard);
 }
 
 button:focus-visible,
@@ -60,4 +76,21 @@ p {
   border: 0;
   clip: rect(0 0 0 0);
   white-space: nowrap;
+}
+
+// Reduce movement, never remove feedback: state changes (colour, fill, active
+// styling) still resolve — only the travel is removed. See 07 §6.1.
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  button:not(:disabled):active {
+    scale: 1;
+  }
 }

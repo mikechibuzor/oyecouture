@@ -359,12 +359,12 @@ $catalogue-content-width: 92.5rem;
     height: 100%;
     min-height: 23rem;
     object-fit: cover;
-    transition: transform 300ms ease;
+    transition: scale var(--duration-slow) var(--ease-settle);
   }
 
   &:hover img,
   &:focus-visible img {
-    transform: scale(1.025);
+    scale: var(--zoom-image);
   }
 }
 
