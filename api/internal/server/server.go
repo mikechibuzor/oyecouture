@@ -8,11 +8,20 @@ import (
 
 	"github.com/uzor-co/oyecouture/api/internal/config"
 	"github.com/uzor-co/oyecouture/api/internal/health"
+	"github.com/uzor-co/oyecouture/api/internal/products"
 )
 
+// New wires infrastructure, services, and handlers into the API server.
 func New(applicationConfig config.Config, databasePool *pgxpool.Pool) *http.Server {
+	// Build the product read stack once and expose only its public storefront routes.
+	productRepository := products.NewPostgresRepository(databasePool)
+	productService := products.NewService(productRepository, applicationConfig.R2PublicBase)
+	productHandler := products.NewHandler(productService)
+
 	requestMux := http.NewServeMux()
 	requestMux.Handle("GET /healthz", health.NewHandler(databasePool))
+	requestMux.HandleFunc("GET /products", productHandler.List)
+	requestMux.HandleFunc("GET /products/{slug}", productHandler.GetBySlug)
 
 	return &http.Server{
 		Addr:              applicationConfig.APIAddress,
@@ -21,7 +30,9 @@ func New(applicationConfig config.Config, databasePool *pgxpool.Pool) *http.Serv
 	}
 }
 
+// allowOrigin permits the configured storefront origin and handles CORS preflight requests.
 func allowOrigin(allowedOrigin string, next http.Handler) http.Handler {
+	// Apply CORS headers consistently before delegating actual requests.
 	return http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
 		if request.Header.Get("Origin") == allowedOrigin {
 			responseWriter.Header().Set("Access-Control-Allow-Origin", allowedOrigin)
