@@ -5,6 +5,12 @@ One short entry per work session or meaningful chunk. Format:
 
 ---
 
+## 2026-07-29T12:33:10+01:00 · Codex · Frontend styling migrated to modular SCSS
+- **Did:** Replaced the plain CSS entry with SCSS design-system tokens, breakpoint mixins, globals, and a foundation-page partial; added Nuxt preprocessing and `sass-embedded`.
+- **State:** No plain CSS source remains. Nuxt typecheck/build and live SCSS compilation pass; existing page output and service connectivity are preserved.
+- **Next:** Wait for approval, then begin A.2 migrations and catalogue seed only.
+- **Blockers:** None for A.2.
+
 ## 2026-07-29T12:20:25+01:00 · Codex · Milestone A.1 scaffold completed and verified
 - **Did:** Initialized and renamed the repository to `oyecouture`; added PostgreSQL 16 Compose, complete `.env.example`, Go API `/healthz`, and a strictly typed Nuxt 3 client that consumes it.
 - **State:** PostgreSQL, API, and web dev services are running. Go tests/build and Nuxt typecheck/build pass; runtime health and SSR both report all services connected.
