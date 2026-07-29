@@ -2,11 +2,13 @@ import type {
   CatalogueFilterOption,
   CategoryPageConfig,
   CategoryTileConfig,
+  HomeHeroImageConfig,
   ProductSectionNavigation,
   ProductSortOption,
 } from '~/types/product'
 import {
   CatalogueFilterId,
+  HomeHeroImageSize,
   ProductSection,
   ProductSize,
   ProductSortId,
@@ -67,9 +69,11 @@ export const PRODUCT_COPY = {
     heroAction: 'Discover Our Collection',
     heroDescription:
       'Invest in pieces that reflect your ambition brilliantly. Bespoke tailoring that speaks before you do.',
-    heroHeading: 'Tailor Your Ambition With Effortless Precision',
+    heroHeading: {
+      lead: 'Tailor Your Ambition',
+      tail: 'With Effortless Precision',
+    },
   },
-  imagePlaceholder: 'Photography coming soon',
   productDetail: {
     error: 'This piece could not be loaded. Please return to the collection.',
     loading: 'Loading this piece...',
@@ -190,14 +194,36 @@ export const CATEGORY_TILES = [
 
 export const HOME_HERO_IMAGES = [
   {
+    id: 'hero-image-one',
     source: '/images/catalogue/oye-hero-c1.webp',
-    alt: 'Oyecouture traditional menswear',
+    alt: 'Oyecouture womenswear portrait',
+    size: HomeHeroImageSize.Compact,
   },
   {
+    id: 'hero-image-two',
     source: '/images/catalogue/oye-hero-c2.webp',
-    alt: 'Oyecouture ceremonial tailoring',
+    alt: 'Oyecouture double-breasted suit',
+    size: HomeHeroImageSize.Tall,
   },
-] as const
+  {
+    id: 'hero-image-three',
+    source: '/images/catalogue/oye-hero-c3.webp',
+    alt: 'Oyecouture casual menswear portrait',
+    size: HomeHeroImageSize.Medium,
+  },
+  {
+    id: 'hero-image-four',
+    source: '/images/catalogue/oye-hero-c4.webp',
+    alt: 'Oyecouture ceremonial traditional attire',
+    size: HomeHeroImageSize.Large,
+  },
+  {
+    id: 'hero-image-five',
+    source: '/images/catalogue/oye-hero-c5.webp',
+    alt: 'Oyecouture traditional menswear portrait',
+    size: HomeHeroImageSize.Landscape,
+  },
+] as const satisfies readonly HomeHeroImageConfig[]
 
 export const PRODUCT_FALLBACK_IMAGES: Readonly<
   Partial<Record<string, readonly string[]>>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { IconNode } from 'lucide'
-import { ArrowUpRight } from 'lucide'
+import { ArrowRight } from 'lucide'
 import type { CategoryTileConfig } from '~/types/product'
 
 interface CategoryTileProps {
@@ -9,7 +9,7 @@ interface CategoryTileProps {
 
 defineProps<CategoryTileProps>()
 
-const CATEGORY_TILE_ICON: IconNode = ArrowUpRight
+const CATEGORY_TILE_ICON: IconNode = ArrowRight
 </script>
 
 <template>

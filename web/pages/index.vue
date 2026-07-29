@@ -12,6 +12,7 @@ import { getProductErrorMessage } from '~/utils/product'
 
 const { data, error, status } = await useProductList()
 const HERO_ACTION_ICON: IconNode = ArrowRight
+const heroCarouselImages = [...HOME_HERO_IMAGES, ...HOME_HERO_IMAGES] as const
 
 // Returns all API products while preserving a stable empty array during loading.
 const products = computed<readonly Product[]>(() => data.value?.products ?? [])
@@ -25,7 +26,10 @@ const errorMessage = computed(() =>
   <div class="home-page">
     <section class="home-hero" aria-labelledby="home-hero-title">
       <div class="home-hero-content">
-        <h1 id="home-hero-title">{{ PRODUCT_COPY.home.heroHeading }}</h1>
+        <h1 id="home-hero-title">
+          {{ PRODUCT_COPY.home.heroHeading.lead }}<br>
+          {{ PRODUCT_COPY.home.heroHeading.tail }}
+        </h1>
         <p>{{ PRODUCT_COPY.home.heroDescription }}</p>
         <NuxtLink :to="StorefrontRoute.Collection">
           <span>{{ PRODUCT_COPY.home.heroAction }}</span>
@@ -39,12 +43,15 @@ const errorMessage = computed(() =>
       </div>
 
       <div class="home-hero-media" aria-hidden="true">
-        <img
-          v-for="heroImage in HOME_HERO_IMAGES"
-          :key="heroImage.source"
-          :src="heroImage.source"
-          :alt="heroImage.alt"
-        >
+        <div class="home-hero-media-track">
+          <img
+            v-for="(heroImage, heroImageIndex) in heroCarouselImages"
+            :key="`${heroImage.id}-${heroImageIndex}`"
+            :class="heroImage.size"
+            :src="heroImage.source"
+            :alt="heroImage.alt"
+          >
+        </div>
       </div>
     </section>
 

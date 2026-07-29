@@ -1,13 +1,14 @@
 @use '../design-system/breakpoints' as *;
 
-$storefront-navigation-width: 90rem;
+$storefront-navigation-width: 92.5rem;
 
 .storefront-header {
   position: sticky;
   z-index: 50;
   top: 0;
   border-bottom: 1px solid var(--color-border-soft);
-  background: var(--color-white);
+  background: rgb(255 255 255 / 90%);
+  backdrop-filter: blur(0.875rem);
 }
 
 .storefront-navigation {
@@ -171,7 +172,7 @@ $storefront-navigation-width: 90rem;
 
 @include breakpoint-min('desktop') {
   .storefront-navigation {
-    min-height: 5rem;
+    min-height: 4.75rem;
     padding: 0 var(--space-xl);
     grid-template-columns: auto minmax(0, 1fr) auto;
     gap: var(--space-lg);
@@ -206,8 +207,8 @@ $storefront-navigation-width: 90rem;
     border: 0;
     color: var(--color-ink);
     background: transparent;
-    font-size: var(--text-xs);
-    font-weight: var(--font-weight-medium);
+    font-size: 0.78125rem;
+    font-weight: var(--font-weight-regular);
     letter-spacing: var(--tracking-label);
     text-decoration: none;
     text-transform: uppercase;

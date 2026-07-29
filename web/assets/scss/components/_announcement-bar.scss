@@ -2,8 +2,8 @@
 
 .announcement-bar {
   display: grid;
-  min-height: 3.625rem;
-  padding: var(--space-xs) var(--space-md);
+  min-height: 2.125rem;
+  padding: 0.625rem 1.25rem;
   place-items: center;
   color: var(--color-champagne);
   background: var(--color-ink);
@@ -11,20 +11,17 @@
   p {
     max-width: 18rem;
     margin: 0;
-    font-size: 0.625rem;
-    font-weight: var(--font-weight-semibold);
-    line-height: 1.45;
-    letter-spacing: var(--tracking-ultra);
+    font-size: 0.6875rem;
+    font-weight: 300;
+    line-height: 1.2;
+    letter-spacing: var(--tracking-section);
     text-align: center;
     text-transform: uppercase;
   }
 
   @include breakpoint-min('tablet') {
-    min-height: 2.5rem;
-
     p {
       max-width: none;
-      font-size: var(--text-xs);
     }
   }
 }

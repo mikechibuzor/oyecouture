@@ -35,6 +35,14 @@ export enum ProductSortId {
   Newest = 'newest',
 }
 
+export enum HomeHeroImageSize {
+  Compact = 'is-compact',
+  Tall = 'is-tall',
+  Medium = 'is-medium',
+  Large = 'is-large',
+  Landscape = 'is-landscape',
+}
+
 export enum AsyncDataStatus {
   Idle = 'idle',
   Pending = 'pending',
@@ -110,6 +118,13 @@ export interface CategoryTileConfig {
   readonly imagePath: string
   readonly imageAlt: string
   readonly to: StorefrontRoute
+}
+
+export interface HomeHeroImageConfig {
+  readonly id: string
+  readonly source: string
+  readonly alt: string
+  readonly size: HomeHeroImageSize
 }
 
 export interface ProductSectionNavigation {

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { IconNode } from 'lucide'
-import { ArrowLeft, ArrowRight, ArrowUpRight, Heart, ShoppingBag } from 'lucide'
+import { ArrowUpRight, ChevronLeft, ChevronRight, Heart, ShoppingBag } from 'lucide'
 import { PRODUCT_COPY, getProductRoute } from '~/constants/products'
 import type { Product, ProductMediaItem } from '~/types/product'
 import { formatProductPrice } from '~/utils/product'
@@ -12,11 +12,11 @@ interface ProductCardProps {
 const props = defineProps<ProductCardProps>()
 const activeMediaIndex = ref(0)
 const isWishlisted = ref(false)
-const { mediaItems } = useProductMedia(() => props.product)
+const { mediaItems } = useProductMedia(() => props.product, true)
 
 const CARD_ICONS = {
-  next: ArrowRight,
-  previous: ArrowLeft,
+  next: ChevronRight,
+  previous: ChevronLeft,
   view: ArrowUpRight,
   wishlist: Heart,
   bag: ShoppingBag,
