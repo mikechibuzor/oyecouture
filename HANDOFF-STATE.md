@@ -7,13 +7,13 @@
 ## Current status
 - **Phase:** 1 (MVP). First 40% milestone **paid**; build authorized.
 - **Milestone:** A — Foundations & catalogue (see `05-BUILD-ROADMAP.md`).
-- **Step:** A.5 complete: the API-backed shop, category, and product detail pages are implemented and verified.
+- **Step:** A.6 complete: the approved instant product-search overlay is implemented and verified. Milestone A is complete.
 - **Last worked by:** Codex · 2026-07-29.
 - **Repo / branch:** `/Users/chibuzoriwuagwu/Downloads/share/oyecouture` · `main`.
-- **Last implementation commits:** `9cc1333` (approved-design alignment), `7c7bca4` (browser-QA polish), `8736afc` (product detail), `ed4f3d9` (shop/category pages), `82d45fa` (catalogue components), `68417f9` (typed catalogue foundation).
+- **Last implementation commits:** `d743037` (instant search overlay), `803149b` (single-column mobile catalogue), `5bcfaa8` (storefront microinteractions), `9cc1333` (approved-design alignment), `8736afc` (product detail), `ed4f3d9` (shop/category pages).
 
 ## ▶ Next action (the ONE thing to do next)
-**Wait for user review and explicit authorization before starting A.6.** The next roadmap step is A.6 only: the instant search overlay backed by `GET /products?q=`. Do not begin the cart; cart state starts at Milestone B step 8.
+**Wait for user review and explicit authorization before starting Milestone B step 8.** The next roadmap step is cart state only. Do not begin checkout or payments until the cart runs and the user authorizes the next step.
 
 ### ✅ M1 motion foundation — DONE by Claude (`d2544dc`), claim released
 Shipped: `design-system/_motion.scss` tokens, the global `prefers-reduced-motion` block, site-wide `:active` tap feedback, the three existing transitions retuned to tokens, and the **marquee WCAG 2.2.2 fix**. Codex is clear to work anywhere again. **From now on, all timing/easing must come from `_motion.scss` tokens — no raw `ms` or `cubic-bezier()` in component files** (currently zero remain outside the token file; keep it that way). M2 transactional motion (cart drawer, 4-state action button, wishlist, S3 WhatsApp confirm) ships *with* the cart in Milestone B — build it from `07-MOTION-AND-MICROINTERACTIONS.md` §4.4–4.5 rather than retrofitting.
@@ -40,13 +40,18 @@ Shipped: `design-system/_motion.scss` tokens, the global `prefers-reduced-motion
 - A.5 uses API product images first and approved WebP imagery extracted from `design-source/` as temporary fallbacks; missing client photography renders the approved sand placeholder with product name.
 - A.5 browser verification passes at 1280px desktop and 370px mobile: 27 cards, 3 category tiles, correct 8-item Suits route, working Aso-Oke filter and descending-price sort, working RTW gallery/size controls, correct bespoke branch, zero horizontal overflow, and no console or hydration errors.
 - A.5 verification passes: `npm run typecheck`, `npm run build`, `npm run check:seed`, `go test ./...`, live API queries, and responsive in-app browser checks.
+- A.6 product search is complete: a full-screen on-brand overlay uses typed shared copy/config/contracts, six approved top terms, six editorial recommendations, and race-safe debounced `GET /products?q=` requests without adding a frontend dependency.
+- A.6 accessibility is verified: the input autofocuses, body scrolling locks, Tab stays in the dialog, Escape closes it, desktop focus returns to Search, and mobile focus returns to the visible menu trigger after its menu closes.
+- A.6 responsive browser verification passes at 1440px desktop and 390px mobile: four-column desktop and one-column mobile results, three live `linen` matches, accurate singular/plural headings, empty and clear states, `/product/linen` navigation, and no console warnings or errors.
+- Mobile catalogue cards now render one full-width column below 640px while retaining the existing three-column tablet and four-column desktop grids.
+- A.6 verification passes on Node `22.23.1`: `npm run typecheck`, production `npm run build`, fresh dev-server `vue-tsc` with zero errors, API-backed browser interactions, and responsive visual inspection.
 - A.5 design-alignment pass now matches the approved Shop source: exact 48px/700 hero typography and line break, 300-weight support copy, duplicated five-image staggered rail, 40px/600 collection heading, source-width content, champagne category accents, horizontal arrows, 3:4 cards, black/champagne tags, 26px translucent carousel controls, source-weight card text, and dashed image placeholders. The user-approved `Explore Oyecouture / Shop By Category` heading and Add to Bag icon remain.
 - The design-alignment pass was verified at 1440px desktop and 390px mobile, including carousel interaction, placeholder state, no horizontal overflow, strict Nuxt typecheck, production build, fresh dev-server startup with zero `vue-tsc` errors, and HTTP 200 SSR responses for Home and Suits.
 - **Claude review sign-off (2026-07-29):** A.1–A.3 independently reviewed and re-verified (`go vet`/`build`/`test` all pass). Approved with no changes. Claude's three earlier design-token findings (display font, champagne `#e0cf9c`, type scale) were already resolved by Codex in `576ee77`; no fix commit needed. Golden invariants confirmed (integer `priceKobo`, hidden `R2Key`, validated inputs, active-only reads, RTW/bespoke split).
 - **Claude review sign-off — A.4 (2026-07-29):** Storefront shell reviewed and approved. Design fidelity verified against `design-source/` (announcement copy exact; nav Home/Trad/Suits/Casuals▾/Collection▾; Casuals→Men/Women; the COLLECTION names "Dear Groom / Wei-Xin / OYE — Man of Legacy" confirmed present in all 7 design files — extracted, not invented; footer Shop/About/Customer Care + IG/X/TikTok/WhatsApp + legal links match). Code quality strong: nav state in a composable, full a11y (aria-controls/expanded, Escape, click-outside, close-on-route-change), lucide tree-shaken icons, search/account/wishlist/cart correctly emit events for future features. One required A.5 follow-up flagged: remove `:external` per link as pages land (see Decisions). Note: Claude's local `npm run typecheck` was inconclusive due to a missing `oxc-parser` native dep corrupting a generated `.nuxt` file (env artifact, not a source defect); Codex's own typecheck/build/`go test` pass.
 
 ## In progress (exact state)
-- Local PostgreSQL, the product-enabled Go API, and Nuxt dev server are running. A.5 is complete; wait for user review and A.6 authorization.
+- Local PostgreSQL, the product-enabled Go API, and the Node `22.23.1` Nuxt dev server are running. Milestone A is complete; wait for user review and Milestone B step 8 authorization.
 
 ## How to run / verify current state
 ```bash
@@ -64,7 +69,7 @@ cd ../web && npm install && npm run dev
 - Verify products: `curl -sS 'http://localhost:8080/products?section=casuals-men&q=linen'`
 
 ## Blockers / waiting on the user (client deliverables)
-- Nomba credentials (sandbox first), WhatsApp business number, delivery-fee amounts per zone, product photography, customer-care page copy, domain DNS access. None block A.6, but they gate final content and later purchase/deployment steps.
+- Nomba credentials (sandbox first), WhatsApp business number, delivery-fee amounts per zone, product photography, customer-care page copy, domain DNS access. None block cart state, but they gate final content and later checkout/payment/deployment steps.
 
 ## Decisions / deviations from the numbered docs
 - Health proof uses `/healthz` rather than `/health`; it reports both API and PostgreSQL state.
@@ -81,6 +86,8 @@ cd ../web && npm install && npm run dev
 - The written design spec's charcoal footer takes precedence over the white footer shown in the static shop export.
 - Completed A.5 destinations use Nuxt client-side navigation. Future unimplemented destinations remain external anchors until their pages exist, preventing false router warnings without creating placeholders early.
 - ProductCard and product-detail `ADD TO BAG` controls are intentionally present but disabled in A.5; bag mutation and persistence begin at Milestone B step 8, preventing an incomplete cart implementation from leaking into this step.
+- Search recommendations preserve the approved source order (`agbada`, `monarch`, `senator`, `linen`, `classic`, `wrap`); live queries debounce for 250ms, cancel superseded requests, and leave all matching logic on the validated server endpoint.
+- Search results use one column on mobile, two on tablet, and the approved four-column desktop grid. This follows the project's mobile readability decision while retaining the source's desktop dimensions.
 - Approved design-source WebPs are versioned local fallbacks while `product_images` is empty. API/R2 media always takes precedence, so client photography can replace the fallbacks without changing page components.
 - Nuxt's unused experimental app manifest is disabled to avoid a dev-only Vite alias error. Official Lucide icon data is rendered through a typed local Vue component to keep SSR hydration deterministic on Vue `3.5.40`.
 
