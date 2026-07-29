@@ -1,0 +1,125 @@
+import type {
+  StorefrontAction,
+  StorefrontFooterGroup,
+  StorefrontNavigationItem,
+  StorefrontSocialLink,
+} from '~/types/storefront'
+import {
+  StorefrontActionId,
+  StorefrontNavigationItemId,
+  StorefrontRoute,
+  StorefrontSocialPlatform,
+} from '~/types/storefront'
+
+export const STOREFRONT_COPY = {
+  announcement:
+    'COMPLIMENTARY TAILORING CONSULTATION · WORLDWIDE DELIVERY · BE EXCLUSIVE',
+  announcementLabel: 'Store announcement',
+  brandAlt: 'Oyecouture Bespoke',
+  navigationLabel: 'Primary navigation',
+  openMenu: 'Open navigation menu',
+  closeMenu: 'Close navigation menu',
+  footer: {
+    heading: 'Stay Connected',
+    description:
+      'Oyecouture Bespoke — where confidence, simplicity, and class become clothing.',
+    copyright: '© 2026 Oyecouture. All rights reserved.',
+  },
+} as const
+
+export const STOREFRONT_NAVIGATION = [
+  {
+    id: StorefrontNavigationItemId.Home,
+    label: 'Home',
+    to: StorefrontRoute.Home,
+  },
+  {
+    id: StorefrontNavigationItemId.TradAttires,
+    label: 'Trad Attires',
+    to: StorefrontRoute.TradAttires,
+  },
+  {
+    id: StorefrontNavigationItemId.Suits,
+    label: 'Suits',
+    to: StorefrontRoute.Suits,
+  },
+  {
+    id: StorefrontNavigationItemId.Casuals,
+    label: 'Casuals',
+    menuId: 'casuals-navigation-menu',
+    children: [
+      { label: 'Men', to: StorefrontRoute.CasualsMen },
+      { label: 'Women', to: StorefrontRoute.CasualsWomen },
+    ],
+  },
+  {
+    id: StorefrontNavigationItemId.Collection,
+    label: 'Collection',
+    menuId: 'collection-navigation-menu',
+    children: [
+      { label: 'All Pieces', to: StorefrontRoute.Collection },
+      { label: 'Dear Groom', to: StorefrontRoute.DearGroom },
+      { label: 'Wei-Xin', to: StorefrontRoute.WeiXin },
+      { label: 'OYE — Man of Legacy', to: StorefrontRoute.ManOfLegacy },
+    ],
+  },
+] as const satisfies readonly StorefrontNavigationItem[]
+
+export const STOREFRONT_ACTIONS = [
+  { id: StorefrontActionId.Search, label: 'Search' },
+  { id: StorefrontActionId.Account, label: 'Account' },
+  { id: StorefrontActionId.Wishlist, label: 'Wishlist' },
+  { id: StorefrontActionId.Cart, label: 'Bag' },
+] as const satisfies readonly StorefrontAction[]
+
+export const MOBILE_HEADER_ACTIONS = [
+  StorefrontActionId.Wishlist,
+  StorefrontActionId.Cart,
+] as const satisfies readonly StorefrontActionId[]
+
+export const MOBILE_MENU_ACTIONS = [
+  StorefrontActionId.Search,
+  StorefrontActionId.Account,
+] as const satisfies readonly StorefrontActionId[]
+
+export const STOREFRONT_FOOTER_GROUPS = [
+  {
+    heading: 'Shop',
+    links: [
+      { label: 'Trad Attires', to: StorefrontRoute.TradAttires },
+      { label: 'Suits', to: StorefrontRoute.Suits },
+      { label: 'Casuals', to: StorefrontRoute.CasualsMen },
+    ],
+  },
+  {
+    heading: 'About',
+    links: [
+      { label: 'Our Story', to: StorefrontRoute.OurStory },
+      { label: 'The Oyecouture Symbol', to: StorefrontRoute.Symbol },
+      { label: 'Craftsmanship', to: StorefrontRoute.Craftsmanship },
+      { label: 'Mission and Vision', to: StorefrontRoute.Mission },
+    ],
+  },
+  {
+    heading: 'Customer Care',
+    links: [
+      { label: 'Size Guide', to: StorefrontRoute.SizeGuide },
+      { label: 'Shipping & Delivery', to: StorefrontRoute.Shipping },
+      { label: 'Returns & Exchanges', to: StorefrontRoute.Returns },
+      { label: 'Book a Fitting', to: StorefrontRoute.BookFitting },
+      { label: 'Contact Us', to: StorefrontRoute.Contact },
+    ],
+  },
+] as const satisfies readonly StorefrontFooterGroup[]
+
+export const STOREFRONT_SOCIAL_LINKS = [
+  { platform: StorefrontSocialPlatform.Instagram, label: 'Instagram' },
+  { platform: StorefrontSocialPlatform.X, label: 'X' },
+  { platform: StorefrontSocialPlatform.TikTok, label: 'TikTok' },
+  { platform: StorefrontSocialPlatform.WhatsApp, label: 'WhatsApp' },
+] as const satisfies readonly StorefrontSocialLink[]
+
+export const STOREFRONT_LEGAL_LINKS = [
+  { label: 'Legal & Privacy', to: StorefrontRoute.Legal },
+  { label: 'Terms', to: StorefrontRoute.Terms },
+] as const

@@ -7,13 +7,13 @@
 ## Current status
 - **Phase:** 1 (MVP). First 40% milestone **paid**; build authorized.
 - **Milestone:** A — Foundations & catalogue (see `05-BUILD-ROADMAP.md`).
-- **Step:** A.3 complete and verified. Stop boundary reached; A.4 has not started.
+- **Step:** A.4 in progress: typed storefront shell foundations are being implemented.
 - **Last worked by:** Codex · 2026-07-29.
 - **Repo / branch:** `/Users/chibuzoriwuagwu/Downloads/share/oyecouture` · `main`.
 - **Last implementation commits:** `b42bb60` (product HTTP endpoints), `36f40bc` (product read service), `bc20818` (catalogue seed), `2e66fbc` (database migrations), `576ee77` (design tokens/Jost).
 
 ## ▶ Next action (the ONE thing to do next)
-Wait for user authorization, then begin Milestone A step A.4 only: build the Nuxt storefront shell from `02-DESIGN-SPEC.md` (`AnnouncementBar`, `NavBar` with dropdowns/mobile menu, and `Footer`) using the existing SCSS tokens. Do not start A.5 storefront pages in the same step.
+Complete Milestone A step A.4 only: build and verify the Nuxt storefront shell from `02-DESIGN-SPEC.md` (`AnnouncementBar`, `NavBar` with dropdowns/mobile menu, and `Footer`) using the existing SCSS tokens. Do not start A.5 storefront pages in the same step.
 
 ## Done & verified
 - Handoff docs `00`–`06`, `catalogue/`, `design-source/`, `reference-docs/` are complete and current.
@@ -33,7 +33,7 @@ Wait for user authorization, then begin Milestone A step A.4 only: build the Nux
 - **Claude review sign-off (2026-07-29):** A.1–A.3 independently reviewed and re-verified (`go vet`/`build`/`test` all pass). Approved with no changes. Claude's three earlier design-token findings (display font, champagne `#e0cf9c`, type scale) were already resolved by Codex in `576ee77`; no fix commit needed. Golden invariants confirmed (integer `priceKobo`, hidden `R2Key`, validated inputs, active-only reads, RTW/bespoke split).
 
 ## In progress (exact state)
-- Local PostgreSQL, product-enabled Go API, and Nuxt dev services are running for review. No A.4 work is in progress.
+- Local PostgreSQL, product-enabled Go API, and Nuxt dev services are running. A.4 shell implementation is in progress; A.5 remains untouched.
 
 ## How to run / verify current state
 ```bash
