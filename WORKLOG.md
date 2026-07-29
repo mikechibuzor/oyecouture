@@ -5,6 +5,12 @@ One short entry per work session or meaningful chunk. Format:
 
 ---
 
+## 2026-07-29T13:22:06+01:00 · Codex · Core design tokens corrected before A.2
+- **Did:** Replaced the serif display fallback with self-hosted Jost Variable, normalized the type scale through a 60px display token, and added the approved champagne, bright-gold, and taupe palette values.
+- **State:** Nuxt typecheck/build pass; the live stylesheet serves the corrected tokens and local font assets. The function/computed-property walkthrough-comment rule is now durable in `AGENTS.md`.
+- **Next:** Wait for approval, then begin A.2 migrations and catalogue seed only.
+- **Blockers:** None for A.2; licensed Gilmer remains a pre-launch client decision.
+
 ## 2026-07-29T12:33:10+01:00 · Codex · Frontend styling migrated to modular SCSS
 - **Did:** Replaced the plain CSS entry with SCSS design-system tokens, breakpoint mixins, globals, and a foundation-page partial; added Nuxt preprocessing and `sass-embedded`.
 - **State:** No plain CSS source remains. Nuxt typecheck/build and live SCSS compilation pass; existing page output and service connectivity are preserved.
