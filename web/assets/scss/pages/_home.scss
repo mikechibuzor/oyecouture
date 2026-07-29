@@ -1,4 +1,5 @@
 @use '../design-system/breakpoints' as *;
+@use '../design-system/reveal' as *;
 
 $home-content-width: 92.5rem;
 
@@ -205,4 +206,24 @@ $home-content-width: 92.5rem;
     animation: none;
     transform: translateX(-25%);
   }
+}
+
+// ---------------------------------------------------------------------------
+// Motion. Authority: 07-MOTION-AND-MICROINTERACTIONS.md §4.1 / §5.
+// The h1 is deliberately NOT animated: it is the LCP element, and fading it in
+// would delay Largest Contentful Paint on the mobile connections that matter most.
+// ---------------------------------------------------------------------------
+.home-hero-content {
+  p {
+    @include reveal-on-load(120ms);
+  }
+
+  a {
+    @include reveal-on-load(240ms);
+  }
+}
+
+.category-tiles-section > header,
+.category-tile-grid > * {
+  @include reveal-on-scroll;
 }

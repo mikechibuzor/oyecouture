@@ -207,6 +207,7 @@ $storefront-navigation-width: 92.5rem;
   }
 
   .desktop-navigation-link {
+    position: relative;
     display: flex;
     min-height: var(--control-height-md);
     align-items: center;
@@ -222,37 +223,72 @@ $storefront-navigation-width: 92.5rem;
     text-transform: uppercase;
     white-space: nowrap;
 
+    // Underline wipes in from the left on hover/focus.
+    &::after {
+      position: absolute;
+      right: 0;
+      bottom: 0.75rem;
+      left: 0;
+      height: 1px;
+      background: currentcolor;
+      content: '';
+      scale: 0 1;
+      transform-origin: left center;
+      transition: scale var(--duration-quick) var(--ease-fine);
+    }
+
     &.is-active,
     &:hover,
     &:focus-visible {
       color: var(--color-gold);
     }
+
+    &.is-active::after,
+    &:hover::after,
+    &:focus-visible::after {
+      scale: 1 1;
+    }
   }
 
+  // Dark menu card, matching the approved design: #1a1a1a panel, 16px radius,
+  // champagne hairline border, soft deep shadow, 8px padding, 2px item gap.
   .desktop-navigation-dropdown {
     position: absolute;
     top: calc(100% + var(--space-2xs));
     left: 50%;
     display: grid;
     width: max-content;
-    min-width: 11rem;
-    padding: var(--space-sm) 0;
-    border: 1px solid var(--color-border-soft);
-    background: var(--color-white);
-    box-shadow: 0 0.75rem 1.5rem rgb(26 26 26 / 9%);
+    min-width: 14.375rem;
+    padding: var(--space-xs);
+    border: 1px solid rgb(224 207 156 / 22%);
+    border-radius: 1rem;
+    background: var(--color-ink);
+    box-shadow: 0 1.125rem 2.75rem rgb(26 26 26 / 28%);
+    gap: 0.125rem;
     transform: translateX(-50%);
 
+    @media (prefers-reduced-motion: no-preference) {
+      animation: dropdown-settle var(--duration-base) var(--ease-settle) both;
+    }
+
     a {
-      padding: var(--space-sm) var(--space-md);
-      color: var(--color-ink);
-      font-size: var(--text-sm);
+      padding: 0.75rem 0.875rem;
+      border-radius: 0.625rem;
+      color: var(--color-menu-copy);
+      font-size: 0.78125rem;
+      font-weight: var(--font-weight-regular);
+      letter-spacing: var(--tracking-label);
       text-decoration: none;
+      text-transform: uppercase;
       white-space: nowrap;
+      transition:
+        color var(--duration-quick) var(--ease-standard),
+        background-color var(--duration-quick) var(--ease-standard);
 
       &:hover,
       &:focus-visible {
-        color: var(--color-gold);
-        background: var(--color-cream-2);
+        color: var(--color-champagne);
+        background: rgb(224 207 156 / 10%);
       }
     }
   }
@@ -265,5 +301,18 @@ $storefront-navigation-width: 92.5rem;
 @media (min-width: 1200px) {
   .desktop-navigation-list {
     gap: var(--space-2xl);
+  }
+}
+
+// Dropdown settles down into place; preserves the panel's centring transform.
+@keyframes dropdown-settle {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(calc(var(--lift-md) * -1));
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(-50%);
   }
 }

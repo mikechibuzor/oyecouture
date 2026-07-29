@@ -38,6 +38,18 @@ export const useStorefrontNavigation = (
       : navigationItemId
   }
 
+  // Opens one dropdown outright, for pointer hover on desktop.
+  const openDropdown = (
+    navigationItemId: StorefrontNavigationItemId,
+  ): void => {
+    activeDropdownId.value = navigationItemId
+  }
+
+  // Closes any open dropdown while leaving the mobile menu untouched.
+  const closeDropdown = (): void => {
+    activeDropdownId.value = null
+  }
+
   // Closes every desktop or mobile navigation surface.
   const closeNavigation = (): void => {
     activeDropdownId.value = null
@@ -84,10 +96,12 @@ export const useStorefrontNavigation = (
 
   return {
     activeDropdownId: readonly(activeDropdownId),
+    closeDropdown,
     closeNavigation,
     isDropdownOpen,
     isMobileMenuOpen: readonly(isMobileMenuOpen),
     isNavigationItemActive,
+    openDropdown,
     toggleDropdown,
     toggleMobileMenu,
   }

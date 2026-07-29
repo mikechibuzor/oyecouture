@@ -17,6 +17,7 @@ import {
   STOREFRONT_NAVIGATION,
   isInternalStorefrontRoute,
 } from '~/constants/storefront'
+import type { StorefrontNavigationItem } from '~/types/storefront'
 import { StorefrontActionId } from '~/types/storefront'
 
 const emit = defineEmits<{
@@ -25,10 +26,12 @@ const emit = defineEmits<{
 
 const navigationRoot = ref<HTMLElement | null>(null)
 const {
+  closeDropdown,
   closeNavigation,
   isDropdownOpen,
   isMobileMenuOpen,
   isNavigationItemActive,
+  openDropdown,
   toggleDropdown,
   toggleMobileMenu,
 } = useStorefrontNavigation(navigationRoot)
@@ -43,6 +46,39 @@ const STOREFRONT_ACTION_ICONS: Readonly<Record<StorefrontActionId, IconNode>> = 
 // Forwards shell actions to the future search, account, wishlist, and cart features.
 const handleStorefrontAction = (storefrontActionId: StorefrontActionId): void => {
   emit('action', storefrontActionId)
+}
+
+// Desktop pointer hover opens a dropdown; the trigger's click still toggles it.
+// Only items that actually own a submenu respond.
+const handleItemPointerEnter = (navigationItem: StorefrontNavigationItem): void => {
+  if (navigationItem.children) {
+    openDropdown(navigationItem.id)
+  }
+}
+
+const handleItemPointerLeave = (navigationItem: StorefrontNavigationItem): void => {
+  if (navigationItem.children) {
+    closeDropdown()
+  }
+}
+
+// Click has to mean different things per input type. A mouse click arrives after
+// hover has already opened the menu, so toggling there would close it the instant
+// the user clicks. Touch has no hover, and keyboard activation (Enter/Space, which
+// reports detail 0) needs a real toggle — both of those keep toggle semantics.
+const handleTriggerClick = (
+  navigationItem: StorefrontNavigationItem,
+  event: MouseEvent,
+): void => {
+  const isKeyboardActivation = event.detail === 0
+  const isHoverCapable = window.matchMedia('(hover: hover)').matches
+
+  if (isHoverCapable && !isKeyboardActivation) {
+    openDropdown(navigationItem.id)
+    return
+  }
+
+  toggleDropdown(navigationItem.id)
 }
 </script>
 
@@ -59,6 +95,8 @@ const handleStorefrontAction = (storefrontActionId: StorefrontActionId): void =>
           v-for="navigationItem in STOREFRONT_NAVIGATION"
           :key="navigationItem.id"
           class="desktop-navigation-item"
+          @mouseenter="handleItemPointerEnter(navigationItem)"
+          @mouseleave="handleItemPointerLeave(navigationItem)"
         >
           <NuxtLink
             v-if="navigationItem.to"
@@ -77,7 +115,7 @@ const handleStorefrontAction = (storefrontActionId: StorefrontActionId): void =>
               :class="{ 'is-active': isNavigationItemActive(navigationItem) }"
               :aria-controls="navigationItem.menuId"
               :aria-expanded="isDropdownOpen(navigationItem.id)"
-              @click="toggleDropdown(navigationItem.id)"
+              @click="handleTriggerClick(navigationItem, $event)"
             >
               <span>{{ navigationItem.label }}</span>
               <StorefrontIcon

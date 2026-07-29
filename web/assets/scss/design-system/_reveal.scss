@@ -1,0 +1,46 @@
+// Scroll and load reveals. Authority: 07-MOTION-AND-MICROINTERACTIONS.md §5 (Tier 3).
+// Scroll reveals use CSS scroll-driven animations — no IntersectionObserver, no JS,
+// and they run off the main thread. Guarded by @supports so unsupported browsers
+// simply see the settled state; content is never trapped behind a failed animation.
+
+@keyframes reveal-rise {
+  from {
+    opacity: 0;
+    transform: translateY(var(--lift-lg));
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes reveal-rise-short {
+  from {
+    opacity: 0;
+    transform: translateY(var(--lift-md));
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+// Reveals an element as it scrolls into view.
+@mixin reveal-on-scroll($range: entry 5% cover 30%) {
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      animation: reveal-rise linear both;
+      animation-timeline: view();
+      animation-range: $range;
+    }
+  }
+}
+
+// Reveals an element once on load, for above-the-fold content.
+@mixin reveal-on-load($delay: 0ms) {
+  @media (prefers-reduced-motion: no-preference) {
+    animation: reveal-rise-short var(--duration-editorial) var(--ease-settle) $delay both;
+  }
+}

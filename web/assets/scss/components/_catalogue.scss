@@ -1,4 +1,5 @@
 @use '../design-system/breakpoints' as *;
+@use '../design-system/reveal' as *;
 
 $catalogue-content-width: 92.5rem;
 
@@ -443,5 +444,55 @@ $catalogue-content-width: 92.5rem;
 
   .product-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Motion. Authority: 07-MOTION-AND-MICROINTERACTIONS.md §4.2.
+// ---------------------------------------------------------------------------
+
+// Cards and section headings rise into view as they are scrolled to.
+.catalogue-collection-heading,
+.product-card {
+  @include reveal-on-scroll;
+}
+
+// The garment never moves (P2): the photo only scales slowly inside its frame.
+.product-media img {
+  transition: scale var(--duration-slow) var(--ease-settle);
+}
+
+.product-card:hover .product-media img,
+.product-card:focus-within .product-media img {
+  scale: var(--zoom-image);
+}
+
+.product-card-content h3 a {
+  transition: color var(--duration-quick) var(--ease-standard);
+}
+
+// Card chrome (wishlist, carousel arrows, dots) stays permanently visible by
+// design decision — affordances should never be hover-gated (07 §8). Only the
+// colour/background of those controls responds to hover, via the global button
+// transition in _globals.scss.
+
+// The one sanctioned overshoot on the project (07 §6.3): contained, single pass.
+@media (prefers-reduced-motion: no-preference) {
+  .product-wishlist-button.is-active svg {
+    animation: wishlist-pulse var(--duration-base) var(--ease-fine);
+  }
+}
+
+@keyframes wishlist-pulse {
+  0% {
+    scale: 1;
+  }
+
+  45% {
+    scale: 1.15;
+  }
+
+  100% {
+    scale: 1;
   }
 }
