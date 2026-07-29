@@ -13,7 +13,7 @@
 - **Last implementation commits:** `e6a663d` (responsive storefront shell), `740fc26` (typed shell foundation), `b42bb60` (product HTTP endpoints), `36f40bc` (product read service), `bc20818` (catalogue seed).
 
 ## ▶ Next action (the ONE thing to do next)
-Wait for user authorization, then begin Milestone A step A.5 only: build the storefront pages listed in `05-BUILD-ROADMAP.md` using the completed shell. Do not start A.5 without explicit approval.
+**A.5 is AUTHORIZED by the user (2026-07-29).** Begin Milestone A step A.5 only: build the storefront pages listed in `05-BUILD-ROADMAP.md` using the completed shell (Shop grid with filter chips + sort, the 4 category pages, and product detail with the RTW size selector vs the bespoke WhatsApp note). **As you create each real page, remove the `:external` flag from the corresponding `NuxtLink`s so navigation is client-side (SPA), not a full reload** — see the decision note below. Do not start A.6 (cart) in the same step.
 
 ## Done & verified
 - Handoff docs `00`–`06`, `catalogue/`, `design-source/`, `reference-docs/` are complete and current.
@@ -33,6 +33,7 @@ Wait for user authorization, then begin Milestone A step A.5 only: build the sto
 - A.4 storefront shell is complete: responsive announcement bar, approved Oyecouture logo, desktop dropdown navigation, accessible mobile menu, typed action/icon maps, charcoal footer, and modular component/layout SCSS.
 - A.4 browser verification passes at desktop and 370px mobile widths with no horizontal overflow, working menu open/close behavior, 17 hydrated Lucide icons, all services connected, and no new console errors or hydration warnings.
 - **Claude review sign-off (2026-07-29):** A.1–A.3 independently reviewed and re-verified (`go vet`/`build`/`test` all pass). Approved with no changes. Claude's three earlier design-token findings (display font, champagne `#e0cf9c`, type scale) were already resolved by Codex in `576ee77`; no fix commit needed. Golden invariants confirmed (integer `priceKobo`, hidden `R2Key`, validated inputs, active-only reads, RTW/bespoke split).
+- **Claude review sign-off — A.4 (2026-07-29):** Storefront shell reviewed and approved. Design fidelity verified against `design-source/` (announcement copy exact; nav Home/Trad/Suits/Casuals▾/Collection▾; Casuals→Men/Women; the COLLECTION names "Dear Groom / Wei-Xin / OYE — Man of Legacy" confirmed present in all 7 design files — extracted, not invented; footer Shop/About/Customer Care + IG/X/TikTok/WhatsApp + legal links match). Code quality strong: nav state in a composable, full a11y (aria-controls/expanded, Escape, click-outside, close-on-route-change), lucide tree-shaken icons, search/account/wishlist/cart correctly emit events for future features. One required A.5 follow-up flagged: remove `:external` per link as pages land (see Decisions). Note: Claude's local `npm run typecheck` was inconclusive due to a missing `oxc-parser` native dep corrupting a generated `.nuxt` file (env artifact, not a source defect); Codex's own typecheck/build/`go test` pass.
 
 ## In progress (exact state)
 - Local PostgreSQL, product-enabled Go API, and Nuxt dev services are running. A.4 is complete; A.5 remains untouched pending user authorization.
@@ -68,7 +69,7 @@ cd ../web && npm install && npm run dev
 - Storefront queries reject unsupported sections, malformed slugs, and searches over 100 characters; `%`, `_`, and backslashes are escaped as literal search characters.
 - Product image URLs are derived server-side from `R2_PUBLIC_BASE`, keeping storage keys out of public JSON.
 - The written design spec's charcoal footer takes precedence over the white footer shown in the static shop export.
-- Future A.5 destinations render as external `NuxtLink` anchors until their pages exist, preventing false router warnings without creating placeholder pages early.
+- Future A.5 destinations render as external `NuxtLink` anchors until their pages exist, preventing false router warnings without creating placeholder pages early. **⚠️ A.5 MUST remove `:external` from each nav/footer link once its page exists** — otherwise the finished site hard-reloads between every page and loses client-side (SPA) routing. This is a required cleanup, not optional.
 - Nuxt's unused experimental app manifest is disabled to avoid a dev-only Vite alias error. Official Lucide icon data is rendered through a typed local Vue component to keep SSR hydration deterministic on Vue `3.5.40`.
 
 ## Reminders (non-negotiable)
