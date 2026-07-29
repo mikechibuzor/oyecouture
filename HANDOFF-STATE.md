@@ -15,6 +15,9 @@
 ## ▶ Next action (the ONE thing to do next)
 **Wait for user review and explicit authorization before starting A.6.** The next roadmap step is A.6 only: the instant search overlay backed by `GET /products?q=`. Do not begin the cart; cart state starts at Milestone B step 8.
 
+### 🔒 Claimed by Claude — do not start (added 2026-07-29)
+**M1 motion foundation** (`07-MOTION-AND-MICROINTERACTIONS.md` §9) is **reserved for Claude** and is NOT in Codex's queue. It covers: the `_motion.scss` token file, the global `prefers-reduced-motion` block, site-wide `:active` tap feedback, retuning existing transitions to tokens, and the marquee WCAG 2.2.2 fix (§6.2). Claude will start it **only once Codex has stopped**, to avoid a clash — both agents touch `web/assets/scss/`. Codex: continue with your own next action and leave M1 alone. If you need a motion value before then, read the spec and use its tokens rather than inventing one.
+
 ## Done & verified
 - Handoff docs `00`–`06`, `catalogue/`, `design-source/`, `reference-docs/` are complete and current.
 - Git repository initialized on `main`; commits authored as `mikechibuzor` with no co-author trailers.
