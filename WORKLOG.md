@@ -5,6 +5,16 @@ One short entry per work session or meaningful chunk. Format:
 
 ---
 
+## 2026-07-30T14:10:00+01:00 · Claude · Design audit + About page
+- **Did:** Audited every page against `design-source/` by diffing **computed styles**, not just text. Fixed: category pages ×4 restored to the design (light `#f4f0ec` band, breadcrumb, 40px→56px sentence-case H1, real copy, per-section chips; removed the invented collection heading + sort) `3678100`; grid corrected — **Home is 4-up, category pages are 3-up**, both 22px gap / 56px gutters `559737e`; **footer was fully inverted** — the design's is WHITE with `#4a443e` links, not dark `8e97bf4`; on-card size selector for ready-to-wear, which also lets Add-to-Bag work from the grid `adf90af`; **built the whole About page** `cef6593`.
+- **State:** All values verified against the design at 1440px. About page: hero 62px/700, champagne eyebrow `0.42em`, tab pills 39px, gold section labels, 40px/600 headings, 16px/300 `#4a443e` body, stat 34px, mission `0.22em`, principle `0.1em` — every one matches. The band takes per-page overrides so About shows "Step into the world of Oyecouture" + its extra line, with no duplicate band. All four footer About links now resolve.
+- **Next:** Remaining audit gaps — Home shows 27 products vs the design's curated 13; sort labels use `:` not `·`; `/checkout` still 404s (step 11); step 10 (persist orders + measurement form) still open.
+- **Blockers:** Nomba/Resend credentials; netcup server (billing parked, deadline 13 Aug).
+
+**⚠️ Two measurement lessons, both of which caused real bugs:**
+1. **Widen the viewport before measuring the design.** The preview defaults to ~537px, so every reading is silently a *mobile* value. That is how the category H1 got recorded as 40px when it is 56px at desktop.
+2. **The design stores text sentence-case and uppercases it in CSS.** Selectors matching on `'OUR STORY'` find nothing; match case-insensitively against `'Our Story'`.
+
 ## 2026-07-30T11:40:00+01:00 · Claude · Cart + bespoke WhatsApp confirmation (Milestone B steps 8–9)
 - **Did:** Guest cart shipped (`68b168a`). `useCart` (useState, SSR-safe) + `plugins/cart.client.ts` for localStorage with a per-field validator; `CartDrawer` (430px, matches the approved design) + `CartCheckoutAction`; nav bag badge; Add-to-Bag wired on grid and detail. **The RTW/bespoke split is enforced in the cart:** any bespoke line routes the whole bag to a prefilled `wa.me` deep link; RTW-only routes to `/checkout`. Line key is `slug::size`, so the same shirt in M and L are two lines but the same shirt twice merges to qty 2.
 - **State:** 14 cases verified live — persistence across reload, merge-vs-split by size, mixed-cart routing, RTW-only routing, quantity clamp (max 10, + disables), corrupt-JSON recovery, invalid-line rejection **with storage self-cleaning on load**, empty state, Escape close, body-scroll lock/restore, and a sized product from the grid routing to the detail page instead of guessing a size. SCSS compiles, `go build`/`go test` pass, zero console errors. Found and fixed two real bugs mid-test: a missing `WHATSAPP_NUMBER` produced a broken `wa.me/?text=` link (CTA now disables when unconfigured), and sanitised data was not written back to storage.
