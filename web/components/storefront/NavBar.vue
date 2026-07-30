@@ -33,6 +33,7 @@ const {
   toggleDropdown,
   toggleMobileMenu,
 } = useStorefrontNavigation(navigationRoot)
+const { count: cartCount } = useCart()
 
 const STOREFRONT_ACTION_ICONS: Readonly<Record<StorefrontActionId, IconNode>> = {
   [StorefrontActionId.Search]: Search,
@@ -163,6 +164,13 @@ const handleTriggerClick = (
             :stroke-width="1.5"
             aria-hidden="true"
           />
+          <ClientOnly>
+            <span
+              v-if="storefrontAction.id === StorefrontActionId.Cart && cartCount > 0"
+              class="cart-count-badge"
+              aria-hidden="true"
+            >{{ cartCount }}</span>
+          </ClientOnly>
         </button>
       </div>
 
@@ -182,6 +190,13 @@ const handleTriggerClick = (
             :stroke-width="1.5"
             aria-hidden="true"
           />
+          <ClientOnly>
+            <span
+              v-if="storefrontActionId === StorefrontActionId.Cart && cartCount > 0"
+              class="cart-count-badge"
+              aria-hidden="true"
+            >{{ cartCount }}</span>
+          </ClientOnly>
         </button>
 
         <button

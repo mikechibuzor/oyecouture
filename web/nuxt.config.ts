@@ -16,6 +16,8 @@ export default defineNuxtConfig({
     public: {
       // Browser-facing: overridden in production by NUXT_PUBLIC_API_BASE.
       apiBase: process.env.API_BASE_URL || DEFAULT_API_BASE_URL,
+      // Bespoke orders hand over to this number; set WHATSAPP_NUMBER per environment.
+      whatsappNumber: process.env.WHATSAPP_NUMBER || '',
     },
   },
   typescript: {

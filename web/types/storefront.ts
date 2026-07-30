@@ -18,6 +18,7 @@ export enum StorefrontRoute {
   Returns = '/returns',
   BookFitting = '/#bespoke',
   Contact = '/contact',
+  Checkout = '/checkout',
   Legal = '/legal',
   Terms = '/terms',
 }

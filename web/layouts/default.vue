@@ -2,11 +2,17 @@
 import { StorefrontActionId } from '~/types/storefront'
 
 const isSearchOverlayOpen = ref(false)
+const { open: openCart } = useCart()
 
-// Routes implemented header actions while leaving future account, wishlist, and cart work inert.
+// Routes implemented header actions while leaving future account and wishlist work inert.
 const handleStorefrontAction = (storefrontActionId: StorefrontActionId): void => {
   if (storefrontActionId === StorefrontActionId.Search) {
     isSearchOverlayOpen.value = true
+    return
+  }
+
+  if (storefrontActionId === StorefrontActionId.Cart) {
+    openCart()
   }
 }
 
@@ -24,6 +30,7 @@ const closeSearchOverlay = (): void => {
       <slot />
     </main>
     <StorefrontFooter />
+    <CartDrawer />
     <StorefrontSearchOverlay
       :is-open="isSearchOverlayOpen"
       @close="closeSearchOverlay"

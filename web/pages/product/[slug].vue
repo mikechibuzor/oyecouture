@@ -18,7 +18,19 @@ const productSlug = computed(() => {
 })
 
 const { data, error, status } = await useProductBySlug(productSlug.value)
+const { add, open: openCart } = useCart()
 const selectedSize = ref<ProductSize>(DEFAULT_PRODUCT_SIZE)
+
+// Adds the loaded product to the bag, passing the chosen size for ready-to-wear.
+const addProductToBag = (): void => {
+  if (!product.value) {
+    return
+  }
+
+  if (add(product.value, product.value.hasSizes ? selectedSize.value : null)) {
+    openCart()
+  }
+}
 
 // Returns the loaded product when the detail request succeeds.
 const product = computed<Product | null>(() => data.value?.product ?? null)
@@ -77,7 +89,7 @@ const formattedPrice = computed(() =>
             v-model="selectedSize"
           />
 
-          <button class="product-detail-add-button" type="button" disabled>
+          <button class="product-detail-add-button" type="button" @click="addProductToBag">
             <CatalogueAddToBagButtonContent />
           </button>
 

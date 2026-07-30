@@ -13,6 +13,7 @@ const props = defineProps<ProductCardProps>()
 const activeMediaIndex = ref(0)
 const isWishlisted = ref(false)
 const { mediaItems } = useProductMedia(() => props.product, true)
+const { add, open: openCart } = useCart()
 
 const CARD_ICONS = {
   next: ChevronRight,
@@ -58,6 +59,17 @@ const showPreviousMediaItem = (): void => {
 // Toggles the local wishlist presentation without persisting customer state.
 const toggleWishlist = (): void => {
   isWishlisted.value = !isWishlisted.value
+}
+
+// Adds the product to the bag. A sized product cannot be added from the grid
+// without a size, so the customer is sent to the detail page to choose one.
+const addProductToBag = async (): Promise<void> => {
+  if (add(props.product)) {
+    openCart()
+    return
+  }
+
+  await navigateTo(productRoute.value)
 }
 
 // Builds an accessible label for one carousel position.
@@ -148,7 +160,7 @@ const getMediaButtonLabel = (mediaIndex: number): string =>
             aria-hidden="true"
           />
         </NuxtLink>
-        <button class="product-add-button" type="button" disabled>
+        <button class="product-add-button" type="button" @click="addProductToBag">
           <CatalogueAddToBagButtonContent :icon-size="15" />
         </button>
       </div>
