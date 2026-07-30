@@ -1,0 +1,36 @@
+# Caddy fetches and renews TLS certificates automatically for SITE_HOST.
+# Works for a real domain (staging.example.com) or an IP-based hostname
+# (<ip>.sslip.io) — useful before the client's DNS is delegated to us.
+{
+	email {$ACME_EMAIL}
+}
+
+{$SITE_HOST} {
+	encode zstd gzip
+
+	# API first: the storefront calls /api/* from the browser, same origin,
+	# so production has no CORS to configure at all.
+	handle_path /api/* {
+		reverse_proxy api:8080
+	}
+
+	# Everything else is the Nuxt server-rendered storefront.
+	handle {
+		reverse_proxy web:3000
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		X-Frame-Options "SAMEORIGIN"
+		-Server
+	}
+
+	log {
+		output file /var/log/caddy/access.log {
+			roll_size 10MiB
+			roll_keep 5
+		}
+	}
+}

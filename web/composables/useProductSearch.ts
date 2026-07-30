@@ -9,7 +9,6 @@ import { AsyncDataStatus } from '~/types/product'
 
 // Manages curated recommendations and race-safe debounced product searches.
 export const useProductSearch = () => {
-  const runtimeConfig = useRuntimeConfig()
   const searchQuery = ref('')
   const searchResults = ref<readonly Product[]>([])
   const recommendedProducts = ref<readonly Product[]>([])
@@ -44,7 +43,7 @@ export const useProductSearch = () => {
     requestedSearchQuery?: string,
   ): Promise<ProductListResponse> =>
     $fetch<ProductListResponse>(API_ROUTES.products, {
-      baseURL: runtimeConfig.public.apiBase,
+      baseURL: useApiBaseUrl(),
       query: requestedSearchQuery
         ? { [PRODUCT_API_QUERY_KEYS.search]: requestedSearchQuery }
         : undefined,

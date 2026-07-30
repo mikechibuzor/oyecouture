@@ -1,0 +1,111 @@
+# Production stack: Caddy (TLS) -> Nuxt + Go API -> PostgreSQL.
+# PostgreSQL publishes no ports; it is reachable only on the internal network.
+name: oyecouture
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    container_name: oyecouture-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      SITE_HOST: ${SITE_HOST:?set SITE_HOST}
+      ACME_EMAIL: ${ACME_EMAIL:?set ACME_EMAIL}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+      - caddy-logs:/var/log/caddy
+    depends_on:
+      - web
+      - api
+
+  web:
+    build:
+      context: ./web
+    container_name: oyecouture-web
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      # Browser calls the API through Caddy on the same origin.
+      NUXT_PUBLIC_API_BASE: /api
+      # Server-side rendering talks to the API container directly, skipping
+      # the round trip out through Caddy and back in.
+      NUXT_API_INTERNAL_BASE: http://api:8080
+      NUXT_PUBLIC_SITE_URL: https://${SITE_HOST}
+    depends_on:
+      api:
+        condition: service_started
+
+  api:
+    build:
+      context: ./api
+    container_name: oyecouture-api
+    restart: unless-stopped
+    environment:
+      APP_ENV: production
+      API_BASE_URL: http://0.0.0.0:8080
+      WEB_BASE_URL: https://${SITE_HOST}
+      DATABASE_URL: postgres://${POSTGRES_USER:-oye}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-oyecouture}?sslmode=disable
+      R2_PUBLIC_BASE: ${R2_PUBLIC_BASE:-/images/catalogue}
+      PAYMENT_PROVIDER: ${PAYMENT_PROVIDER:-nomba}
+      NOMBA_CLIENT_ID: ${NOMBA_CLIENT_ID:-}
+      NOMBA_CLIENT_SECRET: ${NOMBA_CLIENT_SECRET:-}
+      NOMBA_ACCOUNT_ID: ${NOMBA_ACCOUNT_ID:-}
+      NOMBA_ENV: ${NOMBA_ENV:-sandbox}
+      NOMBA_WEBHOOK_SECRET: ${NOMBA_WEBHOOK_SECRET:-}
+      PAYSTACK_SECRET_KEY: ${PAYSTACK_SECRET_KEY:-}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      EMAIL_FROM: ${EMAIL_FROM:-}
+      OWNER_NOTIFY_EMAIL: ${OWNER_NOTIFY_EMAIL:-}
+      WHATSAPP_NUMBER: ${WHATSAPP_NUMBER:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: oyecouture-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-oye}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-oyecouture}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-oye} -d ${POSTGRES_DB:-oyecouture}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Nightly pg_dump, kept for 14 days. A store's order history is the one thing
+  # that cannot be rebuilt from the repo, so this ships with the first deploy.
+  backup:
+    image: postgres:16-alpine
+    container_name: oyecouture-backup
+    restart: unless-stopped
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+    volumes:
+      - ./deploy/backup.sh:/usr/local/bin/backup.sh:ro
+      - postgres-backups:/backups
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        while true; do
+          sh /usr/local/bin/backup.sh "${POSTGRES_USER:-oye}" "${POSTGRES_DB:-oyecouture}" || echo "backup failed"
+          sleep 86400
+        done
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres-data:
+  postgres-backups:
+  caddy-data:
+  caddy-config:
+  caddy-logs:
