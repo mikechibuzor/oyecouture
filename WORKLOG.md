@@ -5,6 +5,12 @@ One short entry per work session or meaningful chunk. Format:
 
 ---
 
+## 2026-07-30T09:05:00+01:00 · Claude · Fixed nav dropdown hover/click conflict
+- **Did:** Fixed the reported wart where hovering opened the menu and the next click closed it (with the pointer still inside, no `mouseenter` could reopen it). `useStorefrontNavigation` now tracks `pointerItemId`; `toggleDropdown` will not close a menu the pointer is holding open, while keyboard/touch activation still toggles. Committed `7848780`.
+- **State:** Verified live through all five paths: hover opens → click keeps it open → pointer-leave closes → click with no pointer opens → click again closes. SCSS compiles; no console errors.
+- **Next:** Milestone B step 8 (cart state) still awaits user authorization. M2 transactional motion ships with the cart.
+- **Blockers:** None. Recorded a verification lesson in `HANDOFF-STATE.md`: dropdown state must be asserted via computed `display` on the specific panel id, not `querySelector` presence (`v-show` + two panels + async Vue flush all mislead).
+
 ## 2026-07-30T00:20:00+01:00 · Claude · M1 motion foundation shipped
 - **Did:** Implemented `07-MOTION-AND-MICROINTERACTIONS.md` §9 M1 (`d2544dc`): new `design-system/_motion.scss` (duration/easing/displacement/stagger/press tokens) wired into `main.scss`; global `prefers-reduced-motion` block in `_globals.scss` that kills travel but preserves state feedback; site-wide `:active` press feedback plus smooth colour/border transitions on buttons and links; retuned all three pre-existing transitions (nav chevron, mobile menu, category tile) to tokens with exits now faster than entrances; **fixed the hero marquee WCAG 2.2.2 violation**.
 - **State:** Verified live in-browser — every motion token resolves, marquee `animationPlayState` goes `running → paused → running` on hover/unhover, and all four guard rules (hover-pause, touch fallback, global reduced-motion, tap feedback) confirmed present in the cascade. SCSS compiles clean; home + product SSR return 200; zero console errors; no horizontal overflow at 375px. **Zero raw `ms`/`cubic-bezier()` remain outside the token file.**
