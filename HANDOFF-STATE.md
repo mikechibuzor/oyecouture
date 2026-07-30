@@ -19,7 +19,9 @@
 
 **🔒 CLAUDE owns (do not touch):** (a) **DB-driven product images** — `product_images` is empty and every image is currently a hardcoded frontend map (`PRODUCT_FALLBACK_IMAGES` in `constants/products.ts`), so no image can change without a deploy, which breaks the ghost-admin story. Seeding rows + `R2_PUBLIC_BASE` so images flow DB→API→frontend. (b) **Deploy artifacts + staging on a live link** (roadmap step 7): Dockerfiles, prod compose, Caddy auto-HTTPS, deploy script.
 
-**🔒 CODEX owns (authorized, start now):** **Milestone B steps 8–10** — cart state, the cart drawer per `02-DESIGN-SPEC.md`, and the bespoke **"Confirm order on WhatsApp"** flow + measurement form. Build the M2 transactional motion in as you go from `07-MOTION-AND-MICROINTERACTIONS.md` §4.4–4.5 (drawer choreography, 4-state action button, cart count) — do not retrofit. Use the WhatsApp number from env; do not hardcode it.
+**🔒 CLAUDE now owns the CART (reassigned by user 30 Jul):** Milestone B steps 8–10 — cart state, cart drawer, bespoke WhatsApp confirm + measurement form. **Codex: review, do not build.**
+
+**🔒 (previously Codex, now reassigned — left for history):** **Milestone B steps 8–10** — cart state, the cart drawer per `02-DESIGN-SPEC.md`, and the bespoke **"Confirm order on WhatsApp"** flow + measurement form. Build the M2 transactional motion in as you go from `07-MOTION-AND-MICROINTERACTIONS.md` §4.4–4.5 (drawer choreography, 4-state action button, cart count) — do not retrofit. Use the WhatsApp number from env; do not hardcode it.
 
 ### ⏰ PARKED — netcup billing (deadline 13 Aug 2026)
 Staging deploy is blocked only on the server existing. netcup order **54429992** was placed on a **12-month term** and invoiced **€68.64 upfront**; user wants monthly/no-minimum instead and has asked netcup to amend it. netcup replied that they will attend to the request. **The invoice is deliberately unpaid — do not pay it, and nothing is provisioned until it is.** If netcup has not resolved this by ~**10 Aug**, the formal withdrawal email must go out before the **14-day window closes ~13 Aug**, or the 12-month term binds. Surface this to the user if it goes quiet.
