@@ -1,0 +1,296 @@
+@use '../design-system/breakpoints' as *;
+
+$confirm-width: 68rem;
+
+.confirm-page {
+  width: min(100% - (var(--space-md) * 2), $confirm-width);
+  margin: 0 auto;
+  padding: var(--space-3xl) 0 var(--space-4xl);
+}
+
+.confirm-header {
+  margin-bottom: var(--space-3xl);
+
+  h1 {
+    margin: 0 0 var(--space-md);
+    font-family: var(--font-family-display);
+    font-size: var(--text-3xl);
+    font-weight: var(--font-weight-bold);
+    letter-spacing: var(--tracking-tight);
+  }
+
+  p {
+    max-width: 34rem;
+    margin: 0;
+    color: var(--color-body-copy);
+    font-size: var(--text-md);
+    font-weight: var(--font-weight-light);
+    line-height: 1.65;
+  }
+}
+
+.confirm-empty {
+  display: grid;
+  padding: var(--space-4xl) 0;
+  justify-items: center;
+  gap: var(--space-md);
+  color: var(--color-taupe);
+  text-align: center;
+
+  a {
+    color: var(--color-ink);
+    font-size: var(--text-xs);
+    letter-spacing: var(--tracking-label);
+    text-transform: uppercase;
+    text-underline-offset: 0.25rem;
+  }
+}
+
+.confirm-layout {
+  display: grid;
+  gap: var(--space-3xl);
+}
+
+.confirm-fields {
+  display: grid;
+  gap: var(--space-2xl);
+
+  fieldset {
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  legend {
+    margin-bottom: var(--space-lg);
+    padding: 0;
+    font-size: 0.8125rem;
+    font-weight: var(--font-weight-medium);
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+  }
+
+  label {
+    display: grid;
+    margin-bottom: var(--space-lg);
+    gap: var(--space-2xs);
+
+    > span {
+      color: var(--color-taupe);
+      font-size: var(--text-xs);
+      letter-spacing: var(--tracking-normal);
+    }
+
+    small {
+      color: var(--color-taupe-light);
+      font-size: var(--text-xs);
+    }
+  }
+
+  input[type='text'],
+  input[type='email'],
+  input[type='tel'],
+  input[type='number'],
+  textarea {
+    min-height: 2.875rem;
+    padding: 0 var(--space-sm);
+    border: 1px solid var(--color-border);
+    border-radius: 0;
+    color: var(--color-ink);
+    background: var(--color-white);
+    font: inherit;
+    font-size: var(--text-sm);
+
+    &:focus-visible {
+      border-color: var(--color-ink);
+      outline: 1px solid var(--color-ink);
+      outline-offset: -2px;
+    }
+  }
+
+  textarea {
+    padding: var(--space-sm);
+    line-height: 1.6;
+    resize: vertical;
+  }
+}
+
+.confirm-measurements-hint {
+  margin: 0 0 var(--space-md);
+  color: var(--color-taupe);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-light);
+}
+
+.confirm-toggle {
+  display: flex !important;
+  align-items: center;
+  gap: var(--space-xs);
+
+  input {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  span {
+    color: var(--color-ink) !important;
+    font-size: var(--text-sm) !important;
+  }
+}
+
+.confirm-measurement-grid {
+  display: grid;
+  margin-bottom: var(--space-md);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-md);
+
+  label {
+    margin-bottom: 0;
+  }
+}
+
+.confirm-summary {
+  align-self: start;
+  padding: var(--space-xl);
+  border: 1px solid var(--color-border);
+  background: var(--color-cream-2);
+
+  h2 {
+    margin: 0 0 var(--space-lg);
+    font-size: 0.8125rem;
+    font-weight: var(--font-weight-medium);
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+  }
+
+  ul {
+    display: grid;
+    margin: 0 0 var(--space-lg);
+    padding: 0;
+    gap: var(--space-md);
+    list-style: none;
+  }
+
+  li {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-md);
+    color: var(--color-ink-soft);
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-light);
+  }
+
+  strong {
+    white-space: nowrap;
+  }
+}
+
+.confirm-subtotal {
+  display: flex;
+  padding-top: var(--space-md);
+  align-items: baseline;
+  justify-content: space-between;
+  border-top: 1px solid var(--color-border);
+
+  span {
+    color: var(--color-taupe);
+    font-size: var(--text-xs);
+    letter-spacing: var(--tracking-wider);
+    text-transform: uppercase;
+  }
+
+  strong {
+    font-size: var(--text-lg);
+    font-weight: var(--font-weight-semibold);
+  }
+}
+
+.confirm-error {
+  margin: var(--space-md) 0 0;
+  color: var(--color-error);
+  font-size: var(--text-sm);
+}
+
+.confirm-submit {
+  display: flex;
+  width: 100%;
+  min-height: 3.25rem;
+  margin-top: var(--space-lg);
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  border: 1px solid var(--color-ink);
+  color: var(--color-champagne);
+  background: var(--color-ink);
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: var(--tracking-widest);
+  text-decoration: none;
+  text-transform: uppercase;
+
+  &:disabled {
+    cursor: wait;
+    opacity: 0.6;
+  }
+}
+
+// Success state
+.confirm-success {
+  display: grid;
+  padding: var(--space-4xl) 0;
+  justify-items: center;
+  text-align: center;
+
+  h1 {
+    margin: 0 0 var(--space-md);
+    font-family: var(--font-family-display);
+    font-size: var(--text-3xl);
+    font-weight: var(--font-weight-bold);
+    letter-spacing: var(--tracking-tight);
+  }
+}
+
+.confirm-eyebrow {
+  margin: 0 0 var(--space-md);
+  color: var(--color-gold);
+  font-size: var(--text-xs);
+  font-weight: var(--font-weight-light);
+  letter-spacing: var(--tracking-section);
+  text-transform: uppercase;
+}
+
+.confirm-order-no {
+  margin: 0 0 var(--space-lg);
+  padding: var(--space-sm) var(--space-lg);
+  border: 1px solid var(--color-border);
+  background: var(--color-cream-2);
+  font-size: var(--text-xl);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: var(--tracking-wide);
+}
+
+.confirm-success-body {
+  max-width: 30rem;
+  margin: 0 0 var(--space-xl);
+  color: var(--color-body-copy);
+  font-size: var(--text-md);
+  font-weight: var(--font-weight-light);
+  line-height: 1.65;
+}
+
+.confirm-success .confirm-submit {
+  width: auto;
+  padding: 0 var(--space-2xl);
+}
+
+@include breakpoint-min('tablet') {
+  .confirm-layout {
+    grid-template-columns: minmax(0, 1.3fr) minmax(20rem, 1fr);
+    gap: var(--space-4xl);
+  }
+
+  .confirm-measurement-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}

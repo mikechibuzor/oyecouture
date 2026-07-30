@@ -2,7 +2,6 @@
 import type { IconNode } from 'lucide'
 import { ArrowRight, MessageCircle } from 'lucide'
 import { StorefrontRoute } from '~/types/storefront'
-import { buildWhatsAppOrderUrl } from '~/utils/cart'
 
 interface CartCheckoutActionProps {
   isBespoke: boolean
@@ -11,50 +10,23 @@ interface CartCheckoutActionProps {
 
 const props = defineProps<CartCheckoutActionProps>()
 
-const { close, lines, subtotalKobo } = useCart()
-const runtimeConfig = useRuntimeConfig()
+const { close } = useCart()
 
 const ACTION_ICONS = {
   bespoke: MessageCircle,
   readyToWear: ArrowRight,
 } as const satisfies Readonly<Record<string, IconNode>>
 
-// Guards against a missing WHATSAPP_NUMBER: without it wa.me would open a broken
-// page, so the action is disabled rather than sending the customer nowhere.
-const isWhatsAppConfigured = computed(() =>
-  runtimeConfig.public.whatsappNumber.replace(/\D/g, '').length > 0,
-)
-
-// Prefills the WhatsApp conversation with the bag so the customer never has to
-// retype what they want and the owner sees the order immediately.
-const whatsAppUrl = computed(() =>
-  buildWhatsAppOrderUrl(
-    runtimeConfig.public.whatsappNumber,
-    lines.value,
-    subtotalKobo.value,
-  ),
-)
 const actionIcon = computed(() =>
   props.isBespoke ? ACTION_ICONS.bespoke : ACTION_ICONS.readyToWear,
 )
 </script>
 
 <template>
-  <button
-    v-if="isBespoke && !isWhatsAppConfigured"
+  <NuxtLink
+    v-if="isBespoke"
     class="cart-primary-action"
-    type="button"
-    disabled
-  >
-    <span>{{ label }}</span>
-  </button>
-
-  <a
-    v-else-if="isBespoke"
-    class="cart-primary-action"
-    :href="whatsAppUrl"
-    target="_blank"
-    rel="noopener noreferrer"
+    :to="StorefrontRoute.Confirm"
     @click="close"
   >
     <StorefrontIcon
@@ -64,7 +36,7 @@ const actionIcon = computed(() =>
       aria-hidden="true"
     />
     <span>{{ label }}</span>
-  </a>
+  </NuxtLink>
 
   <NuxtLink
     v-else

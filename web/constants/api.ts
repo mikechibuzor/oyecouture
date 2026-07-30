@@ -1,5 +1,6 @@
 export const API_ROUTES = {
   health: '/healthz',
+  orders: '/orders',
   products: '/products',
 } as const
 

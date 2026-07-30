@@ -9,6 +9,7 @@ export const buildWhatsAppOrderUrl = (
   whatsAppNumber: string,
   lines: readonly CartLine[],
   subtotalKobo: number,
+  orderNo = '',
 ): string => {
   // Wording follows the approved design: "Hi Oyecouture! …" with x-quantity
   // line items and a closing request to confirm availability and sizing.
@@ -19,8 +20,14 @@ export const buildWhatsAppOrderUrl = (
     return `• ${line.name}${sizeSuffix} x${line.quantity} — ${lineTotal}`
   })
 
+  // Once the order is saved it carries a reference, so the conversation and the
+  // order record stay tied together.
+  const opening = orderNo
+    ? `Hi Oyecouture! I'd like to confirm order ${orderNo}:`
+    : "Hi Oyecouture! I'd like to order the following:"
+
   const message = [
-    "Hi Oyecouture! I'd like to order the following:",
+    opening,
     '',
     ...orderLines,
     '',
