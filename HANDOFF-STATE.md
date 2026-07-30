@@ -45,6 +45,8 @@ Compared every page against `design-source/` by extracting rendered text and com
 
 **Grid + spacing corrected (`later commit`):** measured at a **1440px** reference — the design uses **different column counts per page**: Home is **4-up** (313px columns), category pages are **3-up** (425px). Both share a **22px gap** and **56px side gutters**. Ours was 4-up everywhere with tighter gutters. Category `h1` is **56px at desktop**, not 40px — the 40px figure recorded earlier was the *mobile* size, measured before the browser was widened. **Lesson for both agents: always widen the viewport before measuring the design; the default preview width is ~537px and silently yields mobile values.**
 
+**Steps 10–11 delivered (30 Jul):** orders persist with server-side pricing; `/confirm` (bespoke) and `/checkout` (ready-to-wear) both live; delivery zones DB-driven. **All routes return 200 — the `/checkout` 404 is closed.**
+
 **STILL OUTSTANDING:**
 1. **`/about` 404s — the entire About page is unbuilt.** Design has hero "YOUR CLOTHING SPEAKS / LONG BEFORE YOU DO", tab nav, and four sections (01 Our Story, 02 The Oyecouture Symbol incl. the CONFIDENCE/SIMPLICITY/CLASS/YOU grid, 03 Craftsmanship, 04 Mission & Vision). All copy is in the design; the footer links to it from four places.
 2. **Home shows 27 products; the design shows a curated 13** (monarch, sovereign, regent, agbada, heritage, emir, senator, classic, linen, polo, heir, fila, chino). Needs a product decision — full catalogue or curated.

@@ -5,6 +5,16 @@ One short entry per work session or meaningful chunk. Format:
 
 ---
 
+## 2026-07-30T19:05:00+01:00 · Claude · Orders, confirm + checkout (Milestone B steps 10–11)
+- **Did:** `POST /orders` with **server-side pricing** — the storefront sends only slug/size/quantity and every price is re-read from the database (`33aaeae`). `/confirm` page: contact + optional measurements → saves the order → WhatsApp opens carrying the reference (`60861c6`). `/checkout` for ready-to-wear with **DB-driven delivery zones** and server-resolved fees (`bad7d67`), plus `GET /delivery-zones`.
+- **State:** Verified against the live API and database. **A client cannot set a price** — sending `priceKobo` is rejected (`invalid_body`, unknown field), and an invented delivery zone is rejected too. Order kind is derived server-side: any unsized item makes the whole order `bespoke`/`pending_confirmation`; ready-to-wear is `awaiting_payment`. Confirmed end to end: `OYE-1008` (bespoke, WhatsApp message carries the order no) and `OYE-1011` (ready-to-wear, ₦78,000 + ₦5,000 Lagos = ₦83,000, address + zone persisted). **Every route now returns 200 — no 404s left.**
+- **Next:** Payments (Nomba adapter + `/pay/<token>` page) and order emails — both blocked on credentials. Home still shows 27 products vs the design's curated 13 (user decision).
+- **Blockers:** Nomba sandbox keys, Resend API key, real WhatsApp number. Server for deploy (netcup billing parked, deadline 13 Aug).
+
+**⚠️ Nuxt trap worth knowing:** calling `useRuntimeConfig()` (or any Nuxt composable) **inside an async event handler** throws — the Nuxt instance is gone by then, and it surfaces as a vague "something failed". Resolve config during setup and close over it. That is why `useOrders()`/`useDeliveryZones()` capture the base URL at setup rather than per-call.
+
+**⚠️ Delivery fees are PLACEHOLDERS** (Lagos ₦5,000 / Rest of Nigeria ₦10,000 / International ₦0) — the client has not supplied real pricing. They live in `delivery_zones`, so correcting them is a data change, not a deploy.
+
 ## 2026-07-30T14:10:00+01:00 · Claude · Design audit + About page
 - **Did:** Audited every page against `design-source/` by diffing **computed styles**, not just text. Fixed: category pages ×4 restored to the design (light `#f4f0ec` band, breadcrumb, 40px→56px sentence-case H1, real copy, per-section chips; removed the invented collection heading + sort) `3678100`; grid corrected — **Home is 4-up, category pages are 3-up**, both 22px gap / 56px gutters `559737e`; **footer was fully inverted** — the design's is WHITE with `#4a443e` links, not dark `8e97bf4`; on-card size selector for ready-to-wear, which also lets Add-to-Bag work from the grid `adf90af`; **built the whole About page** `cef6593`.
 - **State:** All values verified against the design at 1440px. About page: hero 62px/700, champagne eyebrow `0.42em`, tab pills 39px, gold section labels, 40px/600 headings, 16px/300 `#4a443e` body, stat 34px, mission `0.22em`, principle `0.1em` — every one matches. The band takes per-page overrides so About shows "Step into the world of Oyecouture" + its extra line, with no duplicate band. All four footer About links now resolve.
