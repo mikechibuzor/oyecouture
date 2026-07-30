@@ -1,8 +1,16 @@
 <script setup lang="ts">
-import { StorefrontActionId } from '~/types/storefront'
+import { ABOUT_BESPOKE_BAND } from '~/constants/about'
+import { StorefrontActionId, StorefrontRoute } from '~/types/storefront'
 
 const isSearchOverlayOpen = ref(false)
 const { open: openCart } = useCart()
+const route = useRoute()
+
+// The About page runs its own wording for the bespoke band; every other page
+// falls back to the component's shared copy.
+const bespokeBandProps = computed(() =>
+  route.path === StorefrontRoute.About ? ABOUT_BESPOKE_BAND : {},
+)
 
 // Routes implemented header actions while leaving future account and wishlist work inert.
 const handleStorefrontAction = (storefrontActionId: StorefrontActionId): void => {
@@ -29,7 +37,7 @@ const closeSearchOverlay = (): void => {
     <main class="storefront-main">
       <slot />
     </main>
-    <StorefrontBespokeServiceBand />
+    <StorefrontBespokeServiceBand v-bind="bespokeBandProps" />
     <StorefrontFooter />
     <CartDrawer />
     <StorefrontSearchOverlay

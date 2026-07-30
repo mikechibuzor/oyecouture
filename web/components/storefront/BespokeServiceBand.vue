@@ -34,7 +34,8 @@ withDefaults(defineProps<BespokeServiceBandProps>(), {
     </svg>
 
     <p class="eyebrow">{{ BESPOKE_SERVICE_COPY.eyebrow }}</p>
-    <h2 id="bespoke-service-title">{{ BESPOKE_SERVICE_COPY.heading }}</h2>
+    <h2 id="bespoke-service-title">{{ heading }}</h2>
+    <p v-if="description" class="bespoke-service-description">{{ description }}</p>
 
     <NuxtLink class="bespoke-service-action" :to="StorefrontRoute.BookFitting">
       {{ BESPOKE_SERVICE_COPY.action }}
