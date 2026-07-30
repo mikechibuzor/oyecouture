@@ -12,8 +12,14 @@
 - **Repo / branch:** `/Users/chibuzoriwuagwu/Downloads/share/oyecouture` · `main`.
 - **Last implementation commits:** `562faf8` (reference-inspired button animations), `d743037` (instant search overlay), `803149b` (single-column mobile catalogue), `5bcfaa8` (storefront microinteractions), `9cc1333` (approved-design alignment), `8736afc` (product detail), `ed4f3d9` (shop/category pages).
 
-## ▶ Next action (the ONE thing to do next)
-**Wait for user review and explicit authorization before starting Milestone B step 8.** The next roadmap step is cart state only. Do not begin checkout or payments until the cart runs and the user authorizes the next step.
+## ▶ Next action — DEMO SPRINT, split between agents (30 Jul 08:20)
+⚠️ **The contractual demo is due 31 July and triggers the 40% / ₦180,000 milestone.** Roadmap **step 7 (deploy staging to a live link) was skipped** — we jumped from A.6 to step 8. Two parallel tracks, claimed to avoid collision:
+
+**🔒 CLAUDE owns (do not touch):** (a) **DB-driven product images** — `product_images` is empty and every image is currently a hardcoded frontend map (`PRODUCT_FALLBACK_IMAGES` in `constants/products.ts`), so no image can change without a deploy, which breaks the ghost-admin story. Seeding rows + `R2_PUBLIC_BASE` so images flow DB→API→frontend. (b) **Deploy artifacts + staging on a live link** (roadmap step 7): Dockerfiles, prod compose, Caddy auto-HTTPS, deploy script.
+
+**🔒 CODEX owns (authorized, start now):** **Milestone B steps 8–10** — cart state, the cart drawer per `02-DESIGN-SPEC.md`, and the bespoke **"Confirm order on WhatsApp"** flow + measurement form. Build the M2 transactional motion in as you go from `07-MOTION-AND-MICROINTERACTIONS.md` §4.4–4.5 (drawer choreography, 4-state action button, cart count) — do not retrofit. Use the WhatsApp number from env; do not hardcode it.
+
+**Blocked on client credentials (neither agent can proceed):** Nomba sandbox keys (checkout cannot be *tested*, though the provider interface + adapter can be written), Resend API key (order emails), real WhatsApp business number.
 
 ### ✅ Nav dropdown hover+click fixed by Claude (`7848780`)
 The dropdown now opens on **hover and click**. Bug fixed: hover opened it, then clicking the same trigger closed it — and because the pointer was still inside, no further `mouseenter` could reopen it. `useStorefrontNavigation` now tracks `pointerItemId`; `toggleDropdown` refuses to close a menu the pointer is currently holding open, while keyboard and touch activation (no pointer) still toggle normally. Verified live: hover opens → click keeps open → pointer-leave closes → click-without-pointer opens → click again closes.
