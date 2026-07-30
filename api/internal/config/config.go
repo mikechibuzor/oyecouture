@@ -9,6 +9,9 @@ const (
 	defaultAPIAddress  = ":8080"
 	defaultDatabaseURL = "postgres://oye:oye@localhost:5432/oyecouture?sslmode=disable"
 	defaultWebBaseURL  = "http://localhost:3000"
+	// Origin-relative so product image URLs work in any environment without
+	// knowing the host. Point R2_PUBLIC_BASE at the bucket URL to serve from R2.
+	defaultR2PublicBase = "/images/catalogue"
 )
 
 type Config struct {
@@ -25,7 +28,7 @@ func Load() Config {
 		APIAddress:   apiAddress(os.Getenv("API_BASE_URL")),
 		AppEnv:       valueOrDefault(os.Getenv("APP_ENV"), "development"),
 		DatabaseURL:  valueOrDefault(os.Getenv("DATABASE_URL"), defaultDatabaseURL),
-		R2PublicBase: os.Getenv("R2_PUBLIC_BASE"),
+		R2PublicBase: valueOrDefault(os.Getenv("R2_PUBLIC_BASE"), defaultR2PublicBase),
 		WebBaseURL:   valueOrDefault(os.Getenv("WEB_BASE_URL"), defaultWebBaseURL),
 	}
 }
