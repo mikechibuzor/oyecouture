@@ -1,8 +1,14 @@
 <script setup lang="ts">
 import type { IconNode } from 'lucide'
 import { ArrowUpRight, ChevronLeft, ChevronRight, Heart } from 'lucide'
-import { PRODUCT_COPY, getProductRoute } from '~/constants/products'
+import {
+  DEFAULT_PRODUCT_SIZE,
+  PRODUCT_COPY,
+  PRODUCT_SIZE_OPTIONS,
+  getProductRoute,
+} from '~/constants/products'
 import type { Product, ProductMediaItem } from '~/types/product'
+import type { ProductSize } from '~/types/product'
 import { formatProductPrice } from '~/utils/product'
 
 interface ProductCardProps {
@@ -14,6 +20,7 @@ const activeMediaIndex = ref(0)
 const isWishlisted = ref(false)
 const { mediaItems } = useProductMedia(() => props.product, true)
 const { add, open: openCart } = useCart()
+const selectedSize = ref<ProductSize>(DEFAULT_PRODUCT_SIZE)
 
 const CARD_ICONS = {
   next: ChevronRight,
@@ -63,13 +70,12 @@ const toggleWishlist = (): void => {
 
 // Adds the product to the bag. A sized product cannot be added from the grid
 // without a size, so the customer is sent to the detail page to choose one.
-const addProductToBag = async (): Promise<void> => {
-  if (add(props.product)) {
-    openCart()
-    return
-  }
+const addProductToBag = (): void => {
+  const size = props.product.hasSizes ? selectedSize.value : null
 
-  await navigateTo(productRoute.value)
+  if (add(props.product, size)) {
+    openCart()
+  }
 }
 
 // Builds an accessible label for one carousel position.
@@ -144,11 +150,29 @@ const getMediaButtonLabel = (mediaIndex: number): string =>
     </div>
 
     <div class="product-card-content">
-      <p class="product-category">{{ product.category }}</p>
+      <p v-if="!product.hasSizes" class="product-category">{{ product.category }}</p>
       <h3>
         <NuxtLink :to="productRoute">{{ product.name }}</NuxtLink>
       </h3>
       <p class="product-price">{{ formattedPrice }}</p>
+
+      <div
+        v-if="product.hasSizes"
+        class="product-card-sizes"
+        role="group"
+        :aria-label="PRODUCT_COPY.size.label"
+      >
+        <button
+          v-for="size in PRODUCT_SIZE_OPTIONS"
+          :key="size"
+          type="button"
+          :class="{ 'is-active': selectedSize === size }"
+          :aria-pressed="selectedSize === size"
+          @click="selectedSize = size"
+        >
+          {{ size }}
+        </button>
+      </div>
 
       <div class="product-card-actions">
         <NuxtLink class="product-view-link" :to="productRoute">

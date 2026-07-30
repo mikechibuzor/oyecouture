@@ -496,3 +496,33 @@ $catalogue-content-width: 92.5rem;
     scale: 1;
   }
 }
+
+// On-card size selector for ready-to-wear pieces. Measured from the design:
+// 28px tall, 11px label, 6px gap, active = ink fill with champagne text.
+.product-card-sizes {
+  display: flex;
+  margin-top: var(--space-sm);
+  gap: 0.375rem;
+
+  button {
+    height: 1.75rem;
+    padding: 0;
+    flex: 1 1 0;
+    border: 1px solid var(--color-border);
+    color: var(--color-ink);
+    background: var(--color-white);
+    font-size: 0.6875rem;
+    letter-spacing: var(--tracking-normal);
+
+    &.is-active {
+      border-color: var(--color-ink);
+      color: var(--color-champagne);
+      background: var(--color-ink);
+    }
+
+    &:not(.is-active):hover,
+    &:not(.is-active):focus-visible {
+      border-color: var(--color-ink);
+    }
+  }
+}

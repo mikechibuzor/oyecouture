@@ -1,6 +1,18 @@
 <script setup lang="ts">
 import { BESPOKE_SERVICE_COPY } from '~/constants/storefront'
 import { StorefrontRoute } from '~/types/storefront'
+
+// The About page runs its own heading and adds a line of copy; every other page
+// uses the shared wording.
+interface BespokeServiceBandProps {
+  heading?: string
+  description?: string
+}
+
+withDefaults(defineProps<BespokeServiceBandProps>(), {
+  heading: BESPOKE_SERVICE_COPY.heading,
+  description: '',
+})
 </script>
 
 <template>
