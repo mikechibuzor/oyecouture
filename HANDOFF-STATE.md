@@ -35,6 +35,26 @@ The dropdown now opens on **hover and click**. Bug fixed: hover opened it, then 
 ### ✅ M1 motion foundation — DONE by Claude (`d2544dc`), claim released
 Shipped: `design-system/_motion.scss` tokens, the global `prefers-reduced-motion` block, site-wide `:active` tap feedback, the three existing transitions retuned to tokens, and the **marquee WCAG 2.2.2 fix**. Codex is clear to work anywhere again. **From now on, all timing/easing must come from `_motion.scss` tokens — no raw `ms` or `cubic-bezier()` in component files** (currently zero remain outside the token file; keep it that way). M2 transactional motion (cart drawer, 4-state action button, wishlist, S3 WhatsApp confirm) ships *with* the cart in Milestone B — build it from `07-MOTION-AND-MICROINTERACTIONS.md` §4.4–4.5 rather than retrofitting.
 
+### 🔍 DESIGN AUDIT (Claude, 30 Jul) — findings + status
+Compared every page against `design-source/` by extracting rendered text and computed styles from both sides.
+
+**FIXED (`3678100`):**
+- Category pages ×4 restored to the approved design: light `#f4f0ec` band, `Home / X` breadcrumb, left-aligned **40px/700 sentence-case** H1 (was a dark hero with an uppercase title + invented eyebrow), the design's real descriptions, and per-section chips (Suits `Three-Piece/Two-Piece/Blazers`, Trad `Kaftans/Agbada/Aso-Oke`, Casuals none). Removed the invented `The Collection / X Collection` heading and the sort control (design has neither on category pages).
+- **`StorefrontBespokeServiceBand`** added to the layout — it appears above the footer on *every* design page and was missing entirely. Symbol SVG, champagne eyebrow (`--tracking-section`), 34px/500 `#f3eee6` heading, champagne 47px button.
+- Cart WhatsApp copy now matches the design's voice ("Hi Oyecouture! I'd like to order the following:" … "Please confirm availability, sizing and delivery details.") with `x1` quantities.
+
+**STILL OUTSTANDING:**
+1. **`/about` 404s — the entire About page is unbuilt.** Design has hero "YOUR CLOTHING SPEAKS / LONG BEFORE YOU DO", tab nav, and four sections (01 Our Story, 02 The Oyecouture Symbol incl. the CONFIDENCE/SIMPLICITY/CLASS/YOU grid, 03 Craftsmanship, 04 Mission & Vision). All copy is in the design; the footer links to it from four places.
+2. **Home shows 27 products; the design shows a curated 13** (monarch, sovereign, regent, agbada, heritage, emir, senator, classic, linen, polo, heir, fila, chino). Needs a product decision — full catalogue or curated.
+3. Sort labels use `Price: Low to High`; design uses `Price · Low to High` (middot), and the design has no "Sort by" label.
+4. `/checkout` still 404s (step 11).
+
+**VERIFIED CORRECT:** announcement bar · nav + dropdowns · footer (every column/link/legal line) · product detail structure and copy · product card structure.
+
+**KEPT (previously user-approved deviations):** `Explore Oyecouture / Shop By Category` on Home; the Add-to-Bag icon.
+
+**Bespoke rule confirmed:** WhatsApp routing keys off `hasSizes === false` (17 products: all suits + trad), **not** `tag === 'Bespoke'` (only 3). Verified the design behaves the same — `emir` is untagged yet its cart CTA is "CONFIRM ORDER ON WHATSAPP". Using the tag would send 14 unsized products to card checkout with no measurements.
+
 ## Done & verified
 - Handoff docs `00`–`06`, `catalogue/`, `design-source/`, `reference-docs/` are complete and current.
 - Git repository initialized on `main`; commits authored as `mikechibuzor` with no co-author trailers.
