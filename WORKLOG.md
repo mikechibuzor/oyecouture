@@ -5,6 +5,12 @@ One short entry per work session or meaningful chunk. Format:
 
 ---
 
+## 2026-07-30T11:40:00+01:00 · Claude · Cart + bespoke WhatsApp confirmation (Milestone B steps 8–9)
+- **Did:** Guest cart shipped (`68b168a`). `useCart` (useState, SSR-safe) + `plugins/cart.client.ts` for localStorage with a per-field validator; `CartDrawer` (430px, matches the approved design) + `CartCheckoutAction`; nav bag badge; Add-to-Bag wired on grid and detail. **The RTW/bespoke split is enforced in the cart:** any bespoke line routes the whole bag to a prefilled `wa.me` deep link; RTW-only routes to `/checkout`. Line key is `slug::size`, so the same shirt in M and L are two lines but the same shirt twice merges to qty 2.
+- **State:** 14 cases verified live — persistence across reload, merge-vs-split by size, mixed-cart routing, RTW-only routing, quantity clamp (max 10, + disables), corrupt-JSON recovery, invalid-line rejection **with storage self-cleaning on load**, empty state, Escape close, body-scroll lock/restore, and a sized product from the grid routing to the detail page instead of guessing a size. SCSS compiles, `go build`/`go test` pass, zero console errors. Found and fixed two real bugs mid-test: a missing `WHATSAPP_NUMBER` produced a broken `wa.me/?text=` link (CTA now disables when unconfigured), and sanitised data was not written back to storage.
+- **Next:** `/checkout` route does not exist yet — the RTW CTA currently points at a 404. That is step 11. Step 10 (persisting the order server-side + measurement form) also still open.
+- **Blockers:** None for step 10/11. Nomba + Resend credentials still gate payments and emails.
+
 ## 2026-07-30T09:05:00+01:00 · Claude · Fixed nav dropdown hover/click conflict
 - **Did:** Fixed the reported wart where hovering opened the menu and the next click closed it (with the pointer still inside, no `mouseenter` could reopen it). `useStorefrontNavigation` now tracks `pointerItemId`; `toggleDropdown` will not close a menu the pointer is holding open, while keyboard/touch activation still toggles. Committed `7848780`.
 - **State:** Verified live through all five paths: hover opens → click keeps it open → pointer-leave closes → click with no pointer opens → click again closes. SCSS compiles; no console errors.

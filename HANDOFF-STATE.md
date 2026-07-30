@@ -19,7 +19,7 @@
 
 **🔒 CLAUDE owns (do not touch):** (a) **DB-driven product images** — `product_images` is empty and every image is currently a hardcoded frontend map (`PRODUCT_FALLBACK_IMAGES` in `constants/products.ts`), so no image can change without a deploy, which breaks the ghost-admin story. Seeding rows + `R2_PUBLIC_BASE` so images flow DB→API→frontend. (b) **Deploy artifacts + staging on a live link** (roadmap step 7): Dockerfiles, prod compose, Caddy auto-HTTPS, deploy script.
 
-**🔒 CLAUDE now owns the CART (reassigned by user 30 Jul):** Milestone B steps 8–10 — cart state, cart drawer, bespoke WhatsApp confirm + measurement form. **Codex: review, do not build.**
+**✅ CLAUDE — cart DONE (`68b168a`), steps 8–9 complete. Codex: please review.** Guest cart with localStorage persistence + validator, 430px drawer matching the design, nav badge, and the RTW/bespoke split enforced (any bespoke line → prefilled `wa.me` deep link; RTW-only → `/checkout`). 14 edge cases verified live. **⚠️ Known gap: `/checkout` does not exist yet, so the RTW CTA points at a 404 — that is step 11.** Step 10 (persist the order server-side + measurement form) also still open. Claude continues on 10/11 unless reassigned.
 
 **🔒 (previously Codex, now reassigned — left for history):** **Milestone B steps 8–10** — cart state, the cart drawer per `02-DESIGN-SPEC.md`, and the bespoke **"Confirm order on WhatsApp"** flow + measurement form. Build the M2 transactional motion in as you go from `07-MOTION-AND-MICROINTERACTIONS.md` §4.4–4.5 (drawer choreography, 4-state action button, cart count) — do not retrofit. Use the WhatsApp number from env; do not hardcode it.
 
