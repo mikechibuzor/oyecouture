@@ -29,6 +29,7 @@ const closeSearchOverlay = (): void => {
     <main class="storefront-main">
       <slot />
     </main>
+    <StorefrontBespokeServiceBand />
     <StorefrontFooter />
     <CartDrawer />
     <StorefrontSearchOverlay

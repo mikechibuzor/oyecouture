@@ -30,6 +30,12 @@ export const STOREFRONT_COPY = {
   },
 } as const
 
+export const BESPOKE_SERVICE_COPY = {
+  eyebrow: 'The Bespoke Service',
+  heading: 'Prefer a piece made to a single measure — yours?',
+  action: 'Book an Appointment',
+} as const
+
 export const STOREFRONT_NAVIGATION: readonly StorefrontNavigationItem[] = [
   {
     id: StorefrontNavigationItemId.Home,

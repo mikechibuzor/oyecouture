@@ -10,19 +10,23 @@ export const buildWhatsAppOrderUrl = (
   lines: readonly CartLine[],
   subtotalKobo: number,
 ): string => {
+  // Wording follows the approved design: "Hi Oyecouture! …" with x-quantity
+  // line items and a closing request to confirm availability and sizing.
   const orderLines = lines.map((line) => {
     const sizeSuffix = line.size ? ` (Size ${line.size})` : ''
     const lineTotal = formatProductPrice(line.priceKobo * line.quantity)
 
-    return `• ${line.name}${sizeSuffix} × ${line.quantity} — ${lineTotal}`
+    return `• ${line.name}${sizeSuffix} x${line.quantity} — ${lineTotal}`
   })
 
   const message = [
-    'Hello Oyecouture, I would like to confirm this order:',
+    "Hi Oyecouture! I'd like to order the following:",
     '',
     ...orderLines,
     '',
     `Subtotal: ${formatProductPrice(subtotalKobo)}`,
+    '',
+    'Please confirm availability, sizing and delivery details.',
   ].join('\n')
 
   // wa.me expects digits only — strip any spacing or leading plus the number

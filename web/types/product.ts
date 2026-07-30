@@ -107,9 +107,10 @@ export interface ProductSortOption {
 
 export interface CategoryPageConfig {
   readonly section: ProductSection
-  readonly eyebrow: string
+  readonly breadcrumb: string
   readonly heading: string
   readonly description: string
+  readonly categories: readonly string[]
 }
 
 export interface CategoryTileConfig {

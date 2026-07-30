@@ -119,34 +119,40 @@ export const CASUAL_PRODUCT_SECTIONS = [
   ProductSection.CasualsWomen,
 ] as const
 
+export const CATEGORY_ALL_FILTER = 'All'
+
 export const CATEGORY_PAGE_BY_SECTION = {
   [ProductSection.Suits]: {
     section: ProductSection.Suits,
-    eyebrow: 'Precision Tailoring',
+    breadcrumb: 'Suits',
     heading: 'Suits',
     description:
-      'Structured silhouettes and considered details, made to a single measure for the rooms that matter.',
+      'Structured tailoring for the rooms where decisions are made — two-piece, three-piece and blazers, cut to a single measure.',
+    categories: ['Three-Piece', 'Two-Piece', 'Blazers'],
   },
   [ProductSection.Trad]: {
     section: ProductSection.Trad,
-    eyebrow: 'Heritage, Reconsidered',
+    breadcrumb: 'Trad Attires',
     heading: 'Trad Attires',
     description:
-      'Aso-oke, agbada and kaftan forms refined through modern proportion and exacting handwork.',
+      "Heritage cloth, cut for the room you're about to enter — kaftans, agbada and aso-oke, each finished by hand.",
+    categories: ['Kaftans', 'Agbada', 'Aso-Oke'],
   },
   [ProductSection.CasualsMen]: {
     section: ProductSection.CasualsMen,
-    eyebrow: 'Ready To Wear',
-    heading: 'Casuals For Men',
+    breadcrumb: 'Casuals · Men',
+    heading: 'Casuals — Men',
     description:
-      'Relaxed shirts, trousers and knitwear with the same discipline as our tailoring.',
+      'Off-duty pieces cut with the same discipline as our tailoring — order online, sized to you.',
+    categories: [],
   },
   [ProductSection.CasualsWomen]: {
     section: ProductSection.CasualsWomen,
-    eyebrow: 'Ready To Wear',
-    heading: 'Casuals For Women',
+    breadcrumb: 'Casuals · Women',
+    heading: 'Casuals — Women',
     description:
-      'Quietly expressive pieces cut for ease, movement and repeat wear.',
+      'Off-duty pieces cut with the same discipline as our tailoring — order online, sized to you.',
+    categories: [],
   },
 } as const satisfies Readonly<Record<ProductSection, CategoryPageConfig>>
 
