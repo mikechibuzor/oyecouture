@@ -7,6 +7,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/uzor-co/oyecouture/api/internal/config"
+	"github.com/uzor-co/oyecouture/api/internal/delivery"
 	"github.com/uzor-co/oyecouture/api/internal/health"
 	"github.com/uzor-co/oyecouture/api/internal/orders"
 	"github.com/uzor-co/oyecouture/api/internal/products"
@@ -21,8 +22,9 @@ func New(applicationConfig config.Config, databasePool *pgxpool.Pool) *http.Serv
 
 	// Orders are priced server-side from the database; the storefront only says
 	// which product, size and quantity.
+	deliveryRepository := delivery.NewRepository(databasePool)
 	orderRepository := orders.NewPostgresRepository(databasePool)
-	orderService := orders.NewService(orderRepository)
+	orderService := orders.NewService(orderRepository, deliveryRepository)
 	orderHandler := orders.NewHandler(orderService)
 
 	requestMux := http.NewServeMux()
@@ -30,6 +32,7 @@ func New(applicationConfig config.Config, databasePool *pgxpool.Pool) *http.Serv
 	requestMux.HandleFunc("GET /products", productHandler.List)
 	requestMux.HandleFunc("GET /products/{slug}", productHandler.GetBySlug)
 	requestMux.HandleFunc("POST /orders", orderHandler.Create)
+	requestMux.HandleFunc("GET /delivery-zones", delivery.NewHandler(deliveryRepository).List)
 
 	return &http.Server{
 		Addr:              applicationConfig.APIAddress,

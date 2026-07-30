@@ -66,8 +66,9 @@ func (repository *PostgresRepository) Create(
 	const insertOrder = `
 		INSERT INTO orders (
 			kind, status, customer_name, email, phone,
+			address, delivery_zone, delivery_fee_kobo,
 			subtotal_kobo, total_kobo, pay_token
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 		RETURNING id, order_no, created_at
 	`
 
@@ -75,6 +76,7 @@ func (repository *PostgresRepository) Create(
 	if err := transaction.QueryRow(
 		requestContext, insertOrder,
 		order.Kind, order.Status, order.CustomerName, input.Email, input.Phone,
+		nullIfEmpty(input.Address), nullIfEmpty(order.DeliveryZone), order.DeliveryFeeKobo,
 		order.SubtotalKobo, order.TotalKobo, order.PayToken,
 	).Scan(&orderID, &order.OrderNo, &order.CreatedAt); err != nil {
 		return fmt.Errorf("insert order: %w", err)
@@ -122,4 +124,13 @@ func (repository *PostgresRepository) Create(
 	}
 
 	return nil
+}
+
+// nullIfEmpty keeps optional columns NULL rather than storing empty strings.
+func nullIfEmpty(value string) any {
+	if value == "" {
+		return nil
+	}
+
+	return value
 }

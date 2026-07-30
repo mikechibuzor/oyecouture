@@ -19,6 +19,8 @@ var (
 	ErrUnknownProduct    = errors.New("product is unavailable")
 	ErrSizeRequired      = errors.New("size is required for this product")
 	ErrSizeNotApplicable = errors.New("size is not applicable to this product")
+	ErrDeliveryRequired  = errors.New("delivery details are required")
+	ErrUnknownZone       = errors.New("delivery zone is not available")
 )
 
 const (
@@ -45,17 +47,23 @@ type CatalogueProduct struct {
 }
 
 // Repository is the persistence contract for order creation.
+// DeliveryRates resolves the fee for a zone, so checkout cannot set its own.
+type DeliveryRates interface {
+	FeeForZone(context.Context, string) (int64, bool, error)
+}
+
 type Repository interface {
 	ProductsBySlugs(context.Context, []string) (map[string]CatalogueProduct, error)
 	Create(context.Context, *Order, []Item, *Measurements, CreateOrderInput) error
 }
 
 type Service struct {
-	repository Repository
+	repository    Repository
+	deliveryRates DeliveryRates
 }
 
-func NewService(repository Repository) *Service {
-	return &Service{repository: repository}
+func NewService(repository Repository, deliveryRates DeliveryRates) *Service {
+	return &Service{repository: repository, deliveryRates: deliveryRates}
 }
 
 // Create validates the request, re-prices every line from the database and
@@ -131,6 +139,26 @@ func (service *Service) Create(
 		})
 	}
 
+	// Ready-to-wear ships from a chosen zone; the fee comes from the database.
+	var deliveryFeeKobo int64
+	deliveryZone := strings.TrimSpace(input.DeliveryZone)
+	address := strings.TrimSpace(input.Address)
+
+	if orderKind == KindReadyToWear {
+		if address == "" || deliveryZone == "" {
+			return Order{}, ErrDeliveryRequired
+		}
+
+		fee, zoneExists, err := service.deliveryRates.FeeForZone(requestContext, deliveryZone)
+		if err != nil {
+			return Order{}, fmt.Errorf("resolve delivery zone: %w", err)
+		}
+		if !zoneExists {
+			return Order{}, ErrUnknownZone
+		}
+		deliveryFeeKobo = fee
+	}
+
 	payToken, err := newPayToken()
 	if err != nil {
 		return Order{}, fmt.Errorf("generate pay token: %w", err)
@@ -143,15 +171,15 @@ func (service *Service) Create(
 	}
 
 	order := Order{
-		Kind:         orderKind,
-		Status:       status,
-		CustomerName: strings.TrimSpace(input.CustomerName),
-		Items:        items,
-		SubtotalKobo: subtotalKobo,
-		// Delivery is added at checkout for ready-to-wear and agreed on
-		// WhatsApp for bespoke, so the total starts equal to the subtotal.
-		TotalKobo: subtotalKobo,
-		PayToken:  payToken,
+		Kind:            orderKind,
+		Status:          status,
+		CustomerName:    strings.TrimSpace(input.CustomerName),
+		Items:           items,
+		SubtotalKobo:    subtotalKobo,
+		DeliveryZone:    deliveryZone,
+		DeliveryFeeKobo: deliveryFeeKobo,
+		TotalKobo:       subtotalKobo + deliveryFeeKobo,
+		PayToken:        payToken,
 	}
 
 	if err := service.repository.Create(

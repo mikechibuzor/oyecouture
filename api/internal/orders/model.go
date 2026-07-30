@@ -60,6 +60,9 @@ type CreateOrderInput struct {
 	Phone        string          `json:"phone"`
 	Items        []RequestedItem `json:"items"`
 	Measurements *Measurements   `json:"measurements"`
+	// Ready-to-wear only: bespoke delivery is agreed on WhatsApp.
+	Address      string `json:"address"`
+	DeliveryZone string `json:"deliveryZone"`
 }
 
 // Item is a persisted order line, priced by the server.
@@ -75,13 +78,15 @@ type Item struct {
 
 // Order is the created order as returned to the storefront.
 type Order struct {
-	OrderNo      string    `json:"orderNo"`
-	Kind         Kind      `json:"kind"`
-	Status       Status    `json:"status"`
-	CustomerName string    `json:"customerName"`
-	Items        []Item    `json:"items"`
-	SubtotalKobo int64     `json:"subtotalKobo"`
-	TotalKobo    int64     `json:"totalKobo"`
-	PayToken     string    `json:"payToken"`
-	CreatedAt    time.Time `json:"createdAt"`
+	OrderNo         string    `json:"orderNo"`
+	Kind            Kind      `json:"kind"`
+	Status          Status    `json:"status"`
+	CustomerName    string    `json:"customerName"`
+	Items           []Item    `json:"items"`
+	SubtotalKobo    int64     `json:"subtotalKobo"`
+	DeliveryZone    string    `json:"deliveryZone,omitempty"`
+	DeliveryFeeKobo int64     `json:"deliveryFeeKobo"`
+	TotalKobo       int64     `json:"totalKobo"`
+	PayToken        string    `json:"payToken"`
+	CreatedAt       time.Time `json:"createdAt"`
 }

@@ -1,4 +1,5 @@
 export const API_ROUTES = {
+  deliveryZones: '/delivery-zones',
   health: '/healthz',
   orders: '/orders',
   products: '/products',

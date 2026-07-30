@@ -15,6 +15,7 @@ const (
 	ErrorCodeInvalidBody     ErrorCode = "invalid_body"
 	ErrorCodeInvalidCustomer ErrorCode = "invalid_customer"
 	ErrorCodeInvalidItems    ErrorCode = "invalid_items"
+	ErrorCodeInvalidDelivery ErrorCode = "invalid_delivery"
 	ErrorCodeUnavailable     ErrorCode = "product_unavailable"
 	ErrorCodeInternal        ErrorCode = "internal_error"
 )
@@ -83,6 +84,10 @@ func (handler *Handler) writeServiceError(responseWriter http.ResponseWriter, se
 		errors.Is(serviceError, ErrSizeNotApplicable):
 		writeError(responseWriter, http.StatusBadRequest, ErrorCodeInvalidItems,
 			"the bag contains an item we cannot order")
+	case errors.Is(serviceError, ErrDeliveryRequired),
+		errors.Is(serviceError, ErrUnknownZone):
+		writeError(responseWriter, http.StatusBadRequest, ErrorCodeInvalidDelivery,
+			"please add a delivery address and choose a delivery area")
 	case errors.Is(serviceError, ErrUnknownProduct):
 		writeError(responseWriter, http.StatusConflict, ErrorCodeUnavailable,
 			"one of the pieces is no longer available")

@@ -1,0 +1,29 @@
+export const CHECKOUT_COPY = {
+  breadcrumb: 'Checkout',
+  heading: 'Checkout',
+  description:
+    'Ready-to-wear pieces ship in your chosen size. Add your delivery details and we will confirm your order.',
+  contactHeading: 'Your details',
+  name: 'Full name',
+  email: 'Email address',
+  phone: 'Phone number',
+  deliveryHeading: 'Delivery',
+  address: 'Delivery address',
+  zone: 'Delivery area',
+  zonePlaceholder: 'Select a delivery area',
+  zoneHint: 'International delivery is arranged with us directly after your order.',
+  summaryHeading: 'Your order',
+  subtotal: 'Subtotal',
+  delivery: 'Delivery',
+  total: 'Total',
+  submit: 'Place order',
+  submitting: 'Placing order…',
+  // Payment is wired once the client supplies Nomba credentials.
+  paymentNote: 'We will send a secure payment link to confirm your order.',
+  successEyebrow: 'Order received',
+  successHeading: 'Thank you — your order is in',
+  successBody:
+    'Quote this reference in any message to us. We will send a secure payment link shortly to confirm it.',
+  successAction: 'Continue shopping',
+  errorFallback: 'We could not place that order. Please try again.',
+} as const

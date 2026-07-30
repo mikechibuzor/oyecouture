@@ -294,3 +294,33 @@ $confirm-width: 68rem;
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
+
+// Checkout reuses the confirm layout, with an itemised total.
+.checkout-line {
+  display: flex;
+  padding-bottom: var(--space-xs);
+  align-items: baseline;
+  justify-content: space-between;
+  color: var(--color-ink-soft);
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-light);
+}
+
+.checkout-payment-note {
+  margin: var(--space-md) 0 0;
+  color: var(--color-taupe);
+  font-size: var(--text-xs);
+  line-height: 1.6;
+  text-align: center;
+}
+
+.confirm-fields select {
+  min-height: 2.875rem;
+  padding: 0 var(--space-sm);
+  border: 1px solid var(--color-border);
+  border-radius: 0;
+  color: var(--color-ink);
+  background: var(--color-white);
+  font: inherit;
+  font-size: var(--text-sm);
+}

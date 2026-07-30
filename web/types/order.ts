@@ -24,12 +24,24 @@ export interface MeasurementsRequest {
   notes: string
 }
 
+export interface DeliveryZone {
+  readonly name: string
+  readonly feeKobo: number
+}
+
+export interface DeliveryZonesResponse {
+  readonly zones: readonly DeliveryZone[]
+}
+
 export interface CreateOrderRequest {
   readonly customerName: string
   readonly email: string
   readonly phone: string
   readonly items: readonly OrderItemRequest[]
   readonly measurements: MeasurementsRequest | null
+  // Ready-to-wear only; bespoke delivery is agreed on WhatsApp.
+  readonly address?: string
+  readonly deliveryZone?: string
 }
 
 export interface OrderItem {
@@ -48,6 +60,8 @@ export interface Order {
   readonly customerName: string
   readonly items: readonly OrderItem[]
   readonly subtotalKobo: number
+  readonly deliveryZone?: string
+  readonly deliveryFeeKobo: number
   readonly totalKobo: number
   readonly payToken: string
   readonly createdAt: string
