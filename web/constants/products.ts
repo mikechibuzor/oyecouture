@@ -95,8 +95,8 @@ export const CATALOGUE_FILTER_OPTIONS = [
 
 export const PRODUCT_SORT_OPTIONS = [
   { id: ProductSortId.Featured, label: 'Featured' },
-  { id: ProductSortId.PriceAscending, label: 'Price: Low to High' },
-  { id: ProductSortId.PriceDescending, label: 'Price: High to Low' },
+  { id: ProductSortId.PriceAscending, label: 'Price · Low to High' },
+  { id: ProductSortId.PriceDescending, label: 'Price · High to Low' },
   { id: ProductSortId.Newest, label: 'Newest' },
 ] as const satisfies readonly ProductSortOption[]
 

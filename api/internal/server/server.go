@@ -8,6 +8,7 @@ import (
 
 	"github.com/uzor-co/oyecouture/api/internal/config"
 	"github.com/uzor-co/oyecouture/api/internal/health"
+	"github.com/uzor-co/oyecouture/api/internal/orders"
 	"github.com/uzor-co/oyecouture/api/internal/products"
 )
 
@@ -18,10 +19,17 @@ func New(applicationConfig config.Config, databasePool *pgxpool.Pool) *http.Serv
 	productService := products.NewService(productRepository, applicationConfig.R2PublicBase)
 	productHandler := products.NewHandler(productService)
 
+	// Orders are priced server-side from the database; the storefront only says
+	// which product, size and quantity.
+	orderRepository := orders.NewPostgresRepository(databasePool)
+	orderService := orders.NewService(orderRepository)
+	orderHandler := orders.NewHandler(orderService)
+
 	requestMux := http.NewServeMux()
 	requestMux.Handle("GET /healthz", health.NewHandler(databasePool))
 	requestMux.HandleFunc("GET /products", productHandler.List)
 	requestMux.HandleFunc("GET /products/{slug}", productHandler.GetBySlug)
+	requestMux.HandleFunc("POST /orders", orderHandler.Create)
 
 	return &http.Server{
 		Addr:              applicationConfig.APIAddress,
@@ -40,7 +48,7 @@ func allowOrigin(allowedOrigin string, next http.Handler) http.Handler {
 		}
 
 		if request.Method == http.MethodOptions {
-			responseWriter.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+			responseWriter.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 			responseWriter.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 			responseWriter.WriteHeader(http.StatusNoContent)
 			return
