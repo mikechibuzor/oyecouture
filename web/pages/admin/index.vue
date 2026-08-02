@@ -60,10 +60,46 @@ const filterValues = computed<AdminOrderFilterValues>(() => ({
   to: toFilter.value,
 }))
 
+// The visible row range reads as "1-10 of 30" in the table footer.
 const rangeStart = computed(() => (total.value === 0 ? 0 : offset.value + 1))
+
+// The visible range ends at the number of rows actually loaded on this page.
 const rangeEnd = computed(() => offset.value + orders.value.length)
+
+// Pagination controls disable themselves at the list boundaries.
 const canGoBack = computed(() => offset.value > 0)
 const canGoForward = computed(() => rangeEnd.value < total.value)
+
+// Current page derives from offset so direct page jumps and next/previous agree.
+const currentPage = computed(() => Math.floor(offset.value / ADMIN_ORDERS_PAGE_SIZE) + 1)
+
+// Total pages bottoms out at one so the pagination area never divides by zero.
+const totalPages = computed(() =>
+  Math.max(1, Math.ceil(total.value / ADMIN_ORDERS_PAGE_SIZE)),
+)
+
+// The owner gets nearby pages plus first/last; ellipses keep large lists tidy.
+const paginationItems = computed<(number | 'ellipsis')[]>(() => {
+  const pages = new Set<number>([1, totalPages.value])
+
+  for (let page = currentPage.value - 1; page <= currentPage.value + 1; page += 1) {
+    if (page >= 1 && page <= totalPages.value) {
+      pages.add(page)
+    }
+  }
+
+  const sortedPages = [...pages].sort((firstPage, secondPage) => firstPage - secondPage)
+  return sortedPages.reduce<(number | 'ellipsis')[]>((items, page, index) => {
+    const previousPage = sortedPages[index - 1]
+
+    if (previousPage !== undefined && page - previousPage > 1) {
+      items.push('ellipsis')
+    }
+
+    items.push(page)
+    return items
+  }, [])
+})
 
 // A request counter, not a boolean: a slow early response must not overwrite a
 // fresher one when the owner types quickly.
@@ -160,6 +196,16 @@ const goToPreviousPage = (): void => {
   void load()
 }
 
+// Moves directly to one numbered page.
+const goToPage = (page: number): void => {
+  if (page === currentPage.value) {
+    return
+  }
+
+  offset.value = (page - 1) * ADMIN_ORDERS_PAGE_SIZE
+  void load()
+}
+
 const goToNextPage = (): void => {
   offset.value += ADMIN_ORDERS_PAGE_SIZE
   void load()
@@ -219,6 +265,20 @@ onMounted(() => {
     />
 
     <div class="admin-toolbar">
+      <div class="admin-toolbar-filters">
+        <AdminTableFilter
+          :options="ADMIN_ORDER_FILTER_OPTIONS"
+          :values="filterValues"
+          @update="updateFilter"
+        />
+        <AdminAppliedFilters
+          :options="ADMIN_ORDER_FILTER_OPTIONS"
+          :values="filterValues"
+          @remove="removeFilter"
+          @clear="clearFilters"
+        />
+      </div>
+
       <label class="admin-search">
         <span class="visually-hidden">{{ ADMIN_COPY.searchLabel }}</span>
         <StorefrontIcon
@@ -233,20 +293,6 @@ onMounted(() => {
           :placeholder="ADMIN_COPY.searchPlaceholder"
         >
       </label>
-
-      <div class="admin-toolbar-filters">
-        <AdminTableFilter
-          :options="ADMIN_ORDER_FILTER_OPTIONS"
-          :values="filterValues"
-          @update="updateFilter"
-        />
-        <AdminAppliedFilters
-          :options="ADMIN_ORDER_FILTER_OPTIONS"
-          :values="filterValues"
-          @remove="removeFilter"
-          @clear="clearFilters"
-        />
-      </div>
     </div>
 
     <p v-if="isLoading" class="admin-orders-message">{{ ADMIN_COPY.loading }}</p>
@@ -326,15 +372,30 @@ onMounted(() => {
         <div class="admin-pagination-controls">
           <button
             type="button"
-            class="admin-inline-action"
+            class="admin-pagination-button"
             :disabled="!canGoBack"
             @click="goToPreviousPage"
           >
             {{ ADMIN_COPY.previous }}
           </button>
+
+          <template v-for="(item, index) in paginationItems" :key="`${item}-${index}`">
+            <span v-if="item === 'ellipsis'" class="admin-pagination-ellipsis">…</span>
+            <button
+              v-else
+              type="button"
+              class="admin-pagination-button is-number"
+              :class="{ 'is-current': item === currentPage }"
+              :aria-current="item === currentPage ? 'page' : undefined"
+              @click="goToPage(item)"
+            >
+              {{ item }}
+            </button>
+          </template>
+
           <button
             type="button"
-            class="admin-inline-action"
+            class="admin-pagination-button"
             :disabled="!canGoForward"
             @click="goToNextPage"
           >
