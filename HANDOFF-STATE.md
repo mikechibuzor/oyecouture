@@ -12,6 +12,23 @@
 - **Repo / branch:** `/Users/chibuzoriwuagwu/Downloads/share/oyecouture` · `main`.
 - **Last implementation commits:** `2be9f3c` (row-click order detail navigation), `ac24935` (metrics/table alignment polish), `9619edc` (responsive admin filter popover), `d701dfd` (order detail/actions), `a8a372c` (order desk pagination + microinteractions), `966392e` (orders metrics + VBAN-style filters), `fddbe22` (admin orders desk), `93c564c` (admin orders API), `22065c9` (admin authentication).
 
+## 🔍 PAYMENTS REVIEW (Claude, 2 Aug) — passed, with two items to decide
+
+Reviewed `internal/payments` end to end against the running stack. **The money path is sound.** Verified, not assumed:
+- **Amount and currency are checked server-side** against *both* the stored attempt and the order total (`repository.go`), so neither a tampered attempt nor a repriced order can confirm.
+- **Row-locked** (`FOR UPDATE OF pa, o`) and idempotent — an already-`paid` order commits without reprocessing.
+- **Cross-order references are blocked**: the callback binds the reference to the order behind the `payToken`.
+- **The webhook never trusts its own payload for money** — it takes only the reference and re-verifies against Paystack's API. Signature is HMAC-SHA512 over the **raw body**, compared with `hmac.Equal`, checked *before* parsing. Forged and unsigned webhooks both 401 (verified live).
+- **`paid` cannot be set by hand.** `PATCH /admin/orders/{no}/status` rejects `paid` and illegal transitions with 400, and 401s unauthenticated — enforced in the API, not just hidden in the UI (verified live).
+- Secret key is never logged, `.env` is gitignored and was never committed, `.env.example` holds empty placeholders.
+- Public `GET /payments/{payToken}` excludes email, phone, pay token and order id via `json:"-"`.
+
+**FIXED (`d29c830`):** the amount/currency guard had **no test** — the service tests stub the repository, so the single most important money check was never exercised. Extracted it as `verificationMatchesOrder` and covered underpayment, overpayment, zero, tampered attempt, repriced order and three currency cases. Confirmed real by removing the guard: six cases fail without it.
+
+**▶ TWO ITEMS FOR THE USER TO DECIDE (not bugs, do not silently "fix"):**
+1. **Webhook retry storm on terminal errors.** A correctly-signed webhook whose reference we do not know returns **500** (verified live), so Paystack retries it indefinitely. Same for amount mismatch and a non-payable order — none of which retrying can ever resolve, and an amount mismatch is a fraud signal that should alert rather than loop. Transient failures (DB down, Paystack unreachable) *should* keep returning 500. Suggested fix: acknowledge terminal errors with 200 and log/alert; keep 500 only for transient ones. **Not yet live** — no public webhook URL is registered, so this cannot bite before deploy.
+2. **`payment_attempts.provider_payload` stores Paystack's entire verify response.** That includes the customer's `email`, `phone`, `ip_address`, and an `authorization` object with `bin`, `last4`, `exp_month`, `exp_year`, `bank`, `account_name`, `receiver_bank_account_number` and a reusable `authorization_code`. No full PAN, so not PCI cardholder data, but it widens the blast radius of a database leak and is customer PII under Nigerian data-protection rules with no retention policy. Suggested: persist a trimmed payload (status, amount, currency, reference, paid_at, gateway_response, channel, last4/card_type for support) instead of the whole blob.
+
 ## ▶ Next action — ghost admin, phase 2 product/content management (Codex, 2 Aug)
 **Remember what the ghost admin is:** a full admin layer built in phase 1 but **not billed and not revealed** to the client, who declined it. Pre-priced at ₦300k as an add-on for when they ask. It must be genuinely usable, not a stub — that is the whole point.
 

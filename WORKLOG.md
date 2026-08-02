@@ -5,6 +5,13 @@ One short entry per work session or meaningful chunk. Format:
 
 ---
 
+## 2026-08-02T17:20:00+01:00 · Claude · Review of Codex's ghost admin + Paystack work
+- **Did:** Reviewed `internal/payments` and the ghost admin against the running stack rather than reading only. Confirmed live: forged/unsigned webhooks 401; `PATCH .../status` refuses `paid` and illegal transitions with 400 and 401s unauthenticated, with the DB row unchanged; admin list/detail/metrics 200; unknown pay token 404. Confirmed by reading: amount **and** currency checked against both attempt and order total, `FOR UPDATE OF pa, o` locking, idempotent re-confirmation, cross-order reference binding, webhook signature over the raw body with `hmac.Equal` before parsing, secret never logged, `.env` never committed, PII excluded from the public payment JSON.
+- **Fixed (`d29c830`):** the amount/currency guard had no test — the service tests stub the repository, so it was never exercised. Extracted `verificationMatchesOrder` as a pure function and covered 10 cases (underpayment, one kobo short, overpayment, zero, tampered attempt, repriced order, three currency cases). Mutation-checked: removing the guard fails six of them.
+- **State:** `gofmt`, `go vet`, `go test ./...` and `vue-tsc --noEmit` all clean. Migrations at version 8, not dirty. Codex's work is good — the money path is the strongest code in the repo.
+- **Next:** Two decisions recorded in `HANDOFF-STATE.md` for the user, neither a silent fix: (1) terminal webhook errors return 500 and so retry forever — acknowledge with 200 and alert instead, keeping 500 for transient failures; (2) `provider_payload` stores Paystack's full response including customer email/phone/IP and card metadata with a reusable `authorization_code` — consider persisting a trimmed payload. Neither blocks phase 2.
+- **Blockers:** unchanged — public HTTPS URL for real webhook delivery, remaining launch credentials/content.
+
 ## 2026-08-02T16:26:35+01:00 · Codex · Paystack duplicate-charge guard
 - **Did:** Added Paystack initialize idempotency: unpaid orders now reuse an existing initialized Paystack checkout URL/reference, and migration `000008` enforces one initialized payment attempt per order with a partial unique index. Concurrent initialize races now fail the losing local attempt and return the surviving checkout URL.
 - **State:** Verified `go test ./...`, `go test ./internal/payments`, `npx vue-tsc --noEmit -p tsconfig.json`, `git diff --check`, local migration index creation, and two near-simultaneous initialize calls for `OYE-1068` returning the same reference/URL.
