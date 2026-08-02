@@ -26,6 +26,17 @@ for required in SITE_HOST ACME_EMAIL POSTGRES_PASSWORD; do
   fi
 done
 
+# The password is interpolated into DATABASE_URL, so URL-reserved characters
+# corrupt the connection string. Caught here because the failure otherwise
+# appears only as an API crash loop after a full build.
+POSTGRES_PASSWORD_VALUE="$(grep -E '^POSTGRES_PASSWORD=' "$ENV_FILE" | head -1 | cut -d= -f2-)"
+if printf '%s' "$POSTGRES_PASSWORD_VALUE" | grep -q '[/@:?#]'; then
+  echo "error: POSTGRES_PASSWORD contains a URL-reserved character (/ @ : ? #)." >&2
+  echo "       It is interpolated into DATABASE_URL and will break it." >&2
+  echo "       Generate a safe one with: openssl rand -hex 32" >&2
+  exit 1
+fi
+
 echo "==> Building images"
 docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" build
 

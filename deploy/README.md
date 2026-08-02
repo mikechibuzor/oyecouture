@@ -44,7 +44,7 @@ systemctl restart ssh
 su - deploy
 git clone <repo-url> oyecouture && cd oyecouture
 cp .env.production.example .env.production
-openssl rand -base64 32   # use for POSTGRES_PASSWORD
+openssl rand -hex 32   # use for POSTGRES_PASSWORD (hex: URL-safe)
 nano .env.production
 ```
 
