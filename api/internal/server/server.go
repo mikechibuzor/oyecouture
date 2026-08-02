@@ -58,6 +58,11 @@ func New(applicationConfig config.Config, databasePool *pgxpool.Pool) *http.Serv
 		http.HandlerFunc(adminHandler.Me),
 	))
 
+	adminOrderHandler := orders.NewAdminHandler(orders.NewAdminService(orderRepository))
+	requestMux.Handle("GET /admin/orders", adminHandler.RequireSession(
+		http.HandlerFunc(adminOrderHandler.List),
+	))
+
 	return &http.Server{
 		Addr:              applicationConfig.APIAddress,
 		Handler:           allowOrigin(applicationConfig.WebBaseURL, requestMux),
