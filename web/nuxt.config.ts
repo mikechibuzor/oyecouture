@@ -20,6 +20,14 @@ export default defineNuxtConfig({
       whatsappNumber: process.env.WHATSAPP_NUMBER || '',
     },
   },
+  // The ghost admin is private: it renders in the browser only, so no admin
+  // markup is ever produced server-side, and it is never indexed.
+  routeRules: {
+    '/admin/**': {
+      ssr: false,
+      headers: { 'X-Robots-Tag': 'noindex, nofollow' },
+    },
+  },
   typescript: {
     strict: true,
     typeCheck: true,

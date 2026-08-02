@@ -77,6 +77,10 @@ func allowOrigin(allowedOrigin string, next http.Handler) http.Handler {
 		if request.Header.Get("Origin") == allowedOrigin {
 			responseWriter.Header().Set("Access-Control-Allow-Origin", allowedOrigin)
 			responseWriter.Header().Set("Vary", "Origin")
+			// The admin session cookie only travels on credentialed requests.
+			// Development runs the storefront and API on different ports; in
+			// production Caddy serves both from one origin and CORS never applies.
+			responseWriter.Header().Set("Access-Control-Allow-Credentials", "true")
 		}
 
 		if request.Method == http.MethodOptions {
