@@ -5,6 +5,12 @@ One short entry per work session or meaningful chunk. Format:
 
 ---
 
+## 2026-08-02T14:35:40+01:00 · Codex · Ghost admin 1.2 — VBAN-style orders filters
+- **Did:** Recovered Claude's in-progress ghost-admin orders work, confirmed the real repo is `/Users/chibuzoriwuagwu/Downloads/share/oyecouture`, inspected the VBAN reference filter, and committed `966392e` with order metrics, date-range API support, a single Filter button with status/type/from/to categories, applied filter chips, admin sidebar/metric cards, and shared select polish.
+- **State:** `go test ./...`, `npx vue-tsc --noEmit -p tsconfig.json`, and `git diff --check` pass. `npm run typecheck`/`npm run build` still hit the known local Nuxt `oxc-walker`/`oxc-parser` parser-resolution issue after escalation, so they were not treated as source failures.
+- **Next:** Build order detail/actions: authenticated detail endpoint/page, line items, contact/address, measurements, totals, copy `/pay/<token>`, status transitions, and one-tap WhatsApp reply. Keep `paid` server-verified only.
+- **Blockers:** Nomba sandbox keys, Resend API key, real WhatsApp number, and netcup server/deploy remain unchanged.
+
 ## 2026-08-02T00:00:00+01:00 · Claude · Ghost admin 1.1 — authentication
 - **Did:** Migration `000006` creating `admin_users` + `admin_sessions`; `internal/admin` (auth service, store, handler, `RequireSession`); `cmd/admin` CLI to seed or reset the owner account; routes `POST /admin/login`, `POST /admin/logout`, `GET /admin/me` wired in `server.go` with a startup goroutine sweeping expired sessions (`22065c9`).
 - **State:** Verified live end to end — 401 without a cookie, identical error for unknown email and wrong password (with a dummy bcrypt compare so timing does not leak which accounts exist), HttpOnly cookie set, `/admin/me` 200 with it, logout 204 with the row deleted server-side, lockout after 8 failed attempts. Password is bcrypt cost 12 in the DB; **nothing secret in `.env`**. `go test ./...` passes.
