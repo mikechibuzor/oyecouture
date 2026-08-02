@@ -5,6 +5,12 @@ One short entry per work session or meaningful chunk. Format:
 
 ---
 
+## 2026-08-02T20:30:30+01:00 · Codex · Polished paid-order email templates
+- **Did:** Reworked the order confirmation and payment receipt templates with a premium image-free Oyecouture wordmark, warmer framed layout, preheaders, summary/status blocks, cleaner totals, and a fulfilment note. Removed reliance on a hosted logo so SendByte/local previews no longer show a broken image.
+- **State:** Verified `go test ./...` and `git diff --check`; new test asserts paid-order emails do not include external `<img>` tags and do include the brand wordmark.
+- **Next:** Restart API, then create a new paid test order to view the updated templates in SendByte. Existing sent orders keep their original template because outbox idempotency prevents duplicate sends.
+- **Blockers:** Live inbox delivery still needs SendByte live key + verified sender/domain.
+
 ## 2026-08-02T19:55:06+01:00 · Codex · SendByte paid-order emails
 - **Did:** Implemented SendByte transactional email after verified Paystack payment: two separate customer emails (order confirmation + payment receipt), `outbound_emails` outbox/audit table, deterministic idempotency keys, stale-pending retry recovery, local HTML/text templates with Oyecouture branding, and payment-service hooks for callback/webhook settlement.
 - **State:** SendByte sandbox key is only in ignored `.env`; committed env files have placeholders. Verified `go test ./...`, `npx vue-tsc --noEmit -p tsconfig.json`, `npm run build` on Node `22.23.1`, and `git diff --check`. No real/sandbox email was sent in this session.

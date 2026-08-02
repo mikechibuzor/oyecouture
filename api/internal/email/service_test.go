@@ -2,6 +2,7 @@ package email
 
 import (
 	"context"
+	"strings"
 	"testing"
 )
 
@@ -28,6 +29,14 @@ func TestSendPaidOrderEmailsSendsConfirmationAndReceipt(t *testing.T) {
 	}
 	if provider.messages[0].HTML == "" || provider.messages[0].Text == "" {
 		t.Fatal("confirmation email did not include html and text bodies")
+	}
+	if strings.Contains(provider.messages[0].HTML, "<img") ||
+		strings.Contains(provider.messages[1].HTML, "<img") {
+		t.Fatal("paid order emails should not rely on externally hosted logo images")
+	}
+	if !strings.Contains(provider.messages[0].HTML, "Oyecouture") ||
+		!strings.Contains(provider.messages[1].HTML, "Oyecouture") {
+		t.Fatal("paid order emails should include the Oyecouture brand wordmark")
 	}
 }
 
