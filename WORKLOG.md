@@ -5,6 +5,12 @@ One short entry per work session or meaningful chunk. Format:
 
 ---
 
+## 2026-08-02T14:50:46+01:00 · Codex · Ghost admin phase 1 complete
+- **Did:** Committed `a8a372c` with numbered pagination, left-side filters, half-width search, and quieter admin microinteractions; committed `d701dfd` with authenticated order detail/read API, status update API, detail page, line items, customer/address/measurements, totals, payment-link copy, WhatsApp reply, and guarded manual status actions.
+- **State:** Ghost admin phase 1 is complete. Admin actions cannot mark an order `paid`; payment remains reserved for server-side verification/webhook. Verified `go test ./...`, `npx vue-tsc --noEmit -p tsconfig.json`, `npx sass --no-source-map assets/scss/main.scss /tmp/oyecouture-admin.css`, and `git diff --check`.
+- **Next:** Phase 2 product/content management. Start with product create/edit + image metadata flow, keeping DB/R2 media boundaries ready while credentials are still missing.
+- **Blockers:** R2/upload credentials, Nomba sandbox keys, Resend API key, real WhatsApp number, client delivery fees/photos/content, and netcup server/deploy remain unchanged.
+
 ## 2026-08-02T14:35:40+01:00 · Codex · Ghost admin 1.2 — VBAN-style orders filters
 - **Did:** Recovered Claude's in-progress ghost-admin orders work, confirmed the real repo is `/Users/chibuzoriwuagwu/Downloads/share/oyecouture`, inspected the VBAN reference filter, and committed `966392e` with order metrics, date-range API support, a single Filter button with status/type/from/to categories, applied filter chips, admin sidebar/metric cards, and shared select polish.
 - **State:** `go test ./...`, `npx vue-tsc --noEmit -p tsconfig.json`, and `git diff --check` pass. `npm run typecheck`/`npm run build` still hit the known local Nuxt `oxc-walker`/`oxc-parser` parser-resolution issue after escalation, so they were not treated as source failures.
