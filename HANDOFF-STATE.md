@@ -12,6 +12,27 @@
 - **Repo / branch:** `/Users/chibuzoriwuagwu/Downloads/share/oyecouture` · `main`.
 - **Last implementation commits:** `2be9f3c` (row-click order detail navigation), `ac24935` (metrics/table alignment polish), `9619edc` (responsive admin filter popover), `d701dfd` (order detail/actions), `a8a372c` (order desk pagination + microinteractions), `966392e` (orders metrics + VBAN-style filters), `fddbe22` (admin orders desk), `93c564c` (admin orders API), `22065c9` (admin authentication).
 
+## 🚀 STAGING SERVER IS LIVE (Claude, 2 Aug) — Hostinger, netcup abandoned
+
+**Hosting moved from netcup to Hostinger.** ⏰ **netcup order `54429992` must still be formally withdrawn — €68.64 unpaid, window closes ~13 Aug.** Nothing depends on it any more; not withdrawing just buys a 12-month liability.
+
+- **Server:** Hostinger KVM 1 · `82.29.184.79` · Ubuntu 24.04.4 LTS · 3.9 GB RAM · 1 vCPU · 48 GB NVMe.
+- **Billing:** 1-month term, $10.74 paid. ⚠️ **Renews at $19.49/mo (~₦26,900) — more than the entire ₦25k maintenance retainer.** Switch to the 12-month term (~₦9,646/mo) or cancel before it rolls. Set a reminder ~28 days out.
+- **Access:** `ssh oyecouture` (config written on the user's Mac). Dedicated key `~/.ssh/oyecouture`, **no passphrase** — created because the only existing key was labelled `chibuzor@ovalfi.com`, i.e. the work key, and client production must not share a credential with the employer.
+- **Hardened:** `deploy` user with passwordless sudo + docker group; 2 GB swap (4 GB RAM on 1 vCPU, and the Nuxt build runs `vue-tsc`); `ufw` 22/80/443 only; **key-only SSH — password auth verified refused**. Deploy-user login was verified *before* passwords were disabled, deliberately.
+- **Code:** now on GitHub — **private** repo `mikechibuzor/oyecouture`, 90 commits. Previously the repo existed only on the user's laptop. Server pulls via a **read-only deploy key** (`~/.ssh/github_deploy` on the VPS).
+- **Config:** `~/oyecouture/.env.production`, mode 600, sandbox Paystack + SendByte keys, freshly generated Postgres password, `WHATSAPP_NUMBER=2348094939264` (the user's own number, for testing), `SITE_HOST=82-29-184-79.sslip.io`.
+
+**Three bugs the first real deploy exposed — none of which local builds or tests could have caught:**
+1. **`456bbdb`** — `api/Dockerfile` pinned `golang:1.23-alpine` while `go.mod` requires `go >= 1.25.0`. `GOTOOLCHAIN` is `local` in that image, so it failed instead of fetching a toolchain. Keep the Dockerfile base and the `go` directive in step.
+2. **`02cbc66`** — the runbook told you to generate `POSTGRES_PASSWORD` with `openssl rand -base64 32`, but compose interpolates it into `DATABASE_URL` and base64 emits `/`, which terminates the authority section. The API crash-looped on `invalid port after host` **only after a full image build**. Generator is now `openssl rand -hex 32`, and `deploy.sh` rejects `/ @ : ? #` up front.
+3. **`7660408`** — the ghost admin had **no account and no way to create one** on a deployed box: the seeding CLI needs Go, the distroless runtime image has none, and the runbook had no seeding step. The `admin` binary now ships in the image — `docker compose exec -it api /admin`.
+
+**Live staging URL: https://82-29-184-79.sslip.io** — real Let's Encrypt cert, HTTP→HTTPS 308. Verified from the public internet: `/`, `/suits`, `/admin`, `/api/healthz`, `/api/products`, `/api/delivery-zones` all 200; **Postgres (5432) and the API (8080) are not reachable from outside** — only Caddy is. Fresh DB at migration v9: 27 products, 3 delivery zones, 0 orders.
+
+**▶ STAGING → PRODUCTION is a config swap, not a rebuild.** When going live: point the client's domain A record at `82.29.184.79`, set `SITE_HOST` to it, swap in **live** Paystack keys, re-register the webhook in the **live** Paystack dashboard, then `./deploy/deploy.sh`. Caddy issues the new certificate itself.
+⚠️ **Purge test data before go-live.** There are ~40 orders, 10 marked paid, ₦1,543,000 of fake revenue. Truncate `orders`, `order_items`, `measurements`, `payment_attempts`, `outbound_emails`; **keep** `products`, `product_images`, `delivery_zones`, `admin_users`.
+
 ## 🔍 PAYMENTS REVIEW (Claude, 2 Aug) — passed, with two items to decide
 
 Reviewed `internal/payments` end to end against the running stack. **The money path is sound.** Verified, not assumed:
