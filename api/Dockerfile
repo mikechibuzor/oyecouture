@@ -1,6 +1,8 @@
 # Go API — multi-stage build producing a small static image.
 # Migrations are embedded in the binary via go:embed, so no SQL files are copied.
-FROM golang:1.23-alpine AS build
+# Must match the go directive in go.mod: GOTOOLCHAIN is local in this image, so
+# an older base fails the build rather than downloading a newer toolchain.
+FROM golang:1.25-alpine AS build
 
 WORKDIR /src
 
