@@ -19,10 +19,20 @@ RUN CGO_ENABLED=0 GOOS=linux go build \
     -o /out/server \
     ./cmd/server
 
+# The admin CLI ships alongside the server: without it there is no way to seed
+# the owner account on a deployed box, and the admin is unreachable.
+#   docker compose exec -it api /admin
+RUN CGO_ENABLED=0 GOOS=linux go build \
+    -trimpath \
+    -ldflags="-s -w" \
+    -o /out/admin \
+    ./cmd/admin
+
 # Distroless: no shell, no package manager — a much smaller attack surface than alpine.
 FROM gcr.io/distroless/static-debian12:nonroot
 
 COPY --from=build /out/server /server
+COPY --from=build /out/admin /admin
 
 USER nonroot:nonroot
 EXPOSE 8080

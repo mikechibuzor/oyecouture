@@ -58,6 +58,20 @@ IP automatically and still earns a real Let's Encrypt certificate.
 ./deploy/deploy.sh
 ```
 
+### 4. Create the admin account (once)
+
+The ghost admin has no account until you seed one. The CLI ships inside the
+API image, so it runs against the deployed database:
+
+```bash
+docker compose -f compose.prod.yaml --env-file .env.production exec -it api /admin
+```
+
+It prompts for an email and password and stores a bcrypt hash — nothing goes
+into `.env.production`. Re-run it any time to reset the password.
+
+Sign in at `https://<SITE_HOST>/admin`.
+
 Caddy requests the certificate on first boot; allow a few seconds. Then check:
 
 ```bash
