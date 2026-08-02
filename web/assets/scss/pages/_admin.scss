@@ -815,15 +815,23 @@
     border-bottom: 0;
   }
 
-  tbody tr {
-    transition:
-      background-color var(--duration-quick) var(--ease-standard),
-      box-shadow var(--duration-quick) var(--ease-standard);
+}
 
-    &:hover {
-      background-color: var(--color-canvas);
-      box-shadow: inset 3px 0 0 var(--color-gold);
-    }
+.admin-table-row {
+  cursor: pointer;
+  transition:
+    background-color var(--duration-quick) var(--ease-standard),
+    box-shadow var(--duration-quick) var(--ease-standard);
+
+  &:hover,
+  &:focus-visible {
+    background-color: var(--color-canvas);
+    box-shadow: inset 3px 0 0 var(--color-gold);
+  }
+
+  &:focus-visible {
+    outline: 2px solid rgb(181 145 68 / 32%);
+    outline-offset: -3px;
   }
 }
 

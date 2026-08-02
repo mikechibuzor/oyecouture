@@ -242,6 +242,36 @@ const selectMetric = (nextStatus: OrderStatus | null): void => {
   statusFilter.value = nextStatus ?? ''
 }
 
+// Nested links keep their native behavior; the rest of the row opens details.
+const isInteractiveRowTarget = (eventTarget: EventTarget | null): boolean =>
+  eventTarget instanceof Element &&
+  Boolean(eventTarget.closest('a, button, input, select, textarea, summary'))
+
+// Opens the same detail route exposed by the order/customer links.
+const openOrderDetail = (orderNo: string): void => {
+  void router.push(ADMIN_ROUTES.orderDetail(orderNo))
+}
+
+// Row clicks make the table behave like an order desk, not a static report.
+const handleOrderRowClick = (mouseEvent: MouseEvent, orderNo: string): void => {
+  if (!isInteractiveRowTarget(mouseEvent.target)) {
+    openOrderDetail(orderNo)
+  }
+}
+
+// Keyboard users get the same row-level affordance with Enter or Space.
+const handleOrderRowKeydown = (keyboardEvent: KeyboardEvent, orderNo: string): void => {
+  if (
+    isInteractiveRowTarget(keyboardEvent.target) ||
+    !['Enter', ' '].includes(keyboardEvent.key)
+  ) {
+    return
+  }
+
+  keyboardEvent.preventDefault()
+  openOrderDetail(orderNo)
+}
+
 onMounted(() => {
   void load()
   void loadMetrics()
@@ -331,7 +361,16 @@ onMounted(() => {
             </tr>
           </thead>
           <tbody>
-            <tr v-for="order in orders" :key="order.orderNo">
+            <tr
+              v-for="order in orders"
+              :key="order.orderNo"
+              class="admin-table-row"
+              tabindex="0"
+              role="link"
+              :aria-label="`Open ${order.orderNo} details`"
+              @click="handleOrderRowClick($event, order.orderNo)"
+              @keydown="handleOrderRowKeydown($event, order.orderNo)"
+            >
               <td class="admin-table-order-no">
                 <NuxtLink :to="ADMIN_ROUTES.orderDetail(order.orderNo)">
                   {{ order.orderNo }}
