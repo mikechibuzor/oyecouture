@@ -5,9 +5,12 @@ export enum StorefrontRoute {
   CasualsMen = '/casuals/men',
   CasualsWomen = '/casuals/women',
   Collection = '/#collection',
-  DearGroom = '/collection/dear-groom',
-  WeiXin = '/collection/wei-xin',
-  ManOfLegacy = '/collection/man-of-legacy',
+  DearGroom = '/#collection', // TODO: curated collection, no design yet — see audit
+  //  was '/collection/dear-groom',
+  WeiXin = '/#collection', // TODO: curated collection, no design yet — see audit
+  //  was '/collection/wei-xin',
+  ManOfLegacy = '/#collection', // TODO: curated collection, no design yet — see audit
+  //  was '/collection/man-of-legacy',
   About = '/about',
   OurStory = '/about#our-story',
   Symbol = '/about#symbol',

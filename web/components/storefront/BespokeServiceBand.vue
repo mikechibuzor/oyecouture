@@ -16,7 +16,7 @@ withDefaults(defineProps<BespokeServiceBandProps>(), {
 </script>
 
 <template>
-  <section class="bespoke-service-band" aria-labelledby="bespoke-service-title">
+  <section id="bespoke" class="bespoke-service-band" aria-labelledby="bespoke-service-title">
     <!-- The Oyecouture symbol, taken from the approved design. -->
     <svg
       class="bespoke-service-mark"
