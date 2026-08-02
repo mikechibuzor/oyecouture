@@ -1,4 +1,4 @@
-package payments
+package paystack
 
 import (
 	"bytes"
@@ -10,27 +10,29 @@ import (
 	"net/url"
 	"strconv"
 	"time"
+
+	"github.com/uzor-co/oyecouture/api/internal/payments"
 )
 
-const defaultPaystackBaseURL = "https://api.paystack.co"
+const defaultBaseURL = "https://api.paystack.co"
 
-type PaystackProvider struct {
+type Provider struct {
 	secretKey  string
 	baseURL    string
 	httpClient *http.Client
 }
 
-func NewPaystackProvider(secretKey string) *PaystackProvider {
-	return &PaystackProvider{
+func NewProvider(secretKey string) *Provider {
+	return &Provider{
 		secretKey:  secretKey,
-		baseURL:    defaultPaystackBaseURL,
+		baseURL:    defaultBaseURL,
 		httpClient: &http.Client{Timeout: 20 * time.Second},
 	}
 }
 
-func (provider *PaystackProvider) Name() string { return ProviderPaystack }
+func (provider *Provider) Name() string { return payments.ProviderPaystack }
 
-type paystackInitializeRequest struct {
+type initializeRequest struct {
 	Email       string         `json:"email"`
 	Amount      string         `json:"amount"`
 	Currency    string         `json:"currency"`
@@ -39,7 +41,7 @@ type paystackInitializeRequest struct {
 	Metadata    map[string]any `json:"metadata"`
 }
 
-type paystackInitializeResponse struct {
+type initializeResponse struct {
 	Status  bool   `json:"status"`
 	Message string `json:"message"`
 	Data    struct {
@@ -49,7 +51,7 @@ type paystackInitializeResponse struct {
 	} `json:"data"`
 }
 
-type paystackVerifyResponse struct {
+type verifyResponse struct {
 	Status  bool   `json:"status"`
 	Message string `json:"message"`
 	Data    struct {
@@ -62,15 +64,15 @@ type paystackVerifyResponse struct {
 	} `json:"data"`
 }
 
-func (provider *PaystackProvider) Initialize(
+func (provider *Provider) Initialize(
 	requestContext context.Context,
-	request InitializeRequest,
-) (InitializeResult, []byte, error) {
+	request payments.InitializeRequest,
+) (payments.InitializeResult, []byte, error) {
 	if provider.secretKey == "" {
-		return InitializeResult{}, nil, ErrPaymentUnavailable
+		return payments.InitializeResult{}, nil, payments.ErrPaymentUnavailable
 	}
 
-	payload, err := json.Marshal(paystackInitializeRequest{
+	payload, err := json.Marshal(initializeRequest{
 		Email:       request.Email,
 		Amount:      strconv.FormatInt(request.AmountKobo, 10),
 		Currency:    request.Currency,
@@ -82,55 +84,55 @@ func (provider *PaystackProvider) Initialize(
 		},
 	})
 	if err != nil {
-		return InitializeResult{}, nil, fmt.Errorf("encode paystack initialize: %w", err)
+		return payments.InitializeResult{}, nil, fmt.Errorf("encode paystack initialize: %w", err)
 	}
 
 	responseBody, err := provider.do(requestContext, http.MethodPost, "/transaction/initialize", payload)
 	if err != nil {
-		return InitializeResult{}, responseBody, err
+		return payments.InitializeResult{}, responseBody, err
 	}
 
-	var response paystackInitializeResponse
+	var response initializeResponse
 	if err := json.Unmarshal(responseBody, &response); err != nil {
-		return InitializeResult{}, responseBody, fmt.Errorf("decode paystack initialize: %w", err)
+		return payments.InitializeResult{}, responseBody, fmt.Errorf("decode paystack initialize: %w", err)
 	}
 	if !response.Status || response.Data.AuthorizationURL == "" || response.Data.Reference == "" {
-		return InitializeResult{}, responseBody, fmt.Errorf("paystack initialize rejected: %s", response.Message)
+		return payments.InitializeResult{}, responseBody, fmt.Errorf("paystack initialize rejected: %s", response.Message)
 	}
 
-	return InitializeResult{
+	return payments.InitializeResult{
 		AuthorizationURL: response.Data.AuthorizationURL,
 		AccessCode:       response.Data.AccessCode,
 		Reference:        response.Data.Reference,
 	}, responseBody, nil
 }
 
-func (provider *PaystackProvider) Verify(
+func (provider *Provider) Verify(
 	requestContext context.Context,
 	reference string,
-) (Verification, error) {
+) (payments.Verification, error) {
 	if provider.secretKey == "" {
-		return Verification{}, ErrPaymentUnavailable
+		return payments.Verification{}, payments.ErrPaymentUnavailable
 	}
 
 	responseBody, err := provider.do(
 		requestContext, http.MethodGet, "/transaction/verify/"+url.PathEscape(reference), nil,
 	)
 	if err != nil {
-		return Verification{Reference: reference, ProviderPayload: responseBody}, err
+		return payments.Verification{Reference: reference, ProviderPayload: responseBody}, err
 	}
 
-	var response paystackVerifyResponse
+	var response verifyResponse
 	if err := json.Unmarshal(responseBody, &response); err != nil {
-		return Verification{Reference: reference, ProviderPayload: responseBody},
+		return payments.Verification{Reference: reference, ProviderPayload: responseBody},
 			fmt.Errorf("decode paystack verify: %w", err)
 	}
 	if !response.Status {
-		return Verification{Reference: reference, ProviderPayload: responseBody},
+		return payments.Verification{Reference: reference, ProviderPayload: responseBody},
 			fmt.Errorf("paystack verify rejected: %s", response.Message)
 	}
 
-	return Verification{
+	return payments.Verification{
 		Reference:       response.Data.Reference,
 		Status:          response.Data.Status,
 		AmountKobo:      response.Data.Amount,
@@ -141,7 +143,7 @@ func (provider *PaystackProvider) Verify(
 	}, nil
 }
 
-func (provider *PaystackProvider) do(
+func (provider *Provider) do(
 	requestContext context.Context,
 	method string,
 	path string,

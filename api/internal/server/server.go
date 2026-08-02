@@ -14,6 +14,7 @@ import (
 	"github.com/uzor-co/oyecouture/api/internal/health"
 	"github.com/uzor-co/oyecouture/api/internal/orders"
 	"github.com/uzor-co/oyecouture/api/internal/payments"
+	"github.com/uzor-co/oyecouture/api/internal/payments/paystack"
 	"github.com/uzor-co/oyecouture/api/internal/products"
 )
 
@@ -36,7 +37,10 @@ func New(applicationConfig config.Config, databasePool *pgxpool.Pool) *http.Serv
 	paymentService := payments.NewService(
 		paymentRepository, paymentProvider, applicationConfig.WebBaseURL,
 	)
-	paymentHandler := payments.NewHandler(paymentService, applicationConfig.PaystackSecretKey)
+	paymentHandler := payments.NewHandler(paymentService)
+	paystackWebhookHandler := paystack.NewWebhookHandler(
+		paymentService, applicationConfig.PaystackSecretKey,
+	)
 
 	requestMux := http.NewServeMux()
 	requestMux.Handle("GET /healthz", health.NewHandler(databasePool))
@@ -47,7 +51,7 @@ func New(applicationConfig config.Config, databasePool *pgxpool.Pool) *http.Serv
 	requestMux.HandleFunc("GET /payments/{payToken}", paymentHandler.Summary)
 	requestMux.HandleFunc("POST /payments/{payToken}/initialize", paymentHandler.Initialize)
 	requestMux.HandleFunc("POST /payments/{payToken}/verify", paymentHandler.Verify)
-	requestMux.HandleFunc("POST /webhooks/paystack", paymentHandler.PaystackWebhook)
+	requestMux.HandleFunc("POST /webhooks/paystack", paystackWebhookHandler.Handle)
 
 	// Ghost admin. Unlinked from the storefront and gated by a session cookie;
 	// every route below RequireSession is unreachable without signing in.
@@ -95,7 +99,7 @@ func New(applicationConfig config.Config, databasePool *pgxpool.Pool) *http.Serv
 // providers unavailable rather than silently charging through the wrong one.
 func paymentProvider(applicationConfig config.Config) payments.Provider {
 	if applicationConfig.PaymentProvider == payments.ProviderPaystack {
-		return payments.NewPaystackProvider(applicationConfig.PaystackSecretKey)
+		return paystack.NewProvider(applicationConfig.PaystackSecretKey)
 	}
 
 	return nil

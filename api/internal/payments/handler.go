@@ -2,17 +2,12 @@ package payments
 
 import (
 	"context"
-	"crypto/hmac"
-	"crypto/sha512"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
-	"io"
 	"log"
 	"net/http"
 )
 
-const maximumWebhookBytes = 128 << 10
 const maximumRequestBytes = 32 << 10
 
 type ErrorCode string
@@ -28,16 +23,14 @@ type PaymentService interface {
 	Summary(context.Context, string) (Summary, error)
 	Initialize(context.Context, string) (InitializeResult, error)
 	Verify(context.Context, string, string) (VerifyResult, error)
-	ConfirmWebhookReference(context.Context, string) error
 }
 
 type Handler struct {
-	service           PaymentService
-	paystackSecretKey string
+	service PaymentService
 }
 
-func NewHandler(service PaymentService, paystackSecretKey string) *Handler {
-	return &Handler{service: service, paystackSecretKey: paystackSecretKey}
+func NewHandler(service PaymentService) *Handler {
+	return &Handler{service: service}
 }
 
 type initializeResponse struct {
@@ -50,13 +43,6 @@ type verifyRequest struct {
 
 type verifyResponse struct {
 	Result VerifyResult `json:"result"`
-}
-
-type paystackWebhook struct {
-	Event string `json:"event"`
-	Data  struct {
-		Reference string `json:"reference"`
-	} `json:"data"`
 }
 
 func (handler *Handler) Summary(responseWriter http.ResponseWriter, request *http.Request) {
@@ -101,38 +87,6 @@ func (handler *Handler) Verify(responseWriter http.ResponseWriter, request *http
 	writeJSON(responseWriter, http.StatusOK, verifyResponse{Result: result})
 }
 
-func (handler *Handler) PaystackWebhook(responseWriter http.ResponseWriter, request *http.Request) {
-	body, err := io.ReadAll(http.MaxBytesReader(responseWriter, request.Body, maximumWebhookBytes))
-	if err != nil {
-		writeError(responseWriter, http.StatusBadRequest, ErrorCodeInvalidBody,
-			"the webhook could not be read")
-		return
-	}
-	if !validPaystackSignature(body, request.Header.Get("x-paystack-signature"), handler.paystackSecretKey) {
-		writeError(responseWriter, http.StatusUnauthorized, ErrorCodeInvalidBody,
-			"the webhook signature is invalid")
-		return
-	}
-
-	var event paystackWebhook
-	if err := json.Unmarshal(body, &event); err != nil {
-		writeError(responseWriter, http.StatusBadRequest, ErrorCodeInvalidBody,
-			"the webhook could not be parsed")
-		return
-	}
-
-	if event.Event == "charge.success" && event.Data.Reference != "" {
-		if err := handler.service.ConfirmWebhookReference(request.Context(), event.Data.Reference); err != nil {
-			log.Printf("confirm paystack webhook failed: %v", err)
-			writeError(responseWriter, http.StatusInternalServerError, ErrorCodeInternal,
-				"the webhook could not be processed")
-			return
-		}
-	}
-
-	responseWriter.WriteHeader(http.StatusOK)
-}
-
 func (handler *Handler) writePaymentError(responseWriter http.ResponseWriter, paymentError error) {
 	switch {
 	case errors.Is(paymentError, ErrOrderNotFound), errors.Is(paymentError, ErrReferenceNotFound):
@@ -157,18 +111,6 @@ func (handler *Handler) writePaymentError(responseWriter http.ResponseWriter, pa
 		writeError(responseWriter, http.StatusInternalServerError, ErrorCodeInternal,
 			"the payment request could not be completed")
 	}
-}
-
-func validPaystackSignature(body []byte, signature string, secretKey string) bool {
-	if signature == "" || secretKey == "" {
-		return false
-	}
-
-	mac := hmac.New(sha512.New, []byte(secretKey))
-	mac.Write(body)
-	expectedSignature := hex.EncodeToString(mac.Sum(nil))
-
-	return hmac.Equal([]byte(expectedSignature), []byte(signature))
 }
 
 type errorDetail struct {
