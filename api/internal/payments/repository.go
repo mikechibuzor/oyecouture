@@ -133,7 +133,7 @@ func (repository *PostgresRepository) RecordVerification(
 		SET status = $2, provider_payload = $3::jsonb,
 			verified_at = NOW(), paid_at = $4, updated_at = NOW()
 		WHERE reference = $1
-			AND ($5 = '' OR order_id = $5)
+			AND ($5 = '' OR order_id = NULLIF($5, '')::uuid)
 	`
 
 	paidAt := nullableTime(verification.PaidAt)
@@ -169,7 +169,7 @@ func (repository *PostgresRepository) ConfirmSuccessfulPayment(
 		FROM payment_attempts pa
 		JOIN orders o ON o.id = pa.order_id
 		WHERE pa.reference = $1
-			AND ($2 = '' OR pa.order_id = $2)
+			AND ($2 = '' OR pa.order_id = NULLIF($2, '')::uuid)
 		FOR UPDATE OF pa, o
 	`
 
