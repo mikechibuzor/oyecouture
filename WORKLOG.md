@@ -5,6 +5,12 @@ One short entry per work session or meaningful chunk. Format:
 
 ---
 
+## 2026-08-02T15:15:48+01:00 · Codex · Admin order desk click polish
+- **Did:** Committed `ac24935` for taller metrics and table column alignment; committed `2be9f3c` so clicking or keyboard-opening an order row navigates to the existing detail page while nested links keep native behavior.
+- **State:** Verified `npx vue-tsc --noEmit -p tsconfig.json`, `npx sass --no-source-map assets/scss/main.scss /tmp/oyecouture-admin.css`, and `git diff --check`.
+- **Next:** Phase 2 product/content management remains next.
+- **Blockers:** R2/upload credentials, Nomba sandbox keys, Resend API key, real WhatsApp number, client delivery fees/photos/content, and netcup server/deploy remain unchanged.
+
 ## 2026-08-02T14:55:21+01:00 · Codex · Admin filter popover responsiveness
 - **Did:** Committed `9619edc` to make the VBAN-style admin filter popover fixed-position and viewport-clamped, with resize/scroll repositioning and internal overflow for smaller screens.
 - **State:** Verified `npx vue-tsc --noEmit -p tsconfig.json`, `npx sass --no-source-map assets/scss/main.scss /tmp/oyecouture-admin.css`, and `git diff --check`.
