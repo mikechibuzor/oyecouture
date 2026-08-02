@@ -1,11 +1,14 @@
 package server
 
 import (
+	"context"
+	"log"
 	"net/http"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/uzor-co/oyecouture/api/internal/admin"
 	"github.com/uzor-co/oyecouture/api/internal/config"
 	"github.com/uzor-co/oyecouture/api/internal/delivery"
 	"github.com/uzor-co/oyecouture/api/internal/health"
@@ -33,6 +36,27 @@ func New(applicationConfig config.Config, databasePool *pgxpool.Pool) *http.Serv
 	requestMux.HandleFunc("GET /products/{slug}", productHandler.GetBySlug)
 	requestMux.HandleFunc("POST /orders", orderHandler.Create)
 	requestMux.HandleFunc("GET /delivery-zones", delivery.NewHandler(deliveryRepository).List)
+
+	// Ghost admin. Unlinked from the storefront and gated by a session cookie;
+	// every route below RequireSession is unreachable without signing in.
+	adminStore := admin.NewPostgresStore(databasePool)
+	adminAuth := admin.NewAuthService(adminStore)
+	adminHandler := admin.NewHandler(adminAuth, applicationConfig.AppEnv == "production")
+
+	// Clear dead sessions once at startup rather than running a scheduler.
+	go func() {
+		cleanupContext, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		if err := adminStore.DeleteExpiredSessions(cleanupContext); err != nil {
+			log.Printf("clear expired admin sessions: %v", err)
+		}
+	}()
+
+	requestMux.HandleFunc("POST /admin/login", adminHandler.LogIn)
+	requestMux.HandleFunc("POST /admin/logout", adminHandler.LogOut)
+	requestMux.Handle("GET /admin/me", adminHandler.RequireSession(
+		http.HandlerFunc(adminHandler.Me),
+	))
 
 	return &http.Server{
 		Addr:              applicationConfig.APIAddress,
