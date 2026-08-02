@@ -5,6 +5,7 @@ import {
   PRODUCT_SORT_OPTIONS,
 } from '~/constants/products'
 import { CatalogueFilterId, ProductSortId } from '~/types/product'
+import type { SelectOption } from '~/types/ui'
 
 interface CatalogueToolbarProps {
   pieceCountLabel: string
@@ -21,6 +22,13 @@ const activeFilterId = defineModel<CatalogueFilterId>('activeFilterId', {
 const activeSortId = defineModel<ProductSortId>('activeSortId', {
   required: true,
 })
+
+const sortSelectOptions = computed<SelectOption<ProductSortId>[]>(() =>
+  PRODUCT_SORT_OPTIONS.map((sortOption) => ({
+    value: sortOption.id,
+    label: sortOption.label,
+  })),
+)
 
 // Activates one catalogue filter chip.
 const selectFilter = (catalogueFilterId: CatalogueFilterId): void => {
@@ -50,18 +58,12 @@ const selectFilter = (catalogueFilterId: CatalogueFilterId): void => {
 
     <div class="catalogue-sort-group">
       <span>{{ pieceCountLabel }}</span>
-      <label>
-        <span class="visually-hidden">{{ PRODUCT_COPY.catalogue.sortLabel }}</span>
-        <select v-model="activeSortId" :aria-label="PRODUCT_COPY.catalogue.sortLabel">
-          <option
-            v-for="sortOption in PRODUCT_SORT_OPTIONS"
-            :key="sortOption.id"
-            :value="sortOption.id"
-          >
-            {{ sortOption.label }}
-          </option>
-        </select>
-      </label>
+      <UiSelect
+        v-model="activeSortId"
+        :options="sortSelectOptions"
+        :label="PRODUCT_COPY.catalogue.sortLabel"
+        variant="bare"
+      />
     </div>
   </div>
 </template>

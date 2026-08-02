@@ -1,16 +1,21 @@
 <script setup lang="ts">
+import { Search } from 'lucide'
 import {
   ADMIN_COPY,
+  ADMIN_DEFAULT_PERIOD,
   ADMIN_ORDERS_PAGE_SIZE,
+  ADMIN_ORDER_FILTER_OPTIONS,
   ADMIN_ROUTES,
   ADMIN_SEARCH_DEBOUNCE_MS,
   ORDER_KIND_LABELS,
-  ORDER_KIND_OPTIONS,
   ORDER_STATUS_LABELS,
-  ORDER_STATUS_OPTIONS,
 } from '~/constants/admin'
-import type { AdminOrderSummary } from '~/types/admin'
-import { OrderStatus } from '~/types/admin'
+import type {
+  AdminOrderMetrics,
+  AdminOrderSummary,
+  MetricsPeriod,
+} from '~/types/admin'
+import { type AdminOrderFilterKey, type AdminOrderFilterValues, OrderStatus } from '~/types/admin'
 import { OrderKind } from '~/types/order'
 import { formatOrderDate } from '~/utils/admin'
 import { formatProductPrice } from '~/utils/product'
@@ -19,23 +24,41 @@ definePageMeta({ layout: 'admin', middleware: 'admin' })
 
 useHead({ title: `${ADMIN_COPY.ordersHeading} · ${ADMIN_COPY.brand}` })
 
-const { fetchOrders } = useAdminOrders()
+const { fetchOrders, fetchMetrics } = useAdminOrders()
 const { session } = useAdminSession()
 const router = useRouter()
 
 const searchTerm = ref('')
 const statusFilter = ref<OrderStatus | ''>('')
 const kindFilter = ref<OrderKind | ''>('')
+const fromFilter = ref('')
+const toFilter = ref('')
 const offset = ref(0)
 
 const orders = ref<readonly AdminOrderSummary[]>([])
+const metrics = ref<AdminOrderMetrics | null>(null)
+const metricsPeriod = ref<MetricsPeriod>(ADMIN_DEFAULT_PERIOD)
 const total = ref(0)
 const isLoading = ref(true)
 const hasFailed = ref(false)
 
 const hasFilters = computed(
-  () => searchTerm.value !== '' || statusFilter.value !== '' || kindFilter.value !== '',
+  () =>
+    searchTerm.value !== '' ||
+    statusFilter.value !== '' ||
+    kindFilter.value !== '' ||
+    fromFilter.value !== '' ||
+    toFilter.value !== '',
 )
+
+// The filter popover consumes strings so each filter category can share the
+// same component contract.
+const filterValues = computed<AdminOrderFilterValues>(() => ({
+  status: statusFilter.value,
+  kind: kindFilter.value,
+  from: fromFilter.value,
+  to: toFilter.value,
+}))
 
 const rangeStart = computed(() => (total.value === 0 ? 0 : offset.value + 1))
 const rangeEnd = computed(() => offset.value + orders.value.length)
@@ -45,6 +68,19 @@ const canGoForward = computed(() => rangeEnd.value < total.value)
 // A request counter, not a boolean: a slow early response must not overwrite a
 // fresher one when the owner types quickly.
 let latestRequestId = 0
+
+// A session that expired while the page was open should return the owner to
+// sign-in rather than showing a load failure they cannot act on.
+const isExpiredSession = async (requestError: unknown): Promise<boolean> => {
+  if ((requestError as { status?: number } | null)?.status !== 401) {
+    return false
+  }
+
+  session.value = null
+  await router.push(ADMIN_ROUTES.login)
+
+  return true
+}
 
 const load = async (): Promise<void> => {
   const requestId = ++latestRequestId
@@ -56,6 +92,8 @@ const load = async (): Promise<void> => {
       status: statusFilter.value,
       kind: kindFilter.value,
       q: searchTerm.value,
+      from: fromFilter.value,
+      to: toFilter.value,
       limit: ADMIN_ORDERS_PAGE_SIZE,
       offset: offset.value,
     })
@@ -67,15 +105,7 @@ const load = async (): Promise<void> => {
     orders.value = page.orders
     total.value = page.total
   } catch (loadError) {
-    if (requestId !== latestRequestId) {
-      return
-    }
-
-    // A session that expired while the page was open should return the owner
-    // to sign-in rather than showing a load failure they cannot act on.
-    if ((loadError as { status?: number } | null)?.status === 401) {
-      session.value = null
-      await router.push(ADMIN_ROUTES.login)
+    if (requestId !== latestRequestId || (await isExpiredSession(loadError))) {
       return
     }
 
@@ -89,11 +119,23 @@ const load = async (): Promise<void> => {
   }
 }
 
+// The summary strip is independent of the filters, so a failure there must not
+// blank the list the owner came for.
+const loadMetrics = async (): Promise<void> => {
+  try {
+    metrics.value = await fetchMetrics(metricsPeriod.value)
+  } catch (metricsError) {
+    if (!(await isExpiredSession(metricsError))) {
+      metrics.value = null
+    }
+  }
+}
+
 // Changing a filter always returns to the first page: otherwise a narrower
 // result set would leave the owner stranded on an empty page.
 let searchTimer: ReturnType<typeof setTimeout> | undefined
 
-watch([statusFilter, kindFilter], () => {
+watch([statusFilter, kindFilter, fromFilter, toFilter], () => {
   offset.value = 0
   void load()
 })
@@ -104,6 +146,11 @@ watch(searchTerm, () => {
     offset.value = 0
     void load()
   }, ADMIN_SEARCH_DEBOUNCE_MS)
+})
+
+// The period narrows the summary only; the list below is unaffected.
+watch(metricsPeriod, () => {
+  void loadMetrics()
 })
 
 onBeforeUnmount(() => clearTimeout(searchTimer))
@@ -122,23 +169,64 @@ const clearFilters = (): void => {
   searchTerm.value = ''
   statusFilter.value = ''
   kindFilter.value = ''
+  fromFilter.value = ''
+  toFilter.value = ''
 }
 
-onMounted(load)
+// Updates one filter category from the table filter popover.
+const updateFilter = (key: AdminOrderFilterKey, value: string): void => {
+  if (key === 'status') {
+    statusFilter.value = value as OrderStatus | ''
+  } else if (key === 'kind') {
+    kindFilter.value = value as OrderKind | ''
+  } else if (key === 'from') {
+    fromFilter.value = value
+  } else {
+    toFilter.value = value
+  }
+}
+
+// Removes one applied filter chip without disturbing the other active filters.
+const removeFilter = (key: AdminOrderFilterKey): void => {
+  updateFilter(key, '')
+}
+
+// Clicking a metric card filters the list by that status.
+const selectMetric = (nextStatus: OrderStatus | null): void => {
+  statusFilter.value = nextStatus ?? ''
+}
+
+onMounted(() => {
+  void load()
+  void loadMetrics()
+})
 </script>
 
 <template>
-  <section class="admin-orders">
-    <header class="admin-orders-head">
-      <h1>{{ ADMIN_COPY.ordersHeading }}</h1>
-      <p v-if="total > 0" class="admin-orders-count">
-        {{ rangeStart }}–{{ rangeEnd }} of {{ total }}
-      </p>
+  <div class="admin-page">
+    <header class="admin-page-head">
+      <div>
+        <h1>{{ ADMIN_COPY.ordersHeading }}</h1>
+        <p class="admin-page-subheading">{{ ADMIN_COPY.ordersSubheading }}</p>
+      </div>
     </header>
 
-    <div class="admin-filters">
-      <label class="admin-field admin-field-search">
+    <AdminMetricCards
+      v-model:period="metricsPeriod"
+      :metrics="metrics"
+      :active-status="statusFilter"
+      @select="selectMetric"
+    />
+
+    <div class="admin-toolbar">
+      <label class="admin-search">
         <span class="visually-hidden">{{ ADMIN_COPY.searchLabel }}</span>
+        <StorefrontIcon
+          class="admin-search-icon"
+          :icon-node="Search"
+          :size="16"
+          :stroke-width="1.75"
+        />
         <input
           v-model.trim="searchTerm"
           type="search"
@@ -146,25 +234,19 @@ onMounted(load)
         >
       </label>
 
-      <label class="admin-field">
-        <span class="visually-hidden">{{ ADMIN_COPY.statusLabel }}</span>
-        <select v-model="statusFilter">
-          <option value="">{{ ADMIN_COPY.anyStatus }}</option>
-          <option v-for="status in ORDER_STATUS_OPTIONS" :key="status" :value="status">
-            {{ ORDER_STATUS_LABELS[status] }}
-          </option>
-        </select>
-      </label>
-
-      <label class="admin-field">
-        <span class="visually-hidden">{{ ADMIN_COPY.kindLabel }}</span>
-        <select v-model="kindFilter">
-          <option value="">{{ ADMIN_COPY.anyKind }}</option>
-          <option v-for="kind in ORDER_KIND_OPTIONS" :key="kind" :value="kind">
-            {{ ORDER_KIND_LABELS[kind] }}
-          </option>
-        </select>
-      </label>
+      <div class="admin-toolbar-filters">
+        <AdminTableFilter
+          :options="ADMIN_ORDER_FILTER_OPTIONS"
+          :values="filterValues"
+          @update="updateFilter"
+        />
+        <AdminAppliedFilters
+          :options="ADMIN_ORDER_FILTER_OPTIONS"
+          :values="filterValues"
+          @remove="removeFilter"
+          @clear="clearFilters"
+        />
+      </div>
     </div>
 
     <p v-if="isLoading" class="admin-orders-message">{{ ADMIN_COPY.loading }}</p>
@@ -206,41 +288,60 @@ onMounted(load)
             <tr v-for="order in orders" :key="order.orderNo">
               <td class="admin-table-order-no">{{ order.orderNo }}</td>
               <td>
-                <span class="admin-table-name">{{ order.customerName }}</span>
-                <span class="admin-table-contact">{{ order.phone }}</span>
+                <span class="admin-customer">
+                  <span class="admin-customer-avatar" aria-hidden="true">
+                    {{ order.customerName.slice(0, 1).toUpperCase() }}
+                  </span>
+                  <span class="admin-customer-detail">
+                    <span class="admin-customer-name">{{ order.customerName }}</span>
+                    <span class="admin-customer-contact">{{ order.phone }}</span>
+                  </span>
+                </span>
               </td>
-              <td>{{ ORDER_KIND_LABELS[order.kind] }}</td>
+              <td>
+                <span class="admin-kind" :data-kind="order.kind">
+                  {{ ORDER_KIND_LABELS[order.kind] }}
+                </span>
+              </td>
               <td>
                 <span class="admin-status" :data-status="order.status">
                   {{ ORDER_STATUS_LABELS[order.status] }}
                 </span>
               </td>
               <td class="admin-table-number">{{ order.itemCount }}</td>
-              <td class="admin-table-number">{{ formatProductPrice(order.totalKobo) }}</td>
+              <td class="admin-table-number admin-table-total">
+                {{ formatProductPrice(order.totalKobo) }}
+              </td>
               <td class="admin-table-placed">{{ formatOrderDate(order.createdAt) }}</td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      <nav v-if="canGoBack || canGoForward" class="admin-pagination">
-        <button
-          type="button"
-          class="admin-inline-action"
-          :disabled="!canGoBack"
-          @click="goToPreviousPage"
-        >
-          {{ ADMIN_COPY.previous }}
-        </button>
-        <button
-          type="button"
-          class="admin-inline-action"
-          :disabled="!canGoForward"
-          @click="goToNextPage"
-        >
-          {{ ADMIN_COPY.next }}
-        </button>
+      <nav class="admin-pagination">
+        <p class="admin-pagination-count">
+          {{ rangeStart }}–{{ rangeEnd }} of {{ total }}
+        </p>
+
+        <div class="admin-pagination-controls">
+          <button
+            type="button"
+            class="admin-inline-action"
+            :disabled="!canGoBack"
+            @click="goToPreviousPage"
+          >
+            {{ ADMIN_COPY.previous }}
+          </button>
+          <button
+            type="button"
+            class="admin-inline-action"
+            :disabled="!canGoForward"
+            @click="goToNextPage"
+          >
+            {{ ADMIN_COPY.next }}
+          </button>
+        </div>
       </nav>
     </template>
-  </section>
+  </div>
 </template>

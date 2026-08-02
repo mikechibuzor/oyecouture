@@ -10,6 +10,7 @@ import (
 // OrderLister is the admin service contract exposed over HTTP.
 type OrderLister interface {
 	List(context.Context, ListFilter) (Page, error)
+	Metrics(context.Context, MetricsPeriod) (Metrics, error)
 }
 
 type AdminHandler struct {
@@ -29,6 +30,8 @@ func (handler *AdminHandler) List(responseWriter http.ResponseWriter, request *h
 		Status: Status(queryValues.Get("status")),
 		Kind:   Kind(queryValues.Get("kind")),
 		Search: queryValues.Get("q"),
+		From:   ParseFilterDate(queryValues.Get("from")),
+		To:     ParseFilterDate(queryValues.Get("to")),
 		Limit:  positiveInt(queryValues.Get("limit")),
 		Offset: positiveInt(queryValues.Get("offset")),
 	})
@@ -40,6 +43,21 @@ func (handler *AdminHandler) List(responseWriter http.ResponseWriter, request *h
 	}
 
 	writeJSON(responseWriter, http.StatusOK, page)
+}
+
+// Metrics serves the summary counts shown above the orders list.
+func (handler *AdminHandler) Metrics(responseWriter http.ResponseWriter, request *http.Request) {
+	metrics, err := handler.orderLister.Metrics(
+		request.Context(), MetricsPeriod(request.URL.Query().Get("period")),
+	)
+	if err != nil {
+		log.Printf("load admin order metrics failed: %v", err)
+		writeError(responseWriter, http.StatusInternalServerError, ErrorCodeInternal,
+			"the summary could not be loaded")
+		return
+	}
+
+	writeJSON(responseWriter, http.StatusOK, metrics)
 }
 
 // positiveInt reads a paging parameter, treating anything unparseable as unset

@@ -62,6 +62,9 @@ func New(applicationConfig config.Config, databasePool *pgxpool.Pool) *http.Serv
 	requestMux.Handle("GET /admin/orders", adminHandler.RequireSession(
 		http.HandlerFunc(adminOrderHandler.List),
 	))
+	requestMux.Handle("GET /admin/orders/metrics", adminHandler.RequireSession(
+		http.HandlerFunc(adminOrderHandler.Metrics),
+	))
 
 	return &http.Server{
 		Addr:              applicationConfig.APIAddress,

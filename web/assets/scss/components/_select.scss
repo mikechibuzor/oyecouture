@@ -1,0 +1,127 @@
+// The shared dropdown. Replaces the native control, which cannot be themed
+// consistently across browsers, and is used by both the storefront and the
+// admin so every menu in the product looks and behaves the same.
+
+.ui-select {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+  font-family: var(--font-family-body);
+}
+
+.ui-select-trigger {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--color-border);
+  border-radius: 0;
+  background-color: var(--color-white);
+  color: var(--color-ink);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: var(--text-sm);
+  gap: var(--space-sm);
+  text-align: left;
+  transition:
+    border-color var(--duration-quick) var(--ease-standard),
+    color var(--duration-quick) var(--ease-standard);
+
+  &:hover:not(:disabled) {
+    border-color: var(--color-taupe-light);
+  }
+
+  &:disabled {
+    color: var(--color-taupe-light);
+    cursor: not-allowed;
+  }
+}
+
+.ui-select.is-open .ui-select-trigger {
+  border-color: var(--color-gold);
+}
+
+.ui-select-value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  &.is-placeholder {
+    color: var(--color-taupe);
+  }
+}
+
+.ui-select-chevron {
+  flex-shrink: 0;
+  color: var(--color-taupe);
+  transition: rotate var(--duration-quick) var(--ease-standard);
+}
+
+.ui-select.is-open .ui-select-chevron {
+  rotate: 180deg;
+}
+
+// The bare variant drops the box, for toolbars where the control sits inline
+// with running text.
+.ui-select.is-bare .ui-select-trigger {
+  padding: var(--space-2xs) 0;
+  border: 0;
+  background: none;
+  font-size: var(--text-sm);
+  gap: var(--space-2xs);
+
+  &:hover:not(:disabled) {
+    color: var(--color-gold);
+  }
+}
+
+.ui-select-list {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + var(--space-2xs));
+  right: 0;
+  left: 0;
+  overflow-y: auto;
+  max-height: 15rem;
+  margin: 0;
+  padding: var(--space-2xs);
+  border: 1px solid var(--color-border-warm);
+  background-color: var(--color-white);
+  box-shadow: 0 0.75rem 2rem rgb(26 26 26 / 12%);
+  list-style: none;
+}
+
+// A bare trigger is usually right-aligned, so the menu hangs from its right
+// edge rather than stretching to the trigger's narrow width.
+.ui-select.is-bare .ui-select-list {
+  left: auto;
+  min-width: 12rem;
+}
+
+.ui-select-option {
+  padding: var(--space-xs) var(--space-sm);
+  color: var(--color-ink-soft);
+  cursor: pointer;
+  font-size: var(--text-sm);
+  transition:
+    background-color var(--duration-instant) var(--ease-standard),
+    color var(--duration-instant) var(--ease-standard);
+
+  // Highlighted by keyboard or pointer. One state for both, so arrowing and
+  // hovering never disagree about which row is live.
+  &.is-active {
+    background-color: var(--color-cream-2);
+    color: var(--color-ink);
+  }
+
+  &.is-selected {
+    color: var(--color-ink);
+    font-weight: var(--font-weight-medium);
+  }
+
+  &.is-disabled {
+    color: var(--color-taupe-light);
+    cursor: default;
+  }
+}

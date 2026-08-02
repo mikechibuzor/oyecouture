@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ADMIN_COPY, ADMIN_ROUTES } from '~/constants/admin'
+import { ADMIN_ROUTES } from '~/constants/admin'
 
 const { session, logOut } = useAdminSession()
 const router = useRouter()
@@ -18,20 +18,8 @@ const handleSignOut = async (): Promise<void> => {
 </script>
 
 <template>
-  <div class="admin-shell">
-    <header v-if="session" class="admin-bar">
-      <p class="admin-bar-brand">
-        {{ ADMIN_COPY.brand }}
-        <span>{{ ADMIN_COPY.panel }}</span>
-      </p>
-
-      <div class="admin-bar-session">
-        <span class="admin-bar-email">{{ session.email }}</span>
-        <button type="button" class="admin-bar-signout" @click="handleSignOut">
-          {{ ADMIN_COPY.signOut }}
-        </button>
-      </div>
-    </header>
+  <div class="admin-shell" :class="{ 'is-signed-in': Boolean(session) }">
+    <AdminSideNav v-if="session" :session="session" @sign-out="handleSignOut" />
 
     <main class="admin-main">
       <slot />

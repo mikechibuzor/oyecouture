@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 )
 
 // List reads one page of orders for the admin, newest first. The total is taken
@@ -32,6 +33,8 @@ func (repository *PostgresRepository) List(
 				OR o.email ILIKE $3 ESCAPE '\'
 				OR o.phone ILIKE $3 ESCAPE '\'
 		  )
+		  AND ($6::timestamptz IS NULL OR o.created_at >= $6)
+		  AND ($7::timestamptz IS NULL OR o.created_at < $7)
 		ORDER BY o.created_at DESC, o.order_no DESC
 		LIMIT $4 OFFSET $5
 	`
@@ -44,7 +47,7 @@ func (repository *PostgresRepository) List(
 	rows, err := repository.pool.Query(
 		requestContext, query,
 		string(filter.Status), string(filter.Kind), searchPattern,
-		filter.Limit, filter.Offset,
+		filter.Limit, filter.Offset, filter.From, filter.To,
 	)
 	if err != nil {
 		return Page{}, fmt.Errorf("query orders: %w", err)
@@ -102,17 +105,56 @@ func (repository *PostgresRepository) countOrders(
 				OR o.email ILIKE $3 ESCAPE '\'
 				OR o.phone ILIKE $3 ESCAPE '\'
 		  )
+		  AND ($4::timestamptz IS NULL OR o.created_at >= $4)
+		  AND ($5::timestamptz IS NULL OR o.created_at < $5)
 	`
 
 	var total int
 	if err := repository.pool.QueryRow(
 		requestContext, query,
 		string(filter.Status), string(filter.Kind), searchPattern,
+		filter.From, filter.To,
 	).Scan(&total); err != nil {
 		return 0, fmt.Errorf("count orders: %w", err)
 	}
 
 	return total, nil
+}
+
+// Metrics counts the orders by state in a single pass. A nil `since` covers
+// all time.
+func (repository *PostgresRepository) Metrics(
+	requestContext context.Context,
+	since *time.Time,
+) (Metrics, error) {
+	const query = `
+		SELECT
+			COUNT(*),
+			COUNT(*) FILTER (WHERE status = $1),
+			COUNT(*) FILTER (WHERE status = $2),
+			COUNT(*) FILTER (WHERE status = ANY($3)),
+			COALESCE(SUM(total_kobo) FILTER (WHERE status = ANY($3)), 0)
+		FROM orders
+		WHERE $4::timestamptz IS NULL OR created_at >= $4
+	`
+
+	paid := make([]string, 0, len(PaidStatuses))
+	for _, status := range PaidStatuses {
+		paid = append(paid, string(status))
+	}
+
+	var metrics Metrics
+	if err := repository.pool.QueryRow(
+		requestContext, query,
+		string(StatusPendingConfirmation), string(StatusAwaitingPayment), paid, since,
+	).Scan(
+		&metrics.Total, &metrics.PendingConfirmation,
+		&metrics.AwaitingPayment, &metrics.Paid, &metrics.RevenueKobo,
+	); err != nil {
+		return Metrics{}, fmt.Errorf("query order metrics: %w", err)
+	}
+
+	return metrics, nil
 }
 
 // escapeLikePattern neutralises the ILIKE wildcards so a customer searching for

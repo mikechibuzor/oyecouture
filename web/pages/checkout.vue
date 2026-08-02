@@ -4,6 +4,7 @@ import { CHECKOUT_COPY } from '~/constants/checkout'
 import { PRODUCT_COPY } from '~/constants/products'
 import type { DeliveryZone, Order } from '~/types/order'
 import { StorefrontRoute } from '~/types/storefront'
+import type { SelectOption } from '~/types/ui'
 import { formatProductPrice } from '~/utils/product'
 
 const { clear, isEmpty, lines, subtotalKobo } = useCart()
@@ -23,6 +24,15 @@ const placedOrder = ref<Order | null>(null)
 useSeoMeta({ title: `${CHECKOUT_COPY.heading} — Oyecouture Bespoke` })
 
 const zones = computed<readonly DeliveryZone[]>(() => zoneData.value?.zones ?? [])
+
+// The fee is part of the label so the customer sees what each area costs before
+// choosing, not after.
+const zoneSelectOptions = computed<SelectOption[]>(() =>
+  zones.value.map((zone) => ({
+    value: zone.name,
+    label: `${zone.name} — ${formatProductPrice(zone.feeKobo)}`,
+  })),
+)
 const selectedZone = computed(() =>
   zones.value.find((zone) => zone.name === deliveryZoneName.value) ?? null,
 )
@@ -32,6 +42,13 @@ const totalKobo = computed(() => subtotalKobo.value + deliveryFeeKobo.value)
 
 const handleSubmit = async (): Promise<void> => {
   if (isSubmitting.value || isEmpty.value) {
+    return
+  }
+
+  // The styled dropdown is a button, so the browser cannot enforce `required`
+  // on it the way it did for the native select.
+  if (!deliveryZoneName.value) {
+    errorMessage.value = CHECKOUT_COPY.zoneRequired
     return
   }
 
@@ -125,16 +142,16 @@ const handleSubmit = async (): Promise<void> => {
               />
             </label>
 
-            <label>
+            <div class="checkout-zone-field">
               <span>{{ CHECKOUT_COPY.zone }}</span>
-              <select v-model="deliveryZoneName" name="deliveryZone" required>
-                <option value="" disabled>{{ CHECKOUT_COPY.zonePlaceholder }}</option>
-                <option v-for="zone in zones" :key="zone.name" :value="zone.name">
-                  {{ zone.name }} — {{ formatProductPrice(zone.feeKobo) }}
-                </option>
-              </select>
+              <UiSelect
+                v-model="deliveryZoneName"
+                :options="zoneSelectOptions"
+                :label="CHECKOUT_COPY.zone"
+                :placeholder="CHECKOUT_COPY.zonePlaceholder"
+              />
               <small>{{ CHECKOUT_COPY.zoneHint }}</small>
-            </label>
+            </div>
           </fieldset>
         </div>
 

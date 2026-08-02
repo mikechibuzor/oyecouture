@@ -12,6 +12,7 @@ export const CHECKOUT_COPY = {
   zone: 'Delivery area',
   zonePlaceholder: 'Select a delivery area',
   zoneHint: 'International delivery is arranged with us directly after your order.',
+  zoneRequired: 'Please choose a delivery area.',
   summaryHeading: 'Your order',
   subtotal: 'Subtotal',
   delivery: 'Delivery',

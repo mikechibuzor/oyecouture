@@ -70,7 +70,8 @@ $confirm-width: 68rem;
     text-transform: uppercase;
   }
 
-  label {
+  label,
+  .checkout-zone-field {
     display: grid;
     margin-bottom: var(--space-lg);
     gap: var(--space-2xs);
@@ -312,15 +313,4 @@ $confirm-width: 68rem;
   font-size: var(--text-xs);
   line-height: 1.6;
   text-align: center;
-}
-
-.confirm-fields select {
-  min-height: 2.875rem;
-  padding: 0 var(--space-sm);
-  border: 1px solid var(--color-border);
-  border-radius: 0;
-  color: var(--color-ink);
-  background: var(--color-white);
-  font: inherit;
-  font-size: var(--text-sm);
 }

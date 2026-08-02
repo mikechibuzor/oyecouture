@@ -1,5 +1,6 @@
 import { OrderKind } from '~/types/order'
-import { OrderStatus } from '~/types/admin'
+import type { AdminFilterOption, AdminMetricCard, AdminNavGroup } from '~/types/admin'
+import { AdminFilterType, MetricsPeriod, OrderStatus } from '~/types/admin'
 
 export const ADMIN_ROUTES = {
   login: '/admin/login',
@@ -11,11 +12,12 @@ export const ADMIN_API_ROUTES = {
   logout: '/admin/logout',
   me: '/admin/me',
   orders: '/admin/orders',
+  orderMetrics: '/admin/orders/metrics',
 } as const
 
 export const ADMIN_COPY = {
   brand: 'Oyecouture',
-  panel: 'Order desk',
+  panel: 'Admin',
   signIn: 'Sign in',
   signOut: 'Sign out',
   signingIn: 'Signing in…',
@@ -27,6 +29,7 @@ export const ADMIN_COPY = {
   loginThrottled: 'Too many attempts. Wait a few minutes and try again.',
   loginUnreachable: 'Could not reach the server. Check your connection.',
   ordersHeading: 'Orders',
+  ordersSubheading: 'Manage orders',
   searchLabel: 'Search orders',
   searchPlaceholder: 'Order number, name, email or phone',
   statusLabel: 'Status',
@@ -41,13 +44,81 @@ export const ADMIN_COPY = {
   clearFilters: 'Clear filters',
   previous: 'Previous',
   next: 'Next',
+  pendingBadge: 'Soon',
+  navigationLabel: 'Admin sections',
+  collapseSidebar: 'Collapse sidebar',
+  expandSidebar: 'Expand sidebar',
+  periodLabel: 'Summary period',
+  filter: 'Filter',
+  filterEmpty: 'All',
+  appliedFiltersLabel: 'Applied filters',
+  clearFilter: 'Clear filter',
 } as const
 
-// The page size the list requests; the API clamps anything larger.
-export const ADMIN_ORDERS_PAGE_SIZE = 25
+// The summary strip covers this window by default.
+export const ADMIN_DEFAULT_PERIOD = MetricsPeriod.AllTime
+
+export const METRICS_PERIOD_LABELS: Readonly<Record<MetricsPeriod, string>> = {
+  [MetricsPeriod.Today]: 'Today',
+  [MetricsPeriod.LastWeek]: 'Last week',
+  [MetricsPeriod.Last14Days]: 'Last 14 days',
+  [MetricsPeriod.Last60Days]: 'Last 60 days',
+  [MetricsPeriod.Last90Days]: 'Last 90 days',
+  [MetricsPeriod.AllTime]: 'All time',
+}
+
+export const METRICS_PERIOD_OPTIONS: readonly MetricsPeriod[] = [
+  MetricsPeriod.Today,
+  MetricsPeriod.LastWeek,
+  MetricsPeriod.Last14Days,
+  MetricsPeriod.Last60Days,
+  MetricsPeriod.Last90Days,
+  MetricsPeriod.AllTime,
+]
+
+// Ten rows a page, matching the house admin pattern.
+export const ADMIN_ORDERS_PAGE_SIZE = 10
 
 // Typing in the search box should not fire a request per keystroke.
 export const ADMIN_SEARCH_DEBOUNCE_MS = 250
+
+// The summary strip. The first card clears the status filter; the rest apply
+// theirs, so the numbers double as one-click filters.
+export const ADMIN_METRIC_CARDS: readonly AdminMetricCard[] = [
+  { id: 'total', label: 'All orders', statusFilter: null },
+  {
+    id: 'pendingConfirmation',
+    label: 'Pending confirmation',
+    statusFilter: OrderStatus.PendingConfirmation,
+  },
+  {
+    id: 'awaitingPayment',
+    label: 'Awaiting payment',
+    statusFilter: OrderStatus.AwaitingPayment,
+  },
+  { id: 'paid', label: 'Paid', statusFilter: OrderStatus.Paid },
+  { id: 'revenueKobo', label: 'Revenue', statusFilter: null, isMoney: true },
+]
+
+// The shape of the finished admin. Only Orders is built; the rest are marked
+// pending rather than linking nowhere.
+export const ADMIN_NAVIGATION: readonly AdminNavGroup[] = [
+  {
+    id: 'main',
+    label: 'Main',
+    items: [
+      { id: 'orders', label: 'Orders', route: ADMIN_ROUTES.orders },
+      { id: 'products', label: 'Products', isPending: true },
+      { id: 'home-content', label: 'Home content', isPending: true },
+      { id: 'delivery', label: 'Delivery', isPending: true },
+    ],
+  },
+  {
+    id: 'other',
+    label: 'Other',
+    items: [{ id: 'settings', label: 'Settings', isPending: true }],
+  },
+]
 
 // Status labels and tones. Tone drives the badge colour only.
 export const ORDER_STATUS_LABELS: Readonly<Record<OrderStatus, string>> = {
@@ -81,4 +152,27 @@ export const ORDER_STATUS_OPTIONS: readonly OrderStatus[] = [
 export const ORDER_KIND_OPTIONS: readonly OrderKind[] = [
   OrderKind.Bespoke,
   OrderKind.ReadyToWear,
+]
+
+export const ADMIN_ORDER_FILTER_OPTIONS: readonly AdminFilterOption[] = [
+  {
+    key: 'status',
+    label: ADMIN_COPY.statusLabel,
+    type: AdminFilterType.Select,
+    items: ORDER_STATUS_OPTIONS.map((status) => ({
+      value: status,
+      label: ORDER_STATUS_LABELS[status],
+    })),
+  },
+  {
+    key: 'kind',
+    label: ADMIN_COPY.kindLabel,
+    type: AdminFilterType.Select,
+    items: ORDER_KIND_OPTIONS.map((kind) => ({
+      value: kind,
+      label: ORDER_KIND_LABELS[kind],
+    })),
+  },
+  { key: 'from', label: 'From date', type: AdminFilterType.Date },
+  { key: 'to', label: 'To date', type: AdminFilterType.Date },
 ]
