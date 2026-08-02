@@ -12,6 +12,23 @@
 - **Repo / branch:** `/Users/chibuzoriwuagwu/Downloads/share/oyecouture` · `main`.
 - **Last implementation commits:** `2be9f3c` (row-click order detail navigation), `ac24935` (metrics/table alignment polish), `9619edc` (responsive admin filter popover), `d701dfd` (order detail/actions), `a8a372c` (order desk pagination + microinteractions), `966392e` (orders metrics + VBAN-style filters), `fddbe22` (admin orders desk), `93c564c` (admin orders API), `22065c9` (admin authentication).
 
+## 🖼 PRODUCT PHOTOGRAPHY + CLOUDINARY (Claude, 3 Aug)
+
+**Cloudinary is the image backend** (user's decision; it was also the original PRD plan). Credentials in the gitignored `.env` as `CLOUDINARY_CLOUD_NAME=exgithrw`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`. ⚠️ **The API secret was pasted into chat — regenerate it in the Cloudinary console once setup is done.** The key had to be moved from *media user* to *admin* role; a media-user key returns `403 missing permissions (actions=["create"])` on upload.
+
+**Serving needs no code change.** `buildPublicImageURL` is `base + "/" + key`, so pointing `R2_PUBLIC_BASE` at `https://res.cloudinary.com/exgithrw/image/upload/f_auto,q_auto` and storing the Cloudinary public_id in `product_images.r2_key` just works. (`r2_key`/`R2_PUBLIC_BASE` are now misnomers — they hold a Cloudinary public id and delivery base.)
+
+**92 images uploaded** from the client's two Drive folders, resized 2400px/q88 first: **709 MB → 102 MB**. Public ids are `oyecouture/casual-NN`, `oyecouture/asoke-look-NN-N`, `oyecouture/campaign-N`. Uses **0.4% of the 25 free monthly credits**.
+
+**Measured delivery sizes (do not re-estimate — these are real):** casuals ~99 KB at w_1200; aso-oke **125 KB at w_600, 254 KB at w_900, 408 KB at w_1200** — textile detail compresses poorly. Realistic ceiling ≈ **16,000 page views/month**, not the 29–40k first projected. Keep grids at w_400–600 and consider `q_auto:eco` for thumbnails.
+
+**The client's real inventory, grouped and priced (dummy prices, awaiting client correction):**
+- **Aso-oke → `trad`, aso-oke filter, 12 looks:** full agbada (L1, L2, L4, L5) ₦780,000 · aso-oke two-piece (L8, L9, L11, L12) ₦520,000 · embroidered buba+sokoto (L3, L6) ₦295,000. **L7 is a couple shot** (wedding ensemble, ₦860,000?) and **L10 shows two models** (L9 + L1 together — probably lifestyle, not a product). Both need the user's call.
+- **Casuals → 11 products from 33 photos:** long-sleeve two-piece ₦115,000 · short-sleeve two-piece ₦98,000 · women's two-piece ₦105,000.
+- **7 campaign images** (`Group *`, `October *`) are multi-model shots — lookbook/banners, not products.
+
+**▶ DECIDED: the 27 existing products are design-mockup placeholders, not real inventory.** `trad` and `casuals-*` are to be **replaced** by the real photographed products; `suits` stays on placeholders until suit photography arrives.
+
 ## 🚀 STAGING SERVER IS LIVE (Claude, 2 Aug) — Hostinger, netcup abandoned
 
 **Hosting moved from netcup to Hostinger.** ⏰ **netcup order `54429992` must still be formally withdrawn — €68.64 unpaid, window closes ~13 Aug.** Nothing depends on it any more; not withdrawing just buys a 12-month liability.
