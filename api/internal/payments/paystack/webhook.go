@@ -6,9 +6,12 @@ import (
 	"crypto/sha512"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"io"
 	"log"
 	"net/http"
+
+	"github.com/uzor-co/oyecouture/api/internal/payments"
 )
 
 const maximumWebhookBytes = 128 << 10
@@ -52,7 +55,19 @@ func (handler *WebhookHandler) Handle(responseWriter http.ResponseWriter, reques
 
 	if event.Event == "charge.success" && event.Data.Reference != "" {
 		if err := handler.service.ConfirmWebhookReference(request.Context(), event.Data.Reference); err != nil {
-			log.Printf("confirm paystack webhook failed: %v", err)
+			// Paystack retries any non-2xx. Redelivering an event we can never
+			// accept would retry forever, so those are acknowledged and logged
+			// instead — an amount or currency mismatch is a signal for a human,
+			// not something a retry can resolve.
+			if isTerminal(err) {
+				log.Printf("paystack webhook not retryable, acknowledged: reference=%s: %v",
+					event.Data.Reference, err)
+				responseWriter.WriteHeader(http.StatusOK)
+				return
+			}
+
+			log.Printf("confirm paystack webhook failed, will be retried: reference=%s: %v",
+				event.Data.Reference, err)
 			writeWebhookError(responseWriter, http.StatusInternalServerError,
 				"the webhook could not be processed")
 			return
@@ -60,6 +75,31 @@ func (handler *WebhookHandler) Handle(responseWriter http.ResponseWriter, reques
 	}
 
 	responseWriter.WriteHeader(http.StatusOK)
+}
+
+// terminalErrors cannot be resolved by delivering the event again: the
+// reference is unknown to us, or the payment does not match the order it
+// claims to settle.
+var terminalErrors = []error{
+	payments.ErrReferenceNotFound,
+	payments.ErrReferenceMismatch,
+	payments.ErrPaymentAmountMismatch,
+	payments.ErrPaymentCurrency,
+	payments.ErrOrderNotPayable,
+	payments.ErrOrderNotFound,
+}
+
+// isTerminal reports whether retrying is pointless. Anything unrecognised is
+// deliberately treated as transient: a database blip or an unreachable Paystack
+// must be retried, and wrongly acknowledging one would drop a real payment.
+func isTerminal(err error) bool {
+	for _, terminal := range terminalErrors {
+		if errors.Is(err, terminal) {
+			return true
+		}
+	}
+
+	return false
 }
 
 func validSignature(body []byte, signature string, secretKey string) bool {
