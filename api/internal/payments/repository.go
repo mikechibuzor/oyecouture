@@ -228,11 +228,8 @@ func (repository *PostgresRepository) ConfirmSuccessfulPayment(
 	}
 	order.ID = attempt.OrderID
 
-	if attempt.AmountKobo != verification.AmountKobo || order.TotalKobo != verification.AmountKobo {
-		return Order{}, ErrPaymentAmountMismatch
-	}
-	if attempt.Currency != verification.Currency || verification.Currency != CurrencyNGN {
-		return Order{}, ErrPaymentCurrency
+	if err := verificationMatchesOrder(attempt, order, verification); err != nil {
+		return Order{}, err
 	}
 
 	paidAt := nullableTime(verification.PaidAt)
@@ -282,6 +279,24 @@ func (repository *PostgresRepository) ConfirmSuccessfulPayment(
 	}
 
 	return order, nil
+}
+
+// verificationMatchesOrder is the guard that stops an order being marked paid
+// for the wrong money. The provider's amount must equal both the attempt we
+// created and the order total, so neither a tampered attempt nor a repriced
+// order can slip through, and the currency must be the one we charge in.
+//
+// It is a pure function so it can be tested without a database: it is the last
+// check standing between a partial payment and a fulfilled order.
+func verificationMatchesOrder(attempt Attempt, order Order, verification Verification) error {
+	if attempt.AmountKobo != verification.AmountKobo || order.TotalKobo != verification.AmountKobo {
+		return ErrPaymentAmountMismatch
+	}
+	if attempt.Currency != verification.Currency || verification.Currency != CurrencyNGN {
+		return ErrPaymentCurrency
+	}
+
+	return nil
 }
 
 func (repository *PostgresRepository) itemsForOrder(
