@@ -5,6 +5,12 @@ One short entry per work session or meaningful chunk. Format:
 
 ---
 
+## 2026-08-02T16:02:41+01:00 · Codex · Paystack payment foundation
+- **Did:** Continued from the payment planning and implemented the Paystack-first payment flow: `payment_attempts` migration, Paystack initialize/verify provider, payment service/repository with idempotent paid settlement, signed `/webhooks/paystack`, public `/payments/{payToken}` APIs, `/pay/{payToken}` and callback pages, and checkout redirect-to-payment for ready-to-wear orders.
+- **State:** Sandbox secret lives only in ignored `.env`; committed files contain empty env placeholders only. Verified `go test ./...`, `go test ./internal/payments`, `npx vue-tsc --noEmit -p tsconfig.json`, `npm run build`, and a secret scan outside `.env`. Callback verification now requires the reference to belong to the same order as the pay token; webhook confirmation remains reference-based.
+- **Next:** Test a real sandbox card through the browser, then expose the API on public HTTPS and register `POST /webhooks/paystack` in the Paystack dashboard.
+- **Blockers:** Public HTTPS/staging URL for real webhook delivery, Paystack public key if inline payment is later desired, Resend API key, real WhatsApp number, client delivery fees/photos/content, and netcup server/deploy.
+
 ## 2026-08-02T15:15:48+01:00 · Codex · Admin order desk click polish
 - **Did:** Committed `ac24935` for taller metrics and table column alignment; committed `2be9f3c` so clicking or keyboard-opening an order row navigates to the existing detail page while nested links keep native behavior.
 - **State:** Verified `npx vue-tsc --noEmit -p tsconfig.json`, `npx sass --no-source-map assets/scss/main.scss /tmp/oyecouture-admin.css`, and `git diff --check`.

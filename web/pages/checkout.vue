@@ -2,7 +2,7 @@
 import { CART_COPY } from '~/constants/cart'
 import { CHECKOUT_COPY } from '~/constants/checkout'
 import { PRODUCT_COPY } from '~/constants/products'
-import type { DeliveryZone, Order } from '~/types/order'
+import type { DeliveryZone } from '~/types/order'
 import { StorefrontRoute } from '~/types/storefront'
 import type { SelectOption } from '~/types/ui'
 import { formatProductPrice } from '~/utils/product'
@@ -10,6 +10,7 @@ import { formatProductPrice } from '~/utils/product'
 const { clear, isEmpty, lines, subtotalKobo } = useCart()
 const { submitOrder } = useOrders()
 const { data: zoneData } = await useDeliveryZones()
+const router = useRouter()
 
 const customerName = ref('')
 const email = ref('')
@@ -19,7 +20,6 @@ const deliveryZoneName = ref('')
 
 const isSubmitting = ref(false)
 const errorMessage = ref('')
-const placedOrder = ref<Order | null>(null)
 
 useSeoMeta({ title: `${CHECKOUT_COPY.heading} — Oyecouture Bespoke` })
 
@@ -70,8 +70,8 @@ const handleSubmit = async (): Promise<void> => {
       deliveryZone: deliveryZoneName.value,
     })
 
-    placedOrder.value = order
     clear()
+    await router.push(`/pay/${order.payToken}`)
   } catch (submitError) {
     const apiError = submitError as { data?: { error?: { message?: string } } }
     errorMessage.value = apiError?.data?.error?.message ?? CHECKOUT_COPY.errorFallback
@@ -83,26 +83,15 @@ const handleSubmit = async (): Promise<void> => {
 
 <template>
   <div class="confirm-page">
-    <section v-if="placedOrder" class="confirm-success">
-      <p class="confirm-eyebrow">{{ CHECKOUT_COPY.successEyebrow }}</p>
-      <h1>{{ CHECKOUT_COPY.successHeading }}</h1>
-      <p class="confirm-order-no">{{ placedOrder.orderNo }}</p>
-      <p class="confirm-success-body">{{ CHECKOUT_COPY.successBody }}</p>
-      <NuxtLink class="confirm-submit" :to="StorefrontRoute.Collection">
-        {{ CHECKOUT_COPY.successAction }}
-      </NuxtLink>
-    </section>
-
-    <template v-else>
-      <header class="confirm-header">
-        <nav class="category-breadcrumbs" :aria-label="PRODUCT_COPY.breadcrumbs.label">
-          <NuxtLink :to="StorefrontRoute.Home">{{ PRODUCT_COPY.breadcrumbs.home }}</NuxtLink>
-          <span aria-hidden="true">/</span>
-          <span>{{ CHECKOUT_COPY.breadcrumb }}</span>
-        </nav>
-        <h1>{{ CHECKOUT_COPY.heading }}</h1>
-        <p>{{ CHECKOUT_COPY.description }}</p>
-      </header>
+    <header class="confirm-header">
+      <nav class="category-breadcrumbs" :aria-label="PRODUCT_COPY.breadcrumbs.label">
+        <NuxtLink :to="StorefrontRoute.Home">{{ PRODUCT_COPY.breadcrumbs.home }}</NuxtLink>
+        <span aria-hidden="true">/</span>
+        <span>{{ CHECKOUT_COPY.breadcrumb }}</span>
+      </nav>
+      <h1>{{ CHECKOUT_COPY.heading }}</h1>
+      <p>{{ CHECKOUT_COPY.description }}</p>
+    </header>
 
       <p v-if="isEmpty" class="confirm-empty">
         {{ CART_COPY.empty }}
@@ -192,6 +181,5 @@ const handleSubmit = async (): Promise<void> => {
           <p class="checkout-payment-note">{{ CHECKOUT_COPY.paymentNote }}</p>
         </aside>
       </form>
-    </template>
   </div>
 </template>

@@ -21,7 +21,8 @@ import (
 // main prepares infrastructure, starts the API, and coordinates graceful shutdown.
 func main() {
 	// Load local development values before resolving the application configuration.
-	_ = godotenv.Load(".env", "../.env")
+	_ = godotenv.Load("../.env")
+	_ = godotenv.Load(".env")
 
 	applicationConfig := config.Load()
 

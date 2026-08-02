@@ -26,7 +26,8 @@ import (
 const minimumPasswordLength = 12
 
 func main() {
-	_ = godotenv.Load(".env", "../.env")
+	_ = godotenv.Load("../.env")
+	_ = godotenv.Load(".env")
 	applicationConfig := config.Load()
 
 	pool, err := pgxpool.New(context.Background(), applicationConfig.DatabaseURL)

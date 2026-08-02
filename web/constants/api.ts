@@ -2,6 +2,10 @@ export const API_ROUTES = {
   deliveryZones: '/delivery-zones',
   health: '/healthz',
   orders: '/orders',
+  payment: (payToken: string) => `/payments/${encodeURIComponent(payToken)}`,
+  paymentInitialize: (payToken: string) =>
+    `/payments/${encodeURIComponent(payToken)}/initialize`,
+  paymentVerify: (payToken: string) => `/payments/${encodeURIComponent(payToken)}/verify`,
   products: '/products',
 } as const
 
