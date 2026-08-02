@@ -97,8 +97,14 @@ services:
     command:
       - |
         while true; do
-          sh /usr/local/bin/backup.sh "${POSTGRES_USER:-oye}" "${POSTGRES_DB:-oyecouture}" || echo "backup failed"
-          sleep 86400
+          if sh /usr/local/bin/backup.sh "${POSTGRES_USER:-oye}" "${POSTGRES_DB:-oyecouture}"; then
+            sleep 86400
+          else
+            # A rejected dump usually means this fired before migrations ran, so
+            # retry soon rather than leaving the box unbacked for a whole day.
+            echo "backup failed, retrying in 300s"
+            sleep 300
+          fi
         done
     depends_on:
       postgres:
