@@ -16,21 +16,21 @@ import (
 
 const defaultBaseURL = "https://api.paystack.co"
 
-type Provider struct {
+type Paystack struct {
 	secretKey  string
 	baseURL    string
 	httpClient *http.Client
 }
 
-func NewProvider(secretKey string) *Provider {
-	return &Provider{
+func NewPaystack(secretKey string) *Paystack {
+	return &Paystack{
 		secretKey:  secretKey,
 		baseURL:    defaultBaseURL,
 		httpClient: &http.Client{Timeout: 20 * time.Second},
 	}
 }
 
-func (provider *Provider) Name() string { return payments.ProviderPaystack }
+func (paystack *Paystack) Name() string { return payments.ProviderPaystack }
 
 type initializeRequest struct {
 	Email       string         `json:"email"`
@@ -64,11 +64,11 @@ type verifyResponse struct {
 	} `json:"data"`
 }
 
-func (provider *Provider) Initialize(
+func (paystack *Paystack) Initialize(
 	requestContext context.Context,
 	request payments.InitializeRequest,
 ) (payments.InitializeResult, []byte, error) {
-	if provider.secretKey == "" {
+	if paystack.secretKey == "" {
 		return payments.InitializeResult{}, nil, payments.ErrPaymentUnavailable
 	}
 
@@ -87,7 +87,7 @@ func (provider *Provider) Initialize(
 		return payments.InitializeResult{}, nil, fmt.Errorf("encode paystack initialize: %w", err)
 	}
 
-	responseBody, err := provider.do(requestContext, http.MethodPost, "/transaction/initialize", payload)
+	responseBody, err := paystack.do(requestContext, http.MethodPost, "/transaction/initialize", payload)
 	if err != nil {
 		return payments.InitializeResult{}, responseBody, err
 	}
@@ -107,15 +107,15 @@ func (provider *Provider) Initialize(
 	}, responseBody, nil
 }
 
-func (provider *Provider) Verify(
+func (paystack *Paystack) Verify(
 	requestContext context.Context,
 	reference string,
 ) (payments.Verification, error) {
-	if provider.secretKey == "" {
+	if paystack.secretKey == "" {
 		return payments.Verification{}, payments.ErrPaymentUnavailable
 	}
 
-	responseBody, err := provider.do(
+	responseBody, err := paystack.do(
 		requestContext, http.MethodGet, "/transaction/verify/"+url.PathEscape(reference), nil,
 	)
 	if err != nil {
@@ -143,7 +143,7 @@ func (provider *Provider) Verify(
 	}, nil
 }
 
-func (provider *Provider) do(
+func (paystack *Paystack) do(
 	requestContext context.Context,
 	method string,
 	path string,
@@ -155,18 +155,18 @@ func (provider *Provider) do(
 	}
 
 	request, err := http.NewRequestWithContext(
-		requestContext, method, provider.baseURL+path, body,
+		requestContext, method, paystack.baseURL+path, body,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("create paystack request: %w", err)
 	}
 
-	request.Header.Set("Authorization", "Bearer "+provider.secretKey)
+	request.Header.Set("Authorization", "Bearer "+paystack.secretKey)
 	if payload != nil {
 		request.Header.Set("Content-Type", "application/json")
 	}
 
-	response, err := provider.httpClient.Do(request)
+	response, err := paystack.httpClient.Do(request)
 	if err != nil {
 		return nil, fmt.Errorf("call paystack: %w", err)
 	}

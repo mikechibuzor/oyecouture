@@ -29,7 +29,7 @@ api/internal/payments/
   service.go                payment orchestration and verification logic
   service_test.go           provider-agnostic service tests
   paystack/
-    provider.go             Paystack initialize and verify API client
+    paystack.go             Paystack initialize and verify API client
     webhook.go              Paystack webhook signature validation and handler
     webhook_test.go         Paystack signature tests
   nomba/

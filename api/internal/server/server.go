@@ -99,7 +99,7 @@ func New(applicationConfig config.Config, databasePool *pgxpool.Pool) *http.Serv
 // providers unavailable rather than silently charging through the wrong one.
 func paymentProvider(applicationConfig config.Config) payments.Provider {
 	if applicationConfig.PaymentProvider == payments.ProviderPaystack {
-		return paystack.NewProvider(applicationConfig.PaystackSecretKey)
+		return paystack.NewPaystack(applicationConfig.PaystackSecretKey)
 	}
 
 	return nil
