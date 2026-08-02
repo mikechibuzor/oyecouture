@@ -58,10 +58,14 @@ done
 
 # Every build leaves cache and a superseded image behind. Left alone that grows
 # by roughly half a gigabyte per deploy and eventually fills the disk, which
-# surfaces months later as a build failing for no obvious reason. A week of
-# cache is kept so incremental builds stay fast.
+# surfaces months later as a build failing for no obvious reason. Capped by
+# size rather than age: age-based retention keeps everything during a busy
+# week of deploys, which is exactly when it grows fastest. 4GB keeps
+# incremental builds fast while bounding the worst case.
 echo "==> Reclaiming disk from old builds"
-docker builder prune --force --filter until=168h >/dev/null 2>&1 || true
+docker builder prune --force --max-used-space 4GB >/dev/null 2>&1 \
+  || docker builder prune --force --filter until=168h >/dev/null 2>&1 \
+  || true
 docker image prune --force >/dev/null 2>&1 || true
 echo "    $(df -h / | awk 'NR==2{print $4" free of "$2}')"
 
