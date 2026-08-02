@@ -1,4 +1,4 @@
-import type { OrderKind } from '~/types/order'
+import type { MeasurementsRequest, OrderItem, OrderKind } from '~/types/order'
 
 // The order lifecycle, mirroring the database CHECK constraint.
 export enum OrderStatus {
@@ -35,6 +35,31 @@ export interface AdminOrderPage {
   readonly total: number
   readonly limit: number
   readonly offset: number
+}
+
+export interface AdminOrderDetail {
+  readonly orderNo: string
+  readonly kind: OrderKind
+  readonly status: OrderStatus
+  readonly customerName: string
+  readonly email: string
+  readonly phone: string
+  readonly address?: string
+  readonly deliveryZone?: string
+  readonly deliveryFeeKobo: number
+  readonly subtotalKobo: number
+  readonly totalKobo: number
+  readonly payToken: string
+  readonly paymentProvider?: string
+  readonly paymentRef?: string
+  readonly items: readonly OrderItem[]
+  readonly measurements?: MeasurementsRequest
+  readonly createdAt: string
+}
+
+export interface AdminStatusAction {
+  readonly status: OrderStatus
+  readonly label: string
 }
 
 // The window the summary strip covers. It filters the metrics only — the list

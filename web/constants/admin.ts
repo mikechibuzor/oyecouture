@@ -1,10 +1,16 @@
 import { OrderKind } from '~/types/order'
-import type { AdminFilterOption, AdminMetricCard, AdminNavGroup } from '~/types/admin'
+import type {
+  AdminFilterOption,
+  AdminMetricCard,
+  AdminNavGroup,
+  AdminStatusAction,
+} from '~/types/admin'
 import { AdminFilterType, MetricsPeriod, OrderStatus } from '~/types/admin'
 
 export const ADMIN_ROUTES = {
   login: '/admin/login',
   orders: '/admin',
+  orderDetail: (orderNo: string) => `/admin/orders/${encodeURIComponent(orderNo)}`,
 } as const
 
 export const ADMIN_API_ROUTES = {
@@ -13,6 +19,8 @@ export const ADMIN_API_ROUTES = {
   me: '/admin/me',
   orders: '/admin/orders',
   orderMetrics: '/admin/orders/metrics',
+  orderDetail: (orderNo: string) => `/admin/orders/${encodeURIComponent(orderNo)}`,
+  orderStatus: (orderNo: string) => `/admin/orders/${encodeURIComponent(orderNo)}/status`,
 } as const
 
 export const ADMIN_COPY = {
@@ -53,6 +61,24 @@ export const ADMIN_COPY = {
   filterEmpty: 'All',
   appliedFiltersLabel: 'Applied filters',
   clearFilter: 'Clear filter',
+  backToOrders: 'Back to orders',
+  orderDetailLoading: 'Loading order…',
+  orderDetailFailed: 'The order could not be loaded.',
+  customerDetails: 'Customer',
+  orderItems: 'Items',
+  measurements: 'Measurements',
+  noMeasurements: 'No measurements submitted.',
+  paymentLink: 'Payment link',
+  copyPaymentLink: 'Copy payment link',
+  copied: 'Copied',
+  whatsappReply: 'WhatsApp reply',
+  statusActions: 'Status actions',
+  noStatusActions: 'No manual status actions are available.',
+  statusUpdateFailed: 'The status could not be updated.',
+  statusUpdating: 'Updating…',
+  subtotal: 'Subtotal',
+  delivery: 'Delivery',
+  total: 'Total',
 } as const
 
 // The summary strip covers this window by default.
@@ -176,3 +202,28 @@ export const ADMIN_ORDER_FILTER_OPTIONS: readonly AdminFilterOption[] = [
   { key: 'from', label: 'From date', type: AdminFilterType.Date },
   { key: 'to', label: 'To date', type: AdminFilterType.Date },
 ]
+
+export const ADMIN_STATUS_ACTIONS: Readonly<Record<OrderStatus, readonly AdminStatusAction[]>> = {
+  [OrderStatus.PendingConfirmation]: [
+    { status: OrderStatus.AwaitingPayment, label: 'Send payment link' },
+    { status: OrderStatus.Cancelled, label: 'Cancel order' },
+  ],
+  [OrderStatus.AwaitingPayment]: [
+    { status: OrderStatus.Cancelled, label: 'Cancel order' },
+  ],
+  [OrderStatus.Paid]: [
+    { status: OrderStatus.InProgress, label: 'Start fulfilment' },
+    { status: OrderStatus.Cancelled, label: 'Cancel order' },
+    { status: OrderStatus.Refunded, label: 'Mark refunded' },
+  ],
+  [OrderStatus.InProgress]: [
+    { status: OrderStatus.Shipped, label: 'Mark shipped' },
+    { status: OrderStatus.Cancelled, label: 'Cancel order' },
+  ],
+  [OrderStatus.Shipped]: [
+    { status: OrderStatus.Delivered, label: 'Mark delivered' },
+  ],
+  [OrderStatus.Delivered]: [],
+  [OrderStatus.Cancelled]: [],
+  [OrderStatus.Refunded]: [],
+}

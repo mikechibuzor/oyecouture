@@ -1,9 +1,11 @@
 import { ADMIN_API_ROUTES } from '~/constants/admin'
 import type {
+  AdminOrderDetail,
   AdminOrderMetrics,
   AdminOrderPage,
   AdminOrderQuery,
   MetricsPeriod,
+  OrderStatus,
 } from '~/types/admin'
 
 // Reads the admin orders list. The API clamps paging and ignores unknown
@@ -34,5 +36,22 @@ export const useAdminOrders = () => {
       query: { period },
     })
 
-  return { fetchOrders, fetchMetrics }
+  const fetchOrder = (orderNo: string): Promise<AdminOrderDetail> =>
+    $fetch<AdminOrderDetail>(ADMIN_API_ROUTES.orderDetail(orderNo), {
+      baseURL: apiBaseUrl,
+      credentials: 'include',
+    })
+
+  const updateOrderStatus = (
+    orderNo: string,
+    status: OrderStatus,
+  ): Promise<AdminOrderDetail> =>
+    $fetch<AdminOrderDetail>(ADMIN_API_ROUTES.orderStatus(orderNo), {
+      baseURL: apiBaseUrl,
+      credentials: 'include',
+      method: 'PATCH',
+      body: { status },
+    })
+
+  return { fetchOrders, fetchMetrics, fetchOrder, updateOrderStatus }
 }

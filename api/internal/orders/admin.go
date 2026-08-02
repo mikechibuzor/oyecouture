@@ -2,6 +2,7 @@ package orders
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"time"
 )
@@ -27,6 +28,33 @@ type Summary struct {
 	ItemCount    int       `json:"itemCount"`
 	TotalKobo    int64     `json:"totalKobo"`
 	CreatedAt    time.Time `json:"createdAt"`
+}
+
+// Detail is the full admin read model for one order.
+type Detail struct {
+	OrderNo         string        `json:"orderNo"`
+	Kind            Kind          `json:"kind"`
+	Status          Status        `json:"status"`
+	CustomerName    string        `json:"customerName"`
+	Email           string        `json:"email"`
+	Phone           string        `json:"phone"`
+	Address         string        `json:"address,omitempty"`
+	DeliveryZone    string        `json:"deliveryZone,omitempty"`
+	DeliveryFeeKobo int64         `json:"deliveryFeeKobo"`
+	SubtotalKobo    int64         `json:"subtotalKobo"`
+	TotalKobo       int64         `json:"totalKobo"`
+	PayToken        string        `json:"payToken"`
+	PaymentProvider string        `json:"paymentProvider,omitempty"`
+	PaymentRef      string        `json:"paymentRef,omitempty"`
+	Items           []Item        `json:"items"`
+	Measurements    *Measurements `json:"measurements,omitempty"`
+	CreatedAt       time.Time     `json:"createdAt"`
+	orderID         string
+}
+
+// StatusUpdate is the only mutable order field the first admin actions expose.
+type StatusUpdate struct {
+	Status Status `json:"status"`
 }
 
 // ListFilter narrows the admin orders list. The zero value lists everything,
@@ -80,6 +108,38 @@ var validStatuses = map[Status]struct{}{
 
 var validKinds = map[Kind]struct{}{KindBespoke: {}, KindReadyToWear: {}}
 
+var (
+	ErrOrderNotFound           = errors.New("order not found")
+	ErrInvalidStatusUpdate     = errors.New("order status is invalid")
+	ErrInvalidStatusTransition = errors.New("order status transition is invalid")
+	ErrPaymentMustBeServerSide = errors.New("paid status requires server-side payment verification")
+)
+
+// allowedAdminStatusTransitions encodes actions the owner can safely perform.
+// `paid` is intentionally absent as a target: payment must come from the
+// provider verification path, not from an admin click.
+var allowedAdminStatusTransitions = map[Status]map[Status]struct{}{
+	StatusPendingConfirmation: {
+		StatusAwaitingPayment: {},
+		StatusCancelled:       {},
+	},
+	StatusAwaitingPayment: {
+		StatusCancelled: {},
+	},
+	StatusPaid: {
+		StatusInProgress: {},
+		StatusCancelled:  {},
+		StatusRefunded:   {},
+	},
+	StatusInProgress: {
+		StatusShipped:   {},
+		StatusCancelled: {},
+	},
+	StatusShipped: {
+		StatusDelivered: {},
+	},
+}
+
 // Metrics is the summary strip above the orders list. Revenue counts only
 // orders that have actually been paid for, so it never flatters the owner with
 // money that has not arrived.
@@ -119,6 +179,8 @@ var periodDays = map[MetricsPeriod]int{
 type AdminRepository interface {
 	List(context.Context, ListFilter) (Page, error)
 	Metrics(context.Context, *time.Time) (Metrics, error)
+	Detail(context.Context, string) (Detail, error)
+	UpdateStatus(context.Context, string, Status) error
 }
 
 type AdminService struct {
@@ -144,6 +206,55 @@ func (service *AdminService) Metrics(
 	period MetricsPeriod,
 ) (Metrics, error) {
 	return service.repository.Metrics(requestContext, periodStart(period, time.Now()))
+}
+
+// Detail returns one order with its items and measurements.
+func (service *AdminService) Detail(
+	requestContext context.Context,
+	orderNo string,
+) (Detail, error) {
+	return service.repository.Detail(requestContext, strings.TrimSpace(orderNo))
+}
+
+// UpdateStatus moves an order through owner-controlled lifecycle states.
+func (service *AdminService) UpdateStatus(
+	requestContext context.Context,
+	orderNo string,
+	update StatusUpdate,
+) (Detail, error) {
+	nextStatus := update.Status
+	if nextStatus == StatusPaid {
+		return Detail{}, ErrPaymentMustBeServerSide
+	}
+	if _, known := validStatuses[nextStatus]; !known {
+		return Detail{}, ErrInvalidStatusUpdate
+	}
+
+	detail, err := service.Detail(requestContext, orderNo)
+	if err != nil {
+		return Detail{}, err
+	}
+	if !canAdminTransition(detail.Status, nextStatus) {
+		return Detail{}, ErrInvalidStatusTransition
+	}
+
+	if err := service.repository.UpdateStatus(requestContext, detail.OrderNo, nextStatus); err != nil {
+		return Detail{}, err
+	}
+
+	detail.Status = nextStatus
+	return detail, nil
+}
+
+// canAdminTransition protects the paid invariant and blocks nonsensical jumps.
+func canAdminTransition(currentStatus Status, nextStatus Status) bool {
+	allowedTargets, hasTargets := allowedAdminStatusTransitions[currentStatus]
+	if !hasTargets {
+		return false
+	}
+
+	_, allowed := allowedTargets[nextStatus]
+	return allowed
 }
 
 // periodStart resolves a window to the earliest order date it includes. A nil

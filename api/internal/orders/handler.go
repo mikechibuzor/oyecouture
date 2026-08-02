@@ -17,6 +17,8 @@ const (
 	ErrorCodeInvalidItems    ErrorCode = "invalid_items"
 	ErrorCodeInvalidDelivery ErrorCode = "invalid_delivery"
 	ErrorCodeUnavailable     ErrorCode = "product_unavailable"
+	ErrorCodeOrderNotFound   ErrorCode = "order_not_found"
+	ErrorCodeInvalidStatus   ErrorCode = "invalid_status"
 	ErrorCodeInternal        ErrorCode = "internal_error"
 )
 

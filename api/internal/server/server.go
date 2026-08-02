@@ -65,6 +65,12 @@ func New(applicationConfig config.Config, databasePool *pgxpool.Pool) *http.Serv
 	requestMux.Handle("GET /admin/orders/metrics", adminHandler.RequireSession(
 		http.HandlerFunc(adminOrderHandler.Metrics),
 	))
+	requestMux.Handle("GET /admin/orders/{orderNo}", adminHandler.RequireSession(
+		http.HandlerFunc(adminOrderHandler.Detail),
+	))
+	requestMux.Handle("PATCH /admin/orders/{orderNo}/status", adminHandler.RequireSession(
+		http.HandlerFunc(adminOrderHandler.UpdateStatus),
+	))
 
 	return &http.Server{
 		Addr:              applicationConfig.APIAddress,
@@ -87,7 +93,7 @@ func allowOrigin(allowedOrigin string, next http.Handler) http.Handler {
 		}
 
 		if request.Method == http.MethodOptions {
-			responseWriter.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+			responseWriter.Header().Set("Access-Control-Allow-Methods", "GET, POST, PATCH, OPTIONS")
 			responseWriter.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 			responseWriter.WriteHeader(http.StatusNoContent)
 			return

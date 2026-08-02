@@ -1,6 +1,8 @@
 package orders
 
 import (
+	"context"
+	"errors"
 	"strings"
 	"testing"
 	"time"
@@ -228,4 +230,101 @@ func TestEscapeLikePattern(t *testing.T) {
 			}
 		})
 	}
+}
+
+// TestAdminStatusTransitions keeps payment state out of owner-controlled actions.
+func TestAdminStatusTransitions(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		name        string
+		current     Status
+		next        Status
+		wantErr     error
+		wantUpdated bool
+	}{
+		{
+			name:        "confirmation can move to awaiting payment",
+			current:     StatusPendingConfirmation,
+			next:        StatusAwaitingPayment,
+			wantUpdated: true,
+		},
+		{
+			name:    "admin cannot mark an order paid",
+			current: StatusAwaitingPayment,
+			next:    StatusPaid,
+			wantErr: ErrPaymentMustBeServerSide,
+		},
+		{
+			name:    "cannot jump from awaiting payment to fulfilment",
+			current: StatusAwaitingPayment,
+			next:    StatusInProgress,
+			wantErr: ErrInvalidStatusTransition,
+		},
+		{
+			name:        "paid can move into fulfilment",
+			current:     StatusPaid,
+			next:        StatusInProgress,
+			wantUpdated: true,
+		},
+		{
+			name:    "delivered is terminal for admin actions",
+			current: StatusDelivered,
+			next:    StatusShipped,
+			wantErr: ErrInvalidStatusTransition,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
+
+			repository := &adminStatusRepository{
+				detail: Detail{OrderNo: "OYE-1001", Status: testCase.current},
+			}
+			service := NewAdminService(repository)
+
+			_, gotErr := service.UpdateStatus(
+				context.Background(), "OYE-1001", StatusUpdate{Status: testCase.next},
+			)
+
+			if !errors.Is(gotErr, testCase.wantErr) {
+				t.Fatalf("UpdateStatus() error = %v, want %v", gotErr, testCase.wantErr)
+			}
+			if repository.updated != testCase.wantUpdated {
+				t.Fatalf("updated = %v, want %v", repository.updated, testCase.wantUpdated)
+			}
+			if testCase.wantUpdated && repository.status != testCase.next {
+				t.Fatalf("status = %q, want %q", repository.status, testCase.next)
+			}
+		})
+	}
+}
+
+type adminStatusRepository struct {
+	detail  Detail
+	status  Status
+	updated bool
+}
+
+func (repository *adminStatusRepository) List(context.Context, ListFilter) (Page, error) {
+	return Page{}, nil
+}
+
+func (repository *adminStatusRepository) Metrics(context.Context, *time.Time) (Metrics, error) {
+	return Metrics{}, nil
+}
+
+func (repository *adminStatusRepository) Detail(context.Context, string) (Detail, error) {
+	return repository.detail, nil
+}
+
+func (repository *adminStatusRepository) UpdateStatus(
+	_ context.Context,
+	_ string,
+	status Status,
+) error {
+	repository.status = status
+	repository.updated = true
+	return nil
 }

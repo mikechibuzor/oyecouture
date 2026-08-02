@@ -332,9 +332,16 @@ onMounted(() => {
           </thead>
           <tbody>
             <tr v-for="order in orders" :key="order.orderNo">
-              <td class="admin-table-order-no">{{ order.orderNo }}</td>
+              <td class="admin-table-order-no">
+                <NuxtLink :to="ADMIN_ROUTES.orderDetail(order.orderNo)">
+                  {{ order.orderNo }}
+                </NuxtLink>
+              </td>
               <td>
-                <span class="admin-customer">
+                <NuxtLink
+                  class="admin-customer"
+                  :to="ADMIN_ROUTES.orderDetail(order.orderNo)"
+                >
                   <span class="admin-customer-avatar" aria-hidden="true">
                     {{ order.customerName.slice(0, 1).toUpperCase() }}
                   </span>
@@ -342,7 +349,7 @@ onMounted(() => {
                     <span class="admin-customer-name">{{ order.customerName }}</span>
                     <span class="admin-customer-contact">{{ order.phone }}</span>
                   </span>
-                </span>
+                </NuxtLink>
               </td>
               <td>
                 <span class="admin-kind" :data-kind="order.kind">
