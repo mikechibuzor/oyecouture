@@ -99,6 +99,19 @@ func isTerminal(err error) bool {
 		}
 	}
 
+	// Paystack answering "this transaction is not valid" is authoritative;
+	// asking again returns the same answer.
+	if errors.Is(err, ErrVerifyRejected) {
+		return true
+	}
+
+	// A 4xx from Paystack means the request itself is wrong, so redelivering it
+	// changes nothing. A 5xx is their side struggling and is worth retrying.
+	var apiError *APIError
+	if errors.As(err, &apiError) {
+		return !apiError.Retryable()
+	}
+
 	return false
 }
 

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -15,6 +16,27 @@ import (
 )
 
 const defaultBaseURL = "https://api.paystack.co"
+
+// ErrVerifyRejected is Paystack answering, authoritatively, that a transaction
+// is not valid. Asking again will get the same answer.
+var ErrVerifyRejected = errors.New("paystack rejected the verification")
+
+// APIError is a non-2xx response from Paystack. The status code is kept rather
+// than flattened into a string because webhook retries depend on it: a 4xx will
+// never succeed on redelivery, while a 5xx is worth trying again.
+type APIError struct {
+	StatusCode int
+	Status     string
+}
+
+func (apiError *APIError) Error() string {
+	return "paystack returned " + apiError.Status
+}
+
+// Retryable reports whether sending the same request again could succeed.
+func (apiError *APIError) Retryable() bool {
+	return apiError.StatusCode >= http.StatusInternalServerError
+}
 
 type Paystack struct {
 	secretKey  string
@@ -129,7 +151,7 @@ func (paystack *Paystack) Verify(
 	}
 	if !response.Status {
 		return payments.Verification{Reference: reference, ProviderPayload: responseBody},
-			fmt.Errorf("paystack verify rejected: %s", response.Message)
+			fmt.Errorf("%w: %s", ErrVerifyRejected, response.Message)
 	}
 
 	return payments.Verification{
@@ -177,7 +199,7 @@ func (paystack *Paystack) do(
 		return nil, fmt.Errorf("read paystack response: %w", err)
 	}
 	if response.StatusCode < http.StatusOK || response.StatusCode >= http.StatusMultipleChoices {
-		return responseBody.Bytes(), fmt.Errorf("paystack returned %s", response.Status)
+		return responseBody.Bytes(), &APIError{StatusCode: response.StatusCode, Status: response.Status}
 	}
 
 	return responseBody.Bytes(), nil

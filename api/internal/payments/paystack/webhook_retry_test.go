@@ -87,6 +87,34 @@ func TestWebhookRetryBehaviour(t *testing.T) {
 			wantStatus: http.StatusOK,
 		},
 		{
+			name:       "paystack rejecting the verification is not retryable",
+			confirmErr: fmt.Errorf("%w: Transaction reference not found", ErrVerifyRejected),
+			wantStatus: http.StatusOK,
+		},
+		{
+			// A 400 will answer the same way every time; retrying it forever is
+			// the storm this classification exists to prevent.
+			name:       "a 4xx from paystack is not retryable",
+			confirmErr: &APIError{StatusCode: 400, Status: "400 Bad Request"},
+			wantStatus: http.StatusOK,
+		},
+		{
+			name:       "a 404 from paystack is not retryable",
+			confirmErr: fmt.Errorf("verify: %w", &APIError{StatusCode: 404, Status: "404 Not Found"}),
+			wantStatus: http.StatusOK,
+		},
+		{
+			// Their side struggling is exactly what retries are for.
+			name:       "a 5xx from paystack is retried",
+			confirmErr: &APIError{StatusCode: 502, Status: "502 Bad Gateway"},
+			wantStatus: http.StatusInternalServerError,
+		},
+		{
+			name:       "a paystack timeout is retried",
+			confirmErr: &APIError{StatusCode: 504, Status: "504 Gateway Timeout"},
+			wantStatus: http.StatusInternalServerError,
+		},
+		{
 			// The important direction: anything unrecognised must be retried,
 			// because acknowledging it would silently drop a real payment.
 			name:       "an unknown failure is retried",
