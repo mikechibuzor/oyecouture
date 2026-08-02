@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { IconNode } from 'lucide'
-import { Minus, Plus, X } from 'lucide'
+import { Minus, Plus, ShoppingBag, X } from 'lucide'
 import { CART_COPY, CART_MAXIMUM_QUANTITY } from '~/constants/cart'
 import { PRODUCT_COPY, getProductRoute } from '~/constants/products'
 import { CartCheckoutRoute } from '~/types/cart'
@@ -20,6 +20,7 @@ const {
 } = useCart()
 
 const CART_ICONS = {
+  bag: ShoppingBag,
   close: X,
   decrease: Minus,
   increase: Plus,
@@ -112,12 +113,22 @@ onBeforeUnmount(() => {
         </header>
 
         <div class="cart-drawer-body">
-          <p v-if="isEmpty" class="cart-empty">
-            {{ CART_COPY.empty }}
-            <NuxtLink :to="StorefrontRoute.Collection" @click="closeDrawer">
+          <div v-if="isEmpty" class="cart-empty">
+            <StorefrontIcon
+              :icon-node="CART_ICONS.bag"
+              :size="44"
+              :stroke-width="1.2"
+              aria-hidden="true"
+            />
+            <p>{{ CART_COPY.empty }}</p>
+            <NuxtLink
+              class="cart-primary-action"
+              :to="StorefrontRoute.Home"
+              @click="closeDrawer"
+            >
               {{ CART_COPY.emptyAction }}
             </NuxtLink>
-          </p>
+          </div>
 
           <ul v-else class="cart-line-list">
             <li v-for="line in lines" :key="line.key" class="cart-line">
