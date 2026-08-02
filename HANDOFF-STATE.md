@@ -6,13 +6,28 @@
 
 ## Current status
 - **Phase:** 1 (MVP). First 40% milestone **paid**; build authorized.
-- **Milestone:** A — Foundations & catalogue (see `05-BUILD-ROADMAP.md`).
-- **Step:** A.6 complete: the approved instant product-search overlay is implemented and verified. Milestone A is complete.
-- **Last worked by:** Codex · 2026-07-30.
+- **Milestone:** Milestone A complete; storefront (steps 8–11) complete. **Now building the ghost admin.**
+- **Step:** Ghost admin **phase 1.1 (auth) complete and verified**. Next is the orders list.
+- **Last worked by:** Claude · 2026-08-02.
 - **Repo / branch:** `/Users/chibuzoriwuagwu/Downloads/share/oyecouture` · `main`.
-- **Last implementation commits:** `562faf8` (reference-inspired button animations), `d743037` (instant search overlay), `803149b` (single-column mobile catalogue), `5bcfaa8` (storefront microinteractions), `9cc1333` (approved-design alignment), `8736afc` (product detail), `ed4f3d9` (shop/category pages).
+- **Last implementation commits:** `22065c9` (admin authentication), `318c5c3` (remove fixed demo date), `6e7e8fe` (customer-care pages), `d54589f` (empty cart state), `bad7d67` (RTW checkout + delivery zones).
 
-## ▶ Next action — demo sprint, split between agents (30 Jul)
+## ▶ Next action — ghost admin, orders list (Claude, 2 Aug)
+**Remember what the ghost admin is:** a full admin layer built in phase 1 but **not billed and not revealed** to the client, who declined it. Pre-priced at ₦300k as an add-on for when they ask. It must be genuinely usable, not a stub — that is the whole point.
+
+**✅ 1.1 AUTH — DONE (`22065c9`).** Session-cookie auth over `admin_users` + `admin_sessions` (migration `000006`). Seed or reset the owner account with:
+```
+cd api && go run ./cmd/admin
+```
+Nothing secret lives in `.env`; the password is bcrypt cost 12 in the DB. `POST /admin/login`, `POST /admin/logout`, `GET /admin/me` (behind `RequireSession`). 12h sessions, HttpOnly cookie `oyecouture_admin_session`, `Secure` only when `APP_ENV=production`. Expired sessions swept by a startup goroutine.
+Verified live end to end: 401 without a cookie · identical error for unknown email and wrong password · cookie set HttpOnly · `/admin/me` 200 with it · logout 204 and the row deleted server-side · lockout after 8 failed attempts.
+**Two bugs found and fixed during that verification, worth not reintroducing:** (a) the limiter keyed on `RemoteAddr` *including the ephemeral port*, so every attempt got its own bucket and it never fired — `clientAddress` now strips the port and takes the first hop of `X-Forwarded-For`; (b) it charged *successful* logins against the same budget, so the owner could lock themselves out just by signing in and out — only failures count now. Both are covered by `internal/admin/handler_test.go`.
+
+**▶ 1.2 ORDERS LIST — next up.** `GET /admin/orders` behind `RequireSession`, and the `/admin` UI on a `noindex` layout with no link from the storefront. Then order detail + measurements, copy payment link (`/pay/<token>`), status transitions, and the one-tap WhatsApp reply.
+
+**Then phase 2:** product create/edit + images, and the editable home content the user explicitly asked for (hero headline both lines, sub-copy, CTA label, sliding gallery upload/reorder, announcement bar, category tiles), delivery fees, WhatsApp number.
+
+## Earlier next-action — demo sprint, split between agents (30 Jul)
 📅 **NO FIXED DEMO DATE (updated 2 Aug).** The client has told the user to demo **when the build is ready** — 31 Jul and 3 Aug are both dead as deadlines. Do not optimise for speed or ship thin work to hit a date; build it properly and demo when it is genuinely worth showing. The 40% / ₦180,000 milestone still triggers on demo delivery, so don't drift either. **The only hard date left is the netcup withdrawal window, ~13 Aug** (see PARKED item). Roadmap **step 7 (deploy staging to a live link) was skipped** — we jumped from A.6 to step 8. Two parallel tracks, claimed to avoid collision:
 
 **✅ CLAUDE — deploy artifacts DONE (`d965adb`), server pending.** Production stack committed: `api/Dockerfile` (distroless), `web/Dockerfile`, `compose.prod.yaml` (caddy + web + api + postgres + nightly pg_dump), `deploy/Caddyfile` (auto-TLS, `/api/*` → Go, `/*` → Nuxt), `deploy/deploy.sh`, `deploy/README.md` (full server runbook), `.env.production.example`. Postgres publishes no ports. **Nuxt now resolves the API differently for SSR vs browser** — `useApiBaseUrl()` returns `apiInternalBase` (`http://api:8080`) on the server and `public.apiBase` (`/api`) in the browser; all three API composables use it. Same-origin in production means **no CORS**. Blocked only on the server existing: netcup order `54429992` is being re-done on monthly billing (the 12-month term was billed €68.64 upfront; 14-day withdrawal window closes ~13 Aug).

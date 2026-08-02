@@ -5,6 +5,13 @@ One short entry per work session or meaningful chunk. Format:
 
 ---
 
+## 2026-08-02T00:00:00+01:00 · Claude · Ghost admin 1.1 — authentication
+- **Did:** Migration `000006` creating `admin_users` + `admin_sessions`; `internal/admin` (auth service, store, handler, `RequireSession`); `cmd/admin` CLI to seed or reset the owner account; routes `POST /admin/login`, `POST /admin/logout`, `GET /admin/me` wired in `server.go` with a startup goroutine sweeping expired sessions (`22065c9`).
+- **State:** Verified live end to end — 401 without a cookie, identical error for unknown email and wrong password (with a dummy bcrypt compare so timing does not leak which accounts exist), HttpOnly cookie set, `/admin/me` 200 with it, logout 204 with the row deleted server-side, lockout after 8 failed attempts. Password is bcrypt cost 12 in the DB; **nothing secret in `.env`**. `go test ./...` passes.
+- **Two bugs caught by that verification, both now regression-tested** in `internal/admin/handler_test.go`: the throttle keyed on `RemoteAddr` *including the ephemeral source port*, so every attempt landed in its own bucket and the limiter never fired; and it charged *successful* logins against the same budget, so the owner could lock themselves out simply by signing in and out. `clientAddress` now strips the port and honours the first hop of `X-Forwarded-For`; only failures are charged.
+- **Next:** `GET /admin/orders` behind `RequireSession`, then the `/admin` UI on a `noindex` layout with no storefront link. Then order detail + measurements, `/pay/<token>`, status transitions, WhatsApp reply.
+- **Blockers:** unchanged — Nomba Client ID, Resend key, server for deploy (netcup parked, ~13 Aug).
+
 ## 2026-07-30T19:05:00+01:00 · Claude · Orders, confirm + checkout (Milestone B steps 10–11)
 - **Did:** `POST /orders` with **server-side pricing** — the storefront sends only slug/size/quantity and every price is re-read from the database (`33aaeae`). `/confirm` page: contact + optional measurements → saves the order → WhatsApp opens carrying the reference (`60861c6`). `/checkout` for ready-to-wear with **DB-driven delivery zones** and server-resolved fees (`bad7d67`), plus `GET /delivery-zones`.
 - **State:** Verified against the live API and database. **A client cannot set a price** — sending `priceKobo` is rejected (`invalid_body`, unknown field), and an invented delivery zone is rejected too. Order kind is derived server-side: any unsized item makes the whole order `bespoke`/`pending_confirmation`; ready-to-wear is `awaiting_payment`. Confirmed end to end: `OYE-1008` (bespoke, WhatsApp message carries the order no) and `OYE-1011` (ready-to-wear, ₦78,000 + ₦5,000 Lagos = ₦83,000, address + zone persisted). **Every route now returns 200 — no 404s left.**
