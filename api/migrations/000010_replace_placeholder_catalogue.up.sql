@@ -1,3 +1,11 @@
+-- The design mockup gave every product exactly three image slots, and the
+-- schema hard-capped position at 3. The client's real photography runs to six
+-- frames for some looks, so the cap is raised before the inventory lands. The
+-- gallery iterates the array and never assumed three.
+ALTER TABLE product_images DROP CONSTRAINT product_images_position_valid;
+ALTER TABLE product_images ADD CONSTRAINT product_images_position_valid
+    CHECK (position BETWEEN 1 AND 12);
+
 -- The client's real photographed inventory replaces the design-mockup
 -- placeholders. Placeholders are deactivated rather than deleted so order
 -- history keeps its product links and the change stays reversible.
