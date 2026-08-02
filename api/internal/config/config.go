@@ -18,9 +18,12 @@ type Config struct {
 	APIAddress        string
 	AppEnv            string
 	DatabaseURL       string
+	EmailFrom         string
+	EmailProvider     string
 	PaymentProvider   string
 	PaystackSecretKey string
 	R2PublicBase      string
+	SendByteAPIKey    string
 	WebBaseURL        string
 }
 
@@ -30,9 +33,12 @@ func Load() Config {
 		APIAddress:        apiAddress(os.Getenv("API_BASE_URL")),
 		AppEnv:            valueOrDefault(os.Getenv("APP_ENV"), "development"),
 		DatabaseURL:       valueOrDefault(os.Getenv("DATABASE_URL"), defaultDatabaseURL),
+		EmailFrom:         os.Getenv("EMAIL_FROM"),
+		EmailProvider:     valueOrDefault(os.Getenv("EMAIL_PROVIDER"), "sendbyte"),
 		PaymentProvider:   valueOrDefault(os.Getenv("PAYMENT_PROVIDER"), "paystack"),
 		PaystackSecretKey: os.Getenv("PAYSTACK_SECRET_KEY"),
 		R2PublicBase:      valueOrDefault(os.Getenv("R2_PUBLIC_BASE"), defaultR2PublicBase),
+		SendByteAPIKey:    os.Getenv("SENDBYTE_API_KEY"),
 		WebBaseURL:        valueOrDefault(os.Getenv("WEB_BASE_URL"), defaultWebBaseURL),
 	}
 }

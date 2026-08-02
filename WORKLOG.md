@@ -5,6 +5,12 @@ One short entry per work session or meaningful chunk. Format:
 
 ---
 
+## 2026-08-02T19:55:06+01:00 · Codex · SendByte paid-order emails
+- **Did:** Implemented SendByte transactional email after verified Paystack payment: two separate customer emails (order confirmation + payment receipt), `outbound_emails` outbox/audit table, deterministic idempotency keys, stale-pending retry recovery, local HTML/text templates with Oyecouture branding, and payment-service hooks for callback/webhook settlement.
+- **State:** SendByte sandbox key is only in ignored `.env`; committed env files have placeholders. Verified `go test ./...`, `npx vue-tsc --noEmit -p tsconfig.json`, `npm run build` on Node `22.23.1`, and `git diff --check`. No real/sandbox email was sent in this session.
+- **Next:** Optionally trigger one sandbox payment verification with explicit approval to confirm both emails appear in SendByte logs, then continue ghost admin phase 2 product/content management.
+- **Blockers:** Public HTTPS/staging URL for real Paystack webhooks, Paystack live keys before production, SendByte verified sender/domain for live delivery, real WhatsApp number, R2 credentials/photos/content/DNS.
+
 ## 2026-08-02T17:20:00+01:00 · Claude · Review of Codex's ghost admin + Paystack work
 - **Did:** Reviewed `internal/payments` and the ghost admin against the running stack rather than reading only. Confirmed live: forged/unsigned webhooks 401; `PATCH .../status` refuses `paid` and illegal transitions with 400 and 401s unauthenticated, with the DB row unchanged; admin list/detail/metrics 200; unknown pay token 404. Confirmed by reading: amount **and** currency checked against both attempt and order total, `FOR UPDATE OF pa, o` locking, idempotent re-confirmation, cross-order reference binding, webhook signature over the raw body with `hmac.Equal` before parsing, secret never logged, `.env` never committed, PII excluded from the public payment JSON.
 - **Fixed (`d29c830`):** the amount/currency guard had no test — the service tests stub the repository, so it was never exercised. Extracted `verificationMatchesOrder` as a pure function and covered 10 cases (underpayment, one kobo short, overpayment, zero, tampered attempt, repriced order, three currency cases). Mutation-checked: removing the guard fails six of them.

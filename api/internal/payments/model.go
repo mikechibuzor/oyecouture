@@ -33,24 +33,31 @@ var (
 )
 
 type Order struct {
-	ID           string    `json:"-"`
-	OrderNo      string    `json:"orderNo"`
-	PayToken     string    `json:"-"`
-	Status       string    `json:"status"`
-	Kind         string    `json:"kind"`
-	CustomerName string    `json:"customerName"`
-	Email        string    `json:"-"`
-	Phone        string    `json:"-"`
-	TotalKobo    int64     `json:"totalKobo"`
-	Items        []Item    `json:"items"`
-	CreatedAt    time.Time `json:"createdAt"`
+	ID              string    `json:"-"`
+	OrderNo         string    `json:"orderNo"`
+	PayToken        string    `json:"-"`
+	Status          string    `json:"status"`
+	Kind            string    `json:"kind"`
+	CustomerName    string    `json:"customerName"`
+	Email           string    `json:"-"`
+	Phone           string    `json:"-"`
+	Address         string    `json:"-"`
+	DeliveryZone    string    `json:"-"`
+	SubtotalKobo    int64     `json:"-"`
+	TotalKobo       int64     `json:"totalKobo"`
+	DeliveryFeeKobo int64     `json:"-"`
+	PaymentProvider string    `json:"-"`
+	PaymentRef      string    `json:"-"`
+	Items           []Item    `json:"items"`
+	CreatedAt       time.Time `json:"createdAt"`
 }
 
 type Item struct {
-	Name     string `json:"name"`
-	Size     string `json:"size,omitempty"`
-	Quantity int    `json:"quantity"`
-	LineKobo int64  `json:"lineKobo"`
+	Name      string `json:"name"`
+	Size      string `json:"size,omitempty"`
+	Quantity  int    `json:"quantity"`
+	PriceKobo int64  `json:"-"`
+	LineKobo  int64  `json:"lineKobo"`
 }
 
 type Attempt struct {

@@ -11,6 +11,8 @@ import (
 	"github.com/uzor-co/oyecouture/api/internal/admin"
 	"github.com/uzor-co/oyecouture/api/internal/config"
 	"github.com/uzor-co/oyecouture/api/internal/delivery"
+	emailpkg "github.com/uzor-co/oyecouture/api/internal/email"
+	"github.com/uzor-co/oyecouture/api/internal/email/sendbyte"
 	"github.com/uzor-co/oyecouture/api/internal/health"
 	"github.com/uzor-co/oyecouture/api/internal/orders"
 	"github.com/uzor-co/oyecouture/api/internal/payments"
@@ -34,8 +36,9 @@ func New(applicationConfig config.Config, databasePool *pgxpool.Pool) *http.Serv
 
 	paymentRepository := payments.NewPostgresRepository(databasePool)
 	paymentProvider := paymentProvider(applicationConfig)
+	emailService := emailService(applicationConfig, databasePool)
 	paymentService := payments.NewService(
-		paymentRepository, paymentProvider, applicationConfig.WebBaseURL,
+		paymentRepository, paymentProvider, applicationConfig.WebBaseURL, emailService,
 	)
 	paymentHandler := payments.NewHandler(paymentService)
 	paystackWebhookHandler := paystack.NewWebhookHandler(
@@ -100,6 +103,34 @@ func New(applicationConfig config.Config, databasePool *pgxpool.Pool) *http.Serv
 func paymentProvider(applicationConfig config.Config) payments.Provider {
 	if applicationConfig.PaymentProvider == payments.ProviderPaystack {
 		return paystack.NewPaystack(applicationConfig.PaystackSecretKey)
+	}
+
+	return nil
+}
+
+// emailService builds the paid-order email sender only when email config is complete.
+func emailService(
+	applicationConfig config.Config,
+	databasePool *pgxpool.Pool,
+) payments.PaidOrderEmailSender {
+	emailProvider := emailProvider(applicationConfig)
+	if emailProvider == nil || applicationConfig.EmailFrom == "" {
+		return nil
+	}
+
+	return emailpkg.NewService(
+		emailpkg.NewPostgresRepository(databasePool),
+		emailProvider,
+		applicationConfig.EmailFrom,
+		applicationConfig.WebBaseURL,
+	)
+}
+
+// emailProvider selects the configured transactional email provider.
+func emailProvider(applicationConfig config.Config) emailpkg.Provider {
+	if applicationConfig.EmailProvider == emailpkg.ProviderSendByte &&
+		applicationConfig.SendByteAPIKey != "" {
+		return sendbyte.NewSendByte(applicationConfig.SendByteAPIKey)
 	}
 
 	return nil

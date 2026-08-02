@@ -38,7 +38,9 @@ func (repository *PostgresRepository) OrderByPayToken(
 ) (Order, error) {
 	const query = `
 		SELECT id, order_no, pay_token, status, kind, customer_name, email, phone,
-			total_kobo, created_at
+			COALESCE(address, ''), COALESCE(delivery_zone, ''), subtotal_kobo,
+			delivery_fee_kobo, total_kobo, COALESCE(payment_provider, ''),
+			COALESCE(payment_ref, ''), created_at
 		FROM orders
 		WHERE pay_token = $1
 	`
@@ -46,7 +48,9 @@ func (repository *PostgresRepository) OrderByPayToken(
 	var order Order
 	if err := repository.pool.QueryRow(requestContext, query, payToken).Scan(
 		&order.ID, &order.OrderNo, &order.PayToken, &order.Status, &order.Kind,
-		&order.CustomerName, &order.Email, &order.Phone, &order.TotalKobo, &order.CreatedAt,
+		&order.CustomerName, &order.Email, &order.Phone, &order.Address, &order.DeliveryZone,
+		&order.SubtotalKobo, &order.DeliveryFeeKobo, &order.TotalKobo,
+		&order.PaymentProvider, &order.PaymentRef, &order.CreatedAt,
 	); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return Order{}, ErrOrderNotFound
@@ -206,7 +210,9 @@ func (repository *PostgresRepository) ConfirmSuccessfulPayment(
 	const attemptQuery = `
 		SELECT pa.order_id, pa.provider, pa.amount_kobo, pa.currency,
 			o.order_no, o.pay_token, o.status, o.kind, o.customer_name, o.email, o.phone,
-			o.total_kobo, o.created_at
+			COALESCE(o.address, ''), COALESCE(o.delivery_zone, ''), o.subtotal_kobo,
+			o.delivery_fee_kobo, o.total_kobo, COALESCE(o.payment_provider, ''),
+			COALESCE(o.payment_ref, ''), o.created_at
 		FROM payment_attempts pa
 		JOIN orders o ON o.id = pa.order_id
 		WHERE pa.reference = $1
@@ -219,7 +225,9 @@ func (repository *PostgresRepository) ConfirmSuccessfulPayment(
 	if err := transaction.QueryRow(requestContext, attemptQuery, verification.Reference, expectedOrderID).Scan(
 		&attempt.OrderID, &attempt.Provider, &attempt.AmountKobo, &attempt.Currency,
 		&order.OrderNo, &order.PayToken, &order.Status, &order.Kind,
-		&order.CustomerName, &order.Email, &order.Phone, &order.TotalKobo, &order.CreatedAt,
+		&order.CustomerName, &order.Email, &order.Phone, &order.Address, &order.DeliveryZone,
+		&order.SubtotalKobo, &order.DeliveryFeeKobo, &order.TotalKobo,
+		&order.PaymentProvider, &order.PaymentRef, &order.CreatedAt,
 	); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return Order{}, ErrReferenceNotFound
@@ -273,6 +281,8 @@ func (repository *PostgresRepository) ConfirmSuccessfulPayment(
 	}
 
 	order.Status = OrderStatusPaid
+	order.PaymentProvider = attempt.Provider
+	order.PaymentRef = verification.Reference
 	order.Items, err = repository.itemsForOrder(requestContext, order.ID)
 	if err != nil {
 		return Order{}, err
@@ -304,7 +314,8 @@ func (repository *PostgresRepository) itemsForOrder(
 	orderID string,
 ) ([]Item, error) {
 	const query = `
-		SELECT name_snapshot, COALESCE(size, ''), quantity, price_kobo_snapshot * quantity
+		SELECT name_snapshot, COALESCE(size, ''), quantity, price_kobo_snapshot,
+			price_kobo_snapshot * quantity
 		FROM order_items
 		WHERE order_id = $1
 		ORDER BY name_snapshot ASC, id ASC
@@ -319,7 +330,9 @@ func (repository *PostgresRepository) itemsForOrder(
 	items := []Item{}
 	for rows.Next() {
 		var item Item
-		if err := rows.Scan(&item.Name, &item.Size, &item.Quantity, &item.LineKobo); err != nil {
+		if err := rows.Scan(
+			&item.Name, &item.Size, &item.Quantity, &item.PriceKobo, &item.LineKobo,
+		); err != nil {
 			return nil, fmt.Errorf("scan payment order item: %w", err)
 		}
 		items = append(items, item)

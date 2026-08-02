@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"testing"
+
+	"github.com/uzor-co/oyecouture/api/internal/email"
 )
 
 func TestInitializeReusesExistingInitializedAttempt(t *testing.T) {
@@ -93,6 +95,38 @@ func TestVerifyConfirmsSuccessfulPayment(t *testing.T) {
 	}
 }
 
+func TestVerifySendsPaidOrderEmailsAfterSuccessfulPayment(t *testing.T) {
+	t.Parallel()
+
+	repository := newPaymentRepositoryStub()
+	emailer := &paidOrderEmailSenderStub{}
+	provider := &paymentProviderStub{
+		verification: Verification{
+			Reference:  "OYE-1001-test",
+			Status:     StatusSuccess,
+			AmountKobo: repository.order.TotalKobo,
+			Currency:   CurrencyNGN,
+		},
+	}
+	service := NewService(repository, provider, "http://localhost:3000", emailer)
+
+	_, err := service.Verify(context.Background(), repository.order.PayToken, "OYE-1001-test")
+	if err != nil {
+		t.Fatalf("Verify() error = %v", err)
+	}
+
+	if emailer.sentCount != 1 {
+		t.Fatalf("email sends = %d, want 1", emailer.sentCount)
+	}
+	if emailer.lastOrder.OrderNo != repository.order.OrderNo {
+		t.Fatalf("email order = %q, want %q", emailer.lastOrder.OrderNo, repository.order.OrderNo)
+	}
+	if emailer.lastOrder.Payment.Reference != "OYE-1001-test" {
+		t.Fatalf("email payment reference = %q, want OYE-1001-test",
+			emailer.lastOrder.Payment.Reference)
+	}
+}
+
 func TestVerifyRecordsIncompletePaymentWithoutConfirming(t *testing.T) {
 	t.Parallel()
 
@@ -120,6 +154,31 @@ func TestVerifyRecordsIncompletePaymentWithoutConfirming(t *testing.T) {
 	}
 	if repository.recordedStatus != "pending" {
 		t.Fatalf("recorded status = %q, want pending", repository.recordedStatus)
+	}
+}
+
+func TestVerifyDoesNotSendPaidOrderEmailsForIncompletePayment(t *testing.T) {
+	t.Parallel()
+
+	repository := newPaymentRepositoryStub()
+	emailer := &paidOrderEmailSenderStub{}
+	provider := &paymentProviderStub{
+		verification: Verification{
+			Reference:  "OYE-1001-test",
+			Status:     "pending",
+			AmountKobo: repository.order.TotalKobo,
+			Currency:   CurrencyNGN,
+		},
+	}
+	service := NewService(repository, provider, "http://localhost:3000", emailer)
+
+	_, err := service.Verify(context.Background(), repository.order.PayToken, "OYE-1001-test")
+	if err != nil {
+		t.Fatalf("Verify() error = %v", err)
+	}
+
+	if emailer.sentCount != 0 {
+		t.Fatalf("email sends = %d, want 0", emailer.sentCount)
 	}
 }
 
@@ -186,13 +245,26 @@ type paymentRepositoryStub struct {
 func newPaymentRepositoryStub() *paymentRepositoryStub {
 	return &paymentRepositoryStub{
 		order: Order{
-			ID:           "order-id",
-			OrderNo:      "OYE-1001",
-			PayToken:     "pay-token",
-			Status:       OrderStatusAwaitingPayment,
-			CustomerName: "Ada",
-			Email:        "ada@example.com",
-			TotalKobo:    8300000,
+			ID:              "order-id",
+			OrderNo:         "OYE-1001",
+			PayToken:        "pay-token",
+			Status:          OrderStatusAwaitingPayment,
+			CustomerName:    "Ada",
+			Email:           "ada@example.com",
+			Phone:           "07000000000",
+			Address:         "1 Lagos Street",
+			DeliveryZone:    "Lagos",
+			SubtotalKobo:    7800000,
+			DeliveryFeeKobo: 500000,
+			TotalKobo:       8300000,
+			PaymentProvider: ProviderPaystack,
+			Items: []Item{{
+				Name:      "The Oxford Overshirt",
+				Size:      "M",
+				Quantity:  1,
+				PriceKobo: 7800000,
+				LineKobo:  7800000,
+			}},
 		},
 	}
 }
@@ -290,4 +362,18 @@ func (provider *paymentProviderStub) Initialize(
 
 func (provider *paymentProviderStub) Verify(context.Context, string) (Verification, error) {
 	return provider.verification, nil
+}
+
+type paidOrderEmailSenderStub struct {
+	sentCount int
+	lastOrder email.Order
+}
+
+func (sender *paidOrderEmailSenderStub) SendPaidOrderEmails(
+	_ context.Context,
+	order email.Order,
+) error {
+	sender.sentCount++
+	sender.lastOrder = order
+	return nil
 }

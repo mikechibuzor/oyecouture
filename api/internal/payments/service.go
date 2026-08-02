@@ -6,7 +6,11 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"log"
 	"strings"
+	"time"
+
+	"github.com/uzor-co/oyecouture/api/internal/email"
 )
 
 const referenceRandomBytes = 8
@@ -14,11 +18,32 @@ const referenceRandomBytes = 8
 type Service struct {
 	repository Repository
 	provider   Provider
+	emailer    PaidOrderEmailSender
 	webBaseURL string
 }
 
-func NewService(repository Repository, provider Provider, webBaseURL string) *Service {
-	return &Service{repository: repository, provider: provider, webBaseURL: webBaseURL}
+type PaidOrderEmailSender interface {
+	SendPaidOrderEmails(context.Context, email.Order) error
+}
+
+// NewService wires payment persistence, provider calls, and optional email notifications.
+func NewService(
+	repository Repository,
+	provider Provider,
+	webBaseURL string,
+	emailers ...PaidOrderEmailSender,
+) *Service {
+	var emailer PaidOrderEmailSender
+	if len(emailers) > 0 {
+		emailer = emailers[0]
+	}
+
+	return &Service{
+		repository: repository,
+		provider:   provider,
+		emailer:    emailer,
+		webBaseURL: webBaseURL,
+	}
 }
 
 func (service *Service) Summary(requestContext context.Context, payToken string) (Summary, error) {
@@ -159,6 +184,7 @@ func (service *Service) Verify(
 	if err != nil {
 		return VerifyResult{}, err
 	}
+	service.sendPaidOrderEmails(requestContext, paidOrder, verification)
 
 	return VerifyResult{
 		Order:     paidOrder,
@@ -188,8 +214,71 @@ func (service *Service) ConfirmWebhookReference(
 		return service.repository.RecordVerification(requestContext, "", verification)
 	}
 
-	_, err = service.repository.ConfirmSuccessfulPayment(requestContext, "", verification)
+	paidOrder, err := service.repository.ConfirmSuccessfulPayment(requestContext, "", verification)
+	if err == nil {
+		service.sendPaidOrderEmails(requestContext, paidOrder, verification)
+	}
 	return err
+}
+
+// sendPaidOrderEmails maps a verified paid order into transactional customer emails.
+func (service *Service) sendPaidOrderEmails(
+	requestContext context.Context,
+	order Order,
+	verification Verification,
+) {
+	if service.emailer == nil {
+		return
+	}
+
+	paidAt := time.Now()
+	if verification.PaidAt != nil {
+		paidAt = *verification.PaidAt
+	}
+
+	emailOrder := email.Order{
+		ID:              order.ID,
+		OrderNo:         order.OrderNo,
+		CustomerName:    order.CustomerName,
+		Email:           order.Email,
+		Phone:           order.Phone,
+		Address:         order.Address,
+		DeliveryZone:    order.DeliveryZone,
+		SubtotalKobo:    order.SubtotalKobo,
+		DeliveryFeeKobo: order.DeliveryFeeKobo,
+		TotalKobo:       order.TotalKobo,
+		Items:           emailItems(order.Items),
+		Payment: email.Payment{
+			Provider:  order.PaymentProvider,
+			Reference: verification.Reference,
+			PaidAt:    paidAt.Format("2 Jan 2006, 15:04 MST"),
+		},
+	}
+
+	if emailOrder.Payment.Provider == "" {
+		emailOrder.Payment.Provider = service.provider.Name()
+	}
+
+	if err := service.emailer.SendPaidOrderEmails(requestContext, emailOrder); err != nil {
+		// Payment is already confirmed; email failures are recorded by the email service.
+		log.Printf("send paid order emails: %v", err)
+	}
+}
+
+// emailItems converts payment order items into email line items.
+func emailItems(items []Item) []email.Item {
+	emailItems := make([]email.Item, 0, len(items))
+	for _, item := range items {
+		emailItems = append(emailItems, email.Item{
+			Name:      item.Name,
+			Size:      item.Size,
+			Quantity:  item.Quantity,
+			PriceKobo: item.PriceKobo,
+			LineKobo:  item.LineKobo,
+		})
+	}
+
+	return emailItems
 }
 
 func newReference(orderNo string) (string, error) {

@@ -7,7 +7,7 @@
 ## Current status
 - **Phase:** 1 (MVP). First 40% milestone **paid**; build authorized.
 - **Milestone:** Milestone A complete; storefront (steps 8–11) complete. **Now building the ghost admin.**
-- **Step:** Ghost admin **phase 1 complete**: auth, orders list, VBAN-style filters, pagination polish, order detail/actions. Next is phase 2 product/content management.
+- **Step:** Paystack sandbox flow plus SendByte post-payment customer emails are implemented locally. Ghost admin **phase 1 complete**; next product work is phase 2 product/content management.
 - **Last worked by:** Codex · 2026-08-02.
 - **Repo / branch:** `/Users/chibuzoriwuagwu/Downloads/share/oyecouture` · `main`.
 - **Last implementation commits:** `2be9f3c` (row-click order detail navigation), `ac24935` (metrics/table alignment polish), `9619edc` (responsive admin filter popover), `d701dfd` (order detail/actions), `a8a372c` (order desk pagination + microinteractions), `966392e` (orders metrics + VBAN-style filters), `fddbe22` (admin orders desk), `93c564c` (admin orders API), `22065c9` (admin authentication).
@@ -62,7 +62,7 @@ Verified live end to end: 401 without a cookie · identical error for unknown em
 ### ⏰ PARKED — netcup billing (deadline 13 Aug 2026)
 Staging deploy is blocked only on the server existing. netcup order **54429992** was placed on a **12-month term** and invoiced **€68.64 upfront**; user wants monthly/no-minimum instead and has asked netcup to amend it. netcup replied that they will attend to the request. **The invoice is deliberately unpaid — do not pay it, and nothing is provisioned until it is.** If netcup has not resolved this by ~**10 Aug**, the formal withdrawal email must go out before the **14-day window closes ~13 Aug**, or the 12-month term binds. Surface this to the user if it goes quiet.
 
-**Blocked on client credentials (neither agent can proceed):** Nomba sandbox keys (checkout cannot be *tested*, though the provider interface + adapter can be written), Resend API key (order emails), real WhatsApp business number.
+**Blocked on launch credentials/config:** public HTTPS/staging URL for real Paystack webhook delivery, Paystack live keys before production charges, SendByte verified sender/domain before live email delivery, real WhatsApp business number, R2 credentials/product photography/content. Nomba remains reserved for later provider fallback and does not block the active Paystack path.
 
 ### ✅ Nav dropdown hover+click fixed by Claude (`7848780`)
 The dropdown now opens on **hover and click**. Bug fixed: hover opened it, then clicking the same trigger closed it — and because the pointer was still inside, no further `mouseenter` could reopen it. `useStorefrontNavigation` now tracks `pointerItemId`; `toggleDropdown` refuses to close a menu the pointer is currently holding open, while keyboard and touch activation (no pointer) still toggle normally. Verified live: hover opens → click keeps open → pointer-leave closes → click-without-pointer opens → click again closes.
@@ -133,7 +133,7 @@ Compared every page against `design-source/` by extracting rendered text and com
 - **Claude review sign-off — A.4 (2026-07-29):** Storefront shell reviewed and approved. Design fidelity verified against `design-source/` (announcement copy exact; nav Home/Trad/Suits/Casuals▾/Collection▾; Casuals→Men/Women; the COLLECTION names "Dear Groom / Wei-Xin / OYE — Man of Legacy" confirmed present in all 7 design files — extracted, not invented; footer Shop/About/Customer Care + IG/X/TikTok/WhatsApp + legal links match). Code quality strong: nav state in a composable, full a11y (aria-controls/expanded, Escape, click-outside, close-on-route-change), lucide tree-shaken icons, search/account/wishlist/cart correctly emit events for future features. One required A.5 follow-up flagged: remove `:external` per link as pages land (see Decisions). Note: Claude's local `npm run typecheck` was inconclusive due to a missing `oxc-parser` native dep corrupting a generated `.nuxt` file (env artifact, not a source defect); Codex's own typecheck/build/`go test` pass.
 
 ## In progress (exact state)
-- Paystack checkout/webhook work is implemented and locally verified but not deployed. The next payment step is an end-to-end sandbox card payment in the browser, then registering `POST /webhooks/paystack` against a public HTTPS API URL in the Paystack dashboard. Ghost admin phase 2 product/content management remains next after payment verification.
+- Paystack checkout/webhook work is implemented and locally verified but not deployed. SendByte-backed post-payment customer emails are implemented: two separate emails (order confirmation + payment receipt) are sent after server-side successful verification, protected by an `outbound_emails` outbox table and deterministic idempotency keys. No live/sandbox email was sent in this session; verification used automated tests and build checks. Ghost admin phase 2 product/content management remains next after payment/email verification.
 
 ## How to run / verify current state
 ```bash
@@ -151,7 +151,7 @@ cd ../web && npm install && npm run dev
 - Verify products: `curl -sS 'http://localhost:8080/products?section=casuals-men&q=linen'`
 
 ## Blockers / waiting on the user (client deliverables)
-- Public HTTPS/staging URL for real Paystack webhook delivery, Paystack public key if inline payment is later preferred, WhatsApp business number, delivery-fee amounts per zone, product photography, customer-care page copy, domain DNS access. None block local Paystack hosted-checkout testing, but they gate launch/deployment polish.
+- Public HTTPS/staging URL for real Paystack webhook delivery, Paystack live keys before production, SendByte verified sender/domain for live delivery, WhatsApp business number, delivery-fee amounts per zone, product photography, customer-care page copy, domain DNS access. None block local Paystack hosted-checkout testing, but they gate launch/deployment polish.
 
 ## Decisions / deviations from the numbered docs
 - Health proof uses `/healthz` rather than `/health`; it reports both API and PostgreSQL state.

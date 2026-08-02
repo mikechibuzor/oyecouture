@@ -17,7 +17,7 @@ Cadence ~daily. The hard commitment is a **working demo on a live link by 31 Jul
 10. **Bespoke flow:** confirm → create `pending_confirmation` order → optional MeasurementForm → open WhatsApp deep link (`wa.me/<number>?text=Order OYE-… …`).
 11. **RTW checkout:** contact + address + delivery zone/fee → create `awaiting_payment` order.
 12. **Payments:** the `PaymentProvider` interface + **Nomba adapter (sandbox)**; `InitCheckout` → redirect; webhook + `VerifyTransaction`; mark `paid` only after verify. `/pay/<token>` page for bespoke.
-13. **Emails (Resend):** customer confirmation + owner notification on order and on payment. River worker.
+13. **Emails (SendByte):** customer order confirmation + payment receipt after verified payment; owner notifications can follow. River worker/outbox retry can be layered in.
 14. Order-confirmation page (with WhatsApp CTA for bespoke).
 15. Redeploy staging → **this is the demo delivered on 31 Jul** (storefront + cart + WhatsApp confirm + sandbox checkout).
 

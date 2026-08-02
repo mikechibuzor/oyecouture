@@ -34,6 +34,13 @@ api/internal/payments/
     webhook_test.go         Paystack signature tests
   nomba/
     .gitkeep                reserved provider folder
+api/internal/email/
+  model.go                  shared email models, statuses, provider interface
+  repository.go             outbound email outbox persistence
+  service.go                paid-order email orchestration
+  templates.go              order confirmation and receipt HTML/text templates
+  sendbyte/
+    sendbyte.go             SendByte REST API provider
 ```
 
 ## Current Runtime Components
@@ -48,6 +55,8 @@ flowchart TD
   Repository["Payment Repository"]
   PaystackProvider["Paystack Provider Client"]
   PaystackWebhook["Paystack Webhook Handler"]
+  EmailService["Email Service"]
+  SendByte["SendByte API"]
   Paystack["Paystack API"]
   Database[("PostgreSQL")]
 
@@ -62,6 +71,9 @@ flowchart TD
   PaymentService --> Repository
   Repository --> Database
   PaymentService --> PaystackProvider
+  PaymentService --> EmailService
+  EmailService --> Database
+  EmailService --> SendByte
   PaystackProvider --> Paystack
   Paystack -->|"Redirect callback"| Customer
   Paystack -->|"POST /webhooks/paystack"| PaystackWebhook
@@ -108,6 +120,8 @@ flowchart TD
   ProviderVerify["Provider verify API"]
   RecordIncomplete["Record incomplete provider status"]
   Confirm["Confirm successful payment"]
+  ReserveEmails["Reserve outbound emails"]
+  SendEmails["Send confirmation and receipt"]
   Paid["Order marked paid"]
   DB[("PostgreSQL")]
 
@@ -127,6 +141,8 @@ flowchart TD
   ProviderVerify -->|"status != success"| RecordIncomplete
   ProviderVerify -->|"status == success"| Confirm
   Confirm --> Paid
+  Paid --> ReserveEmails
+  ReserveEmails --> SendEmails
 
   Summary --> DB
   NewAttempt --> DB
@@ -134,6 +150,7 @@ flowchart TD
   RecordIncomplete --> DB
   Confirm --> DB
   Paid --> DB
+  ReserveEmails --> DB
 ```
 
 ## Payment Lifecycle
@@ -249,6 +266,7 @@ sequenceDiagram
   participant Browser
   participant API
   participant Paystack
+  participant SendByte
   participant DB
 
   Browser->>API: POST /payments/:payToken/verify(reference)
@@ -259,6 +277,9 @@ sequenceDiagram
   API->>API: Check reference, amount, currency, order status
   API->>DB: Update payment_attempts
   API->>DB: Mark order paid if awaiting_payment
+  API->>DB: Reserve outbound email rows
+  API->>SendByte: Send order confirmation and payment receipt
+  API->>DB: Mark outbound emails sent/failed
   API-->>Browser: paid=true
 ```
 
@@ -268,6 +289,7 @@ sequenceDiagram
   participant Webhook
   participant PaymentService
   participant ProviderClient
+  participant SendByte
   participant DB
 
   Paystack->>Webhook: POST /webhooks/paystack
@@ -278,8 +300,86 @@ sequenceDiagram
   Paystack-->>ProviderClient: status, amount, currency, paid_at
   PaymentService->>DB: ConfirmSuccessfulPayment(reference)
   DB-->>PaymentService: Idempotent paid order
+  PaymentService->>DB: Reserve outbound email rows
+  PaymentService->>SendByte: Send customer emails
+  PaymentService->>DB: Mark outbound emails sent/failed
   Webhook-->>Paystack: HTTP 200
 ```
+
+## Transactional Emails After Payment
+
+Successful payment confirmation now triggers two separate customer emails:
+
+- order confirmation
+- payment receipt
+
+Both emails are sent only after backend verification succeeds through either the browser callback or the Paystack webhook. The email layer is deliberately downstream of settlement:
+
+```text
+provider verify success -> DB settlement -> outbound email reserve -> SendByte send
+```
+
+Email failures do not roll back a paid order. They are recorded for support/retry, because the money path has already completed.
+
+### Email Provider
+
+Current provider:
+
+```text
+EMAIL_PROVIDER=sendbyte
+SENDBYTE_API_KEY=<secret>
+EMAIL_FROM="Oyecouture <orders@...>"
+```
+
+The SendByte adapter calls:
+
+```text
+POST https://api.sendbyte.africa/v1/emails
+Authorization: Bearer <SENDBYTE_API_KEY>
+Idempotency-Key: order:<orderNo>:<email-type>
+```
+
+The email body is stored as version-controlled Go HTML templates rather than dashboard-only templates. This keeps customer-facing transactional copy reviewable in pull requests and deployable with the application.
+
+### Outbound Email Table
+
+The `outbound_emails` table is the email outbox and audit trail.
+
+Important fields:
+
+| Field | Purpose |
+| --- | --- |
+| `order_id` | Links the email to the paid order |
+| `type` | `order_confirmation` or `payment_receipt` |
+| `provider` | Current value: `sendbyte` |
+| `idempotency_key` | Unique retry key for one order/email type |
+| `recipient_email` | Customer recipient |
+| `subject` | Sent subject line |
+| `status` | `pending`, `sent`, or `failed` |
+| `provider_message_id` | Provider delivery id when returned |
+| `provider_payload` | Provider response for audit/debugging |
+| `error_message` | Last provider/render error |
+| `attempts` | Number of actual send attempts |
+| `sent_at` | Successful send timestamp |
+
+### Email Idempotency
+
+Each paid order email uses a deterministic idempotency key:
+
+```text
+order:<orderNo>:confirmation
+order:<orderNo>:payment-receipt
+```
+
+Before calling SendByte, the service reserves the outbox row:
+
+- new key inserts as `pending` and is sent
+- existing `sent` key is skipped
+- fresh existing `pending` key is skipped to avoid callback/webhook double-sends
+- stale existing `pending` key can be retried after five minutes
+- existing `failed` key is reopened as `pending` and retried
+
+This protects against duplicate browser callback/webhook races sending multiple receipts for the same paid order.
 
 ## Payment Attempt Table
 
@@ -561,9 +661,14 @@ Recommended later additions:
 - `PAYSTACK_SECRET_KEY` set in production secret storage
 - no secret committed to Git
 - production `WEB_BASE_URL` set to public HTTPS URL
+- `EMAIL_PROVIDER=sendbyte`
+- `SENDBYTE_API_KEY` set in production secret storage
+- `EMAIL_FROM` set to a verified sender/domain
 - `POST /webhooks/paystack` registered in Paystack dashboard
 - webhook signature validation tested from Paystack dashboard
 - sandbox success, failed, abandoned, and duplicate-click flows tested
+- SendByte sandbox email log tested for confirmation and receipt
+- SendByte live sending/domain verification completed before launch
 - admin order detail confirms paid state after callback and webhook
 - provider reconciliation process documented for support
 
@@ -574,3 +679,4 @@ Recommended later additions:
 - Provider fallback is architectural, not automatic live failover yet.
 - Webhooks need public HTTPS and cannot be fully tested against `localhost`.
 - Payment attempt expiry is not yet modeled; initialized attempts are reused until they become terminal or are reconciled.
+- SendByte sandbox can log emails before live delivery is enabled; production launch needs a verified sender/domain.

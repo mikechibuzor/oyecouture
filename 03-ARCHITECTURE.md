@@ -7,7 +7,7 @@
 - **Database:** PostgreSQL.
 - **Async jobs:** River (Go job queue on Postgres) for emails and payment verification/reconciliation.
 - **Images:** Cloudflare R2 (S3-compatible; zero egress). Go backend generates WebP size variants on upload; store keys in DB.
-- **Email:** Resend (transactional; free tier 3,000/mo).
+- **Email:** SendByte (transactional email; sandbox logs before live delivery is enabled).
 - **Analytics/errors:** Google Analytics (or Plausible) + Sentry.
 
 Rationale for full-custom (no Medusa/CMS): the client's needs will grow and change; we want full control and no third-party commerce framework lock-in. The trade-off — we hand-build the admin — is accepted and is exactly the "ghost admin" we're building anyway.
@@ -35,8 +35,8 @@ type PaymentProvider interface {
 }
 ```
 
-- **Nomba = primary** (client's choice). Nomba Checkout: `POST /v1/checkout/order` with amount + customer details → returns a `checkoutLink`; supports card (Visa/Mastercard/Verve), bank transfer, USSD, NGN & USD. Auth via `clientId`/`clientSecret`/`accountId` (sandbox + production). Docs: developer.nomba.com/docs/guides/accept-online-payments.
-- **Paystack = fallback** (same interface). Enables failover if Nomba `Healthy()` is false or `InitCheckout` errors.
+- **Paystack = active provider** for the first payment phase. It owns hosted checkout, verify, and signed webhooks today.
+- **Nomba = reserved provider** behind the same interface for a later fallback/primary switch if needed.
 - **Selection:** config flag chooses primary; on init failure or unhealthy primary, fall back automatically. Expose the toggle in the ghost admin `settings`.
 - **Golden rule:** an order becomes `paid` **only** after `VerifyTransaction`/verified webhook. Never on the redirect alone. Webhooks must be **idempotent** and **signature-verified**. Record every provider event in `payment_events`.
 
@@ -59,7 +59,7 @@ oyecouture/
     internal/
       products/  orders/  payments/ (interface + nomba/ + paystack/)
       measurements/  delivery/  settings/  admin/
-      email/     (Resend)  storage/ (R2)  jobs/ (River workers)
+      email/     (SendByte)  storage/ (R2)  jobs/ (River workers)
     migrations/             # SQL migrations (see 04-DATA-MODEL.md)
   README.md  .env.example
 ```
@@ -68,7 +68,7 @@ oyecouture/
 ## Hosting — ₦0/month at launch (client declined running costs)
 
 - **App + DB:** Oracle Cloud **Always Free** ARM VM (always-on → no cold starts) running Nuxt + Go + PostgreSQL on the one box. (Alternatively Postgres on **Neon** free tier.) Host it on **our (Uzor & Co.) free-tier accounts** for now.
-- **Images:** Cloudflare R2 free (10 GB). **Email:** Resend free. **Analytics/errors:** free tiers.
+- **Images:** Cloudflare R2 free (10 GB). **Email:** SendByte sandbox/free tier while available. **Analytics/errors:** free tiers.
 - **Avoid** Render's free Postgres — it **expires after 90 days**.
 - When traffic outgrows the free tiers, migrate to paid (~₦15–30k/month) and quote it then. Design deploys so this migration is painless (managed Postgres URL via env, stateless app, images already on R2).
 - Staging + prod; HTTPS on the client's domain; SEO (sitemap, OG tags, indexable product pages).
