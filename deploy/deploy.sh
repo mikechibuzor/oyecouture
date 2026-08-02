@@ -56,6 +56,15 @@ for attempt in $(seq 1 30); do
   sleep 2
 done
 
+# Every build leaves cache and a superseded image behind. Left alone that grows
+# by roughly half a gigabyte per deploy and eventually fills the disk, which
+# surfaces months later as a build failing for no obvious reason. A week of
+# cache is kept so incremental builds stay fast.
+echo "==> Reclaiming disk from old builds"
+docker builder prune --force --filter until=168h >/dev/null 2>&1 || true
+docker image prune --force >/dev/null 2>&1 || true
+echo "    $(df -h / | awk 'NR==2{print $4" free of "$2}')"
+
 SITE_HOST_VALUE="$(grep -E '^SITE_HOST=' "$ENV_FILE" | cut -d= -f2-)"
 
 echo
