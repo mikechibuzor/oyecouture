@@ -6,6 +6,66 @@ import (
 	"testing"
 )
 
+func TestInitializeReusesExistingInitializedAttempt(t *testing.T) {
+	t.Parallel()
+
+	repository := newPaymentRepositoryStub()
+	repository.reusableAttempt = InitializeResult{
+		AuthorizationURL: "https://checkout.paystack.com/reusable",
+		AccessCode:       "access-code",
+		Reference:        "OYE-1001-reusable",
+	}
+	provider := &paymentProviderStub{}
+	service := NewService(repository, provider, "http://localhost:3000")
+
+	result, err := service.Initialize(context.Background(), repository.order.PayToken)
+	if err != nil {
+		t.Fatalf("Initialize() error = %v", err)
+	}
+
+	if result.Reference != repository.reusableAttempt.Reference {
+		t.Fatalf("Initialize() reference = %q, want reusable reference", result.Reference)
+	}
+	if repository.createAttemptCount != 0 {
+		t.Fatalf("CreateAttempt() calls = %d, want 0", repository.createAttemptCount)
+	}
+	if provider.initializeCount != 0 {
+		t.Fatalf("provider Initialize() calls = %d, want 0", provider.initializeCount)
+	}
+}
+
+func TestInitializeFallsBackToReusableAttemptOnInitializedConflict(t *testing.T) {
+	t.Parallel()
+
+	repository := newPaymentRepositoryStub()
+	repository.initializeError = ErrPaymentInProgress
+	repository.reusableAfterInitializeConflict = InitializeResult{
+		AuthorizationURL: "https://checkout.paystack.com/winner",
+		AccessCode:       "winner-code",
+		Reference:        "OYE-1001-winner",
+	}
+	provider := &paymentProviderStub{
+		initializeResult: InitializeResult{
+			AuthorizationURL: "https://checkout.paystack.com/loser",
+			AccessCode:       "loser-code",
+			Reference:        "generated-reference",
+		},
+	}
+	service := NewService(repository, provider, "http://localhost:3000")
+
+	result, err := service.Initialize(context.Background(), repository.order.PayToken)
+	if err != nil {
+		t.Fatalf("Initialize() error = %v", err)
+	}
+
+	if result.Reference != repository.reusableAfterInitializeConflict.Reference {
+		t.Fatalf("Initialize() reference = %q, want winning reusable reference", result.Reference)
+	}
+	if repository.failedAttemptCount != 1 {
+		t.Fatalf("MarkAttemptFailed() calls = %d, want 1", repository.failedAttemptCount)
+	}
+}
+
 func TestVerifyConfirmsSuccessfulPayment(t *testing.T) {
 	t.Parallel()
 
@@ -111,10 +171,16 @@ func TestVerifyBindsReferenceToPayTokenOrder(t *testing.T) {
 }
 
 type paymentRepositoryStub struct {
-	order          Order
-	confirmed      bool
-	confirmError   error
-	recordedStatus string
+	order                                   Order
+	reusableAttempt                         InitializeResult
+	reusableAfterInitializeConflict         InitializeResult
+	createAttemptCount                      int
+	failedAttemptCount                      int
+	confirmed                               bool
+	confirmError                            error
+	initializeError                         error
+	recordedStatus                          string
+	reusableInitializedAttemptLookupCounter int
 }
 
 func newPaymentRepositoryStub() *paymentRepositoryStub {
@@ -135,7 +201,28 @@ func (repository *paymentRepositoryStub) OrderByPayToken(context.Context, string
 	return repository.order, nil
 }
 
-func (repository *paymentRepositoryStub) CreateAttempt(context.Context, Attempt) error { return nil }
+func (repository *paymentRepositoryStub) ReusableInitializedAttempt(
+	context.Context,
+	string,
+	string,
+	int64,
+	string,
+) (InitializeResult, bool, error) {
+	repository.reusableInitializedAttemptLookupCounter++
+	if repository.reusableInitializedAttemptLookupCounter > 1 &&
+		repository.reusableAfterInitializeConflict.Reference != "" {
+		return repository.reusableAfterInitializeConflict, true, nil
+	}
+	if repository.reusableAttempt.Reference == "" {
+		return InitializeResult{}, false, nil
+	}
+	return repository.reusableAttempt, true, nil
+}
+
+func (repository *paymentRepositoryStub) CreateAttempt(context.Context, Attempt) error {
+	repository.createAttemptCount++
+	return nil
+}
 
 func (repository *paymentRepositoryStub) MarkAttemptInitialized(
 	context.Context,
@@ -143,10 +230,11 @@ func (repository *paymentRepositoryStub) MarkAttemptInitialized(
 	InitializeResult,
 	[]byte,
 ) error {
-	return nil
+	return repository.initializeError
 }
 
 func (repository *paymentRepositoryStub) MarkAttemptFailed(context.Context, string, []byte) error {
+	repository.failedAttemptCount++
 	return nil
 }
 
@@ -173,16 +261,31 @@ func (repository *paymentRepositoryStub) ConfirmSuccessfulPayment(
 }
 
 type paymentProviderStub struct {
-	verification Verification
+	initializeResult InitializeResult
+	initializeCount  int
+	verification     Verification
 }
 
 func (provider *paymentProviderStub) Name() string { return ProviderPaystack }
 
 func (provider *paymentProviderStub) Initialize(
-	context.Context,
-	InitializeRequest,
+	_ context.Context,
+	request InitializeRequest,
 ) (InitializeResult, []byte, error) {
-	return InitializeResult{}, nil, nil
+	provider.initializeCount++
+	if provider.initializeResult.Reference == "" {
+		return InitializeResult{
+			AuthorizationURL: "https://checkout.paystack.com/generated",
+			AccessCode:       "generated-code",
+			Reference:        request.Reference,
+		}, nil, nil
+	}
+
+	result := provider.initializeResult
+	if result.Reference == "generated-reference" {
+		result.Reference = request.Reference
+	}
+	return result, nil, nil
 }
 
 func (provider *paymentProviderStub) Verify(context.Context, string) (Verification, error) {

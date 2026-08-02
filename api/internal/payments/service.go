@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"strings"
 )
@@ -52,6 +53,16 @@ func (service *Service) Initialize(
 		return InitializeResult{}, ErrOrderNotPayable
 	}
 
+	reusableAttempt, found, err := service.repository.ReusableInitializedAttempt(
+		requestContext, order.ID, service.provider.Name(), order.TotalKobo, CurrencyNGN,
+	)
+	if err != nil {
+		return InitializeResult{}, err
+	}
+	if found {
+		return reusableAttempt, nil
+	}
+
 	reference, err := newReference(order.OrderNo)
 	if err != nil {
 		return InitializeResult{}, fmt.Errorf("generate payment reference: %w", err)
@@ -89,6 +100,19 @@ func (service *Service) Initialize(
 	if err := service.repository.MarkAttemptInitialized(
 		requestContext, reference, result, providerPayload,
 	); err != nil {
+		if errors.Is(err, ErrPaymentInProgress) {
+			_ = service.repository.MarkAttemptFailed(requestContext, reference, providerPayload)
+
+			reusableAttempt, found, lookupErr := service.repository.ReusableInitializedAttempt(
+				requestContext, order.ID, service.provider.Name(), order.TotalKobo, CurrencyNGN,
+			)
+			if lookupErr != nil {
+				return InitializeResult{}, lookupErr
+			}
+			if found {
+				return reusableAttempt, nil
+			}
+		}
 		return InitializeResult{}, err
 	}
 

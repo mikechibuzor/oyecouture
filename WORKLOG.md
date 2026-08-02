@@ -5,6 +5,12 @@ One short entry per work session or meaningful chunk. Format:
 
 ---
 
+## 2026-08-02T16:26:35+01:00 · Codex · Paystack duplicate-charge guard
+- **Did:** Added Paystack initialize idempotency: unpaid orders now reuse an existing initialized Paystack checkout URL/reference, and migration `000008` enforces one initialized payment attempt per order with a partial unique index. Concurrent initialize races now fail the losing local attempt and return the surviving checkout URL.
+- **State:** Verified `go test ./...`, `go test ./internal/payments`, `npx vue-tsc --noEmit -p tsconfig.json`, `git diff --check`, local migration index creation, and two near-simultaneous initialize calls for `OYE-1068` returning the same reference/URL.
+- **Next:** Continue sandbox payment testing with this guard in place; later production hardening can add provider-side expiry cleanup/reconciliation views.
+- **Blockers:** Public HTTPS/staging URL for real webhook delivery and remaining launch credentials/content.
+
 ## 2026-08-02T16:02:41+01:00 · Codex · Paystack payment foundation
 - **Did:** Continued from the payment planning and implemented the Paystack-first payment flow: `payment_attempts` migration, Paystack initialize/verify provider, payment service/repository with idempotent paid settlement, signed `/webhooks/paystack`, public `/payments/{payToken}` APIs, `/pay/{payToken}` and callback pages, and checkout redirect-to-payment for ready-to-wear orders.
 - **State:** Sandbox secret lives only in ignored `.env`; committed files contain empty env placeholders only. Verified `go test ./...`, `go test ./internal/payments`, `npx vue-tsc --noEmit -p tsconfig.json`, `npm run build`, and a secret scan outside `.env`. Callback verification now requires the reference to belong to the same order as the pay token; webhook confirmation remains reference-based.

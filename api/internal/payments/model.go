@@ -23,6 +23,7 @@ var (
 	ErrOrderNotFound         = errors.New("payment order not found")
 	ErrOrderNotPayable       = errors.New("order is not payable")
 	ErrPaymentAlreadyPaid    = errors.New("order is already paid")
+	ErrPaymentInProgress     = errors.New("payment is already in progress")
 	ErrPaymentUnavailable    = errors.New("payment provider is unavailable")
 	ErrReferenceNotFound     = errors.New("payment reference not found")
 	ErrReferenceMismatch     = errors.New("payment reference mismatch")

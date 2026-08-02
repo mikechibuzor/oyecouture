@@ -7,12 +7,16 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+const initializedAttemptUniqueIndex = "payment_attempts_one_initialized_attempt_per_order_idx"
+
 type Repository interface {
 	OrderByPayToken(context.Context, string) (Order, error)
+	ReusableInitializedAttempt(context.Context, string, string, int64, string) (InitializeResult, bool, error)
 	CreateAttempt(context.Context, Attempt) error
 	MarkAttemptInitialized(context.Context, string, InitializeResult, []byte) error
 	MarkAttemptFailed(context.Context, string, []byte) error
@@ -59,6 +63,40 @@ func (repository *PostgresRepository) OrderByPayToken(
 	return order, nil
 }
 
+func (repository *PostgresRepository) ReusableInitializedAttempt(
+	requestContext context.Context,
+	orderID string,
+	provider string,
+	amountKobo int64,
+	currency string,
+) (InitializeResult, bool, error) {
+	const query = `
+		SELECT authorization_url, access_code, reference
+		FROM payment_attempts
+		WHERE order_id = $1
+			AND provider = $2
+			AND amount_kobo = $3
+			AND currency = $4
+			AND status = $5
+			AND authorization_url IS NOT NULL
+			AND authorization_url <> ''
+		ORDER BY updated_at DESC, created_at DESC
+		LIMIT 1
+	`
+
+	var result InitializeResult
+	if err := repository.pool.QueryRow(
+		requestContext, query, orderID, provider, amountKobo, currency, StatusInitialized,
+	).Scan(&result.AuthorizationURL, &result.AccessCode, &result.Reference); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return InitializeResult{}, false, nil
+		}
+		return InitializeResult{}, false, fmt.Errorf("query reusable payment attempt: %w", err)
+	}
+
+	return result, true, nil
+}
+
 func (repository *PostgresRepository) CreateAttempt(
 	requestContext context.Context,
 	attempt Attempt,
@@ -97,6 +135,9 @@ func (repository *PostgresRepository) MarkAttemptInitialized(
 		requestContext, query, reference, StatusInitialized,
 		result.AuthorizationURL, result.AccessCode, jsonPayload(providerPayload),
 	); err != nil {
+		if isInitializedAttemptConflict(err) {
+			return ErrPaymentInProgress
+		}
 		return fmt.Errorf("mark payment initialized: %w", err)
 	}
 
@@ -289,4 +330,11 @@ func nullableTime(value *time.Time) pgtype.Timestamptz {
 	}
 
 	return pgtype.Timestamptz{Time: *value, Valid: true}
+}
+
+func isInitializedAttemptConflict(err error) bool {
+	var postgresError *pgconn.PgError
+	return errors.As(err, &postgresError) &&
+		postgresError.Code == "23505" &&
+		postgresError.ConstraintName == initializedAttemptUniqueIndex
 }

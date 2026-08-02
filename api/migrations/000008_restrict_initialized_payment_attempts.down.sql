@@ -1,0 +1,1 @@
+DROP INDEX IF EXISTS payment_attempts_one_initialized_attempt_per_order_idx;

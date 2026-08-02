@@ -141,6 +141,9 @@ func (handler *Handler) writePaymentError(responseWriter http.ResponseWriter, pa
 	case errors.Is(paymentError, ErrOrderNotPayable), errors.Is(paymentError, ErrPaymentAlreadyPaid):
 		writeError(responseWriter, http.StatusConflict, ErrorCodeInvalidStatus,
 			"this order cannot be paid right now")
+	case errors.Is(paymentError, ErrPaymentInProgress):
+		writeError(responseWriter, http.StatusConflict, ErrorCodeInvalidStatus,
+			"a payment is already being prepared for this order")
 	case errors.Is(paymentError, ErrPaymentUnavailable):
 		writeError(responseWriter, http.StatusServiceUnavailable, ErrorCodeInternal,
 			"payments are not available right now")
