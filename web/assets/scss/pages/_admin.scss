@@ -422,6 +422,8 @@
   justify-content: flex-start;
   gap: var(--space-sm);
   flex-wrap: wrap;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .admin-filter {
@@ -462,12 +464,15 @@
 }
 
 .admin-filter-popover {
-  position: absolute;
+  position: fixed;
   z-index: 30;
-  top: calc(100% + var(--space-2xs));
-  right: 0;
+  top: var(--admin-filter-popover-top, 0);
+  left: var(--admin-filter-popover-left, var(--space-sm));
   display: grid;
-  width: min(34rem, calc(100vw - 2rem));
+  width: var(--admin-filter-popover-width, min(34rem, calc(100vw - 2rem)));
+  max-width: calc(100vw - 2rem);
+  max-height: min(28rem, calc(100dvh - var(--admin-filter-popover-top, 0px) - 1rem));
+  overflow: auto;
   border: 1px solid var(--color-border-warm);
   border-radius: 0.5rem;
   background-color: var(--color-white);
@@ -475,14 +480,13 @@
   grid-template-columns: minmax(11rem, 0.85fr) minmax(13rem, 1.15fr);
 
   @include breakpoint-max('tablet') {
-    right: auto;
-    left: 0;
     grid-template-columns: 1fr;
   }
 }
 
 .admin-filter-categories,
 .admin-filter-values {
+  min-width: 0;
   padding: var(--space-2xs);
 }
 
@@ -513,6 +517,7 @@
   font-family: inherit;
   font-size: var(--text-sm);
   gap: var(--space-sm);
+  overflow-wrap: anywhere;
   text-align: left;
   transition:
     background-color var(--duration-quick) var(--ease-standard),
