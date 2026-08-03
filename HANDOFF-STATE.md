@@ -12,6 +12,17 @@
 - **Repo / branch:** `/Users/chibuzoriwuagwu/Downloads/share/oyecouture` · `main`.
 - **Last implementation commits:** `2be9f3c` (row-click order detail navigation), `ac24935` (metrics/table alignment polish), `9619edc` (responsive admin filter popover), `d701dfd` (order detail/actions), `a8a372c` (order desk pagination + microinteractions), `966392e` (orders metrics + VBAN-style filters), `fddbe22` (admin orders desk), `93c564c` (admin orders API), `22065c9` (admin authentication).
 
+## 🔑 CREDENTIALS TO REGENERATE (Claude, 3 Aug)
+
+Both work; both were pasted into a chat transcript and should be rotated once setup settles:
+1. **SendByte production key** (`sk_live_…`) — now live on the server in `.env.production`. The local `.env` deliberately keeps the **sandbox** key so local runs cannot send real mail.
+2. **Cloudinary API secret** — in the local gitignored `.env`. The key also had to be moved from *media user* to *admin* role or uploads 403.
+3. (Older, still outstanding) **Nomba private key** — pasted in chat during sandbox setup.
+
+⚠️ **Order emails are now REAL.** Any order placed on staging sends a genuine confirmation and receipt to the address entered. Use the user's own address for test orders.
+
+**▶ Never run end to end yet:** order → Paystack sandbox card → webhook → status `paid` → SendByte email landing in a real inbox. Every part is now in place (public HTTPS webhook URL, verified sending domain, live key) but the whole chain has not been exercised once. Do this before any client demo.
+
 ## 🖼 PRODUCT PHOTOGRAPHY + CLOUDINARY (Claude, 3 Aug)
 
 **Cloudinary is the image backend** (user's decision; it was also the original PRD plan). Credentials in the gitignored `.env` as `CLOUDINARY_CLOUD_NAME=exgithrw`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`. ⚠️ **The API secret was pasted into chat — regenerate it in the Cloudinary console once setup is done.** The key had to be moved from *media user* to *admin* role; a media-user key returns `403 missing permissions (actions=["create"])` on upload.
