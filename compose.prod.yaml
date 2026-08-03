@@ -35,6 +35,7 @@ services:
       # the round trip out through Caddy and back in.
       NUXT_API_INTERNAL_BASE: http://api:8080
       NUXT_PUBLIC_SITE_URL: https://${SITE_HOST}
+      NUXT_PUBLIC_WHATSAPP_NUMBER: ${WHATSAPP_NUMBER:-}
     depends_on:
       api:
         condition: service_started
