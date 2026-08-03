@@ -451,9 +451,13 @@ $catalogue-content-width: 92.5rem;
 // Motion. Authority: 07-MOTION-AND-MICROINTERACTIONS.md §4.2.
 // ---------------------------------------------------------------------------
 
-// Cards and section headings rise into view as they are scrolled to.
-.catalogue-collection-heading,
-.product-card {
+// Section headings rise into view as they are scrolled to.
+//
+// Product cards deliberately do not: the scroll-driven reveal ties opacity to
+// scroll position, and a tall card sitting low in the viewport never finishes
+// its range, so the garment reads as permanently washed out. Photography must
+// look identical wherever it sits on the page.
+.catalogue-collection-heading {
   @include reveal-on-scroll;
 }
 
