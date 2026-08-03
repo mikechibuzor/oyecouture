@@ -10,6 +10,10 @@ export const buildWhatsAppOrderUrl = (
   lines: readonly CartLine[],
   subtotalKobo: number,
   orderNo = '',
+  deliveryDetails?: {
+    readonly address: string
+    readonly deliveryZone: string
+  },
 ): string => {
   // Wording follows the approved design: "Hi Oyecouture! …" with x-quantity
   // line items and a closing request to confirm availability and sizing.
@@ -25,6 +29,10 @@ export const buildWhatsAppOrderUrl = (
   const opening = orderNo
     ? `Hi Oyecouture! I'd like to confirm order ${orderNo}:`
     : "Hi Oyecouture! I'd like to order the following:"
+  const deliveryLines = [
+    deliveryDetails?.deliveryZone ? `Delivery area: ${deliveryDetails.deliveryZone}` : '',
+    deliveryDetails?.address ? `Delivery address: ${deliveryDetails.address}` : '',
+  ].filter(Boolean)
 
   const message = [
     opening,
@@ -32,6 +40,7 @@ export const buildWhatsAppOrderUrl = (
     ...orderLines,
     '',
     `Subtotal: ${formatProductPrice(subtotalKobo)}`,
+    ...(deliveryLines.length ? ['', ...deliveryLines] : []),
     '',
     'Please confirm availability, sizing and delivery details.',
   ].join('\n')

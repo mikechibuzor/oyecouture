@@ -250,21 +250,20 @@ $storefront-navigation-width: 92.5rem;
     }
   }
 
-  // Dark menu card, matching the approved design: #1a1a1a panel, 16px radius,
-  // champagne hairline border, soft deep shadow, 8px padding, 2px item gap.
+  // Dark menu card with no hover gap between trigger and dropdown.
   .desktop-navigation-dropdown {
     position: absolute;
-    top: calc(100% + var(--space-2xs));
+    top: 100%;
     left: 50%;
+    z-index: 10;
     display: grid;
     width: max-content;
     min-width: 14.375rem;
     padding: var(--space-xs);
     border: 1px solid rgb(224 207 156 / 22%);
-    border-radius: 1rem;
+    border-radius: 0.5rem;
     background: var(--color-ink);
     box-shadow: 0 1.125rem 2.75rem rgb(26 26 26 / 28%);
-    gap: 0.125rem;
     transform: translateX(-50%);
 
     @media (prefers-reduced-motion: no-preference) {
@@ -272,8 +271,8 @@ $storefront-navigation-width: 92.5rem;
     }
 
     a {
-      padding: 0.75rem 0.875rem;
-      border-radius: 0.625rem;
+      padding: 0.8125rem 0.875rem;
+      border-left: 1px solid transparent;
       color: var(--color-menu-copy);
       font-size: 0.78125rem;
       font-weight: var(--font-weight-regular);
@@ -283,12 +282,14 @@ $storefront-navigation-width: 92.5rem;
       white-space: nowrap;
       transition:
         color var(--duration-quick) var(--ease-standard),
-        background-color var(--duration-quick) var(--ease-standard);
+        background-color var(--duration-quick) var(--ease-standard),
+        border-color var(--duration-quick) var(--ease-standard);
 
       &:hover,
       &:focus-visible {
         color: var(--color-champagne);
-        background: rgb(224 207 156 / 10%);
+        border-color: var(--color-champagne);
+        background: rgb(224 207 156 / 6%);
       }
     }
   }

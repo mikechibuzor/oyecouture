@@ -4,13 +4,15 @@ import { MessageCircle } from 'lucide'
 import { CONFIRM_COPY, MEASUREMENT_FIELDS } from '~/constants/confirm'
 import { CART_COPY } from '~/constants/cart'
 import { PRODUCT_COPY } from '~/constants/products'
-import type { MeasurementsRequest, Order } from '~/types/order'
+import type { DeliveryZone, MeasurementsRequest, Order } from '~/types/order'
 import { StorefrontRoute } from '~/types/storefront'
+import type { SelectOption } from '~/types/ui'
 import { buildWhatsAppOrderUrl } from '~/utils/cart'
 import { formatProductPrice } from '~/utils/product'
 
 const { clear, isEmpty, lines, subtotalKobo } = useCart()
 const { submitOrder } = useOrders()
+const { data: zoneData } = await useDeliveryZones()
 const runtimeConfig = useRuntimeConfig()
 
 const WHATSAPP_ICON: IconNode = MessageCircle
@@ -18,6 +20,8 @@ const WHATSAPP_ICON: IconNode = MessageCircle
 const customerName = ref('')
 const email = ref('')
 const phone = ref('')
+const address = ref('')
+const deliveryZoneName = ref('')
 const showMeasurements = ref(false)
 const notes = ref('')
 const measurementValues = ref<Record<string, string>>({})
@@ -29,10 +33,18 @@ const placedOrder = ref<Order | null>(null)
 // screen still needs the lines to build the WhatsApp message.
 const placedLines = ref<typeof lines.value>([])
 const placedSubtotalKobo = ref(0)
+const placedDeliveryDetails = ref({ address: '', deliveryZone: '' })
 
 useSeoMeta({ title: `${CONFIRM_COPY.heading} — Oyecouture Bespoke` })
 
 const formattedSubtotal = computed(() => formatProductPrice(subtotalKobo.value))
+const zones = computed<readonly DeliveryZone[]>(() => zoneData.value?.zones ?? [])
+const zoneSelectOptions = computed<SelectOption[]>(() =>
+  zones.value.map((zone) => ({
+    value: zone.name,
+    label: zone.name,
+  })),
+)
 const whatsAppUrl = computed(() =>
   placedOrder.value
     ? buildWhatsAppOrderUrl(
@@ -40,6 +52,7 @@ const whatsAppUrl = computed(() =>
         placedLines.value,
         placedSubtotalKobo.value,
         placedOrder.value.orderNo,
+        placedDeliveryDetails.value,
       )
     : '',
 )
@@ -71,6 +84,11 @@ const handleSubmit = async (): Promise<void> => {
     return
   }
 
+  if (!deliveryZoneName.value) {
+    errorMessage.value = CONFIRM_COPY.zoneRequired
+    return
+  }
+
   isSubmitting.value = true
   errorMessage.value = ''
 
@@ -89,11 +107,17 @@ const handleSubmit = async (): Promise<void> => {
         quantity: line.quantity,
       })),
       measurements: buildMeasurements(),
+      address: address.value.trim(),
+      deliveryZone: deliveryZoneName.value,
     })
 
     placedOrder.value = order
     placedLines.value = submittedLines
     placedSubtotalKobo.value = submittedSubtotal
+    placedDeliveryDetails.value = {
+      address: address.value.trim(),
+      deliveryZone: deliveryZoneName.value,
+    }
     clear()
   } catch (submitError) {
     const apiError = submitError as { data?: { error?: { message?: string } } }
@@ -166,6 +190,32 @@ const handleSubmit = async (): Promise<void> => {
               <input v-model="phone" type="tel" name="phone" autocomplete="tel" required>
               <small>{{ CONFIRM_COPY.phoneHint }}</small>
             </label>
+          </fieldset>
+
+          <fieldset>
+            <legend>{{ CONFIRM_COPY.deliveryHeading }}</legend>
+
+            <label>
+              <span>{{ CONFIRM_COPY.address }}</span>
+              <textarea
+                v-model="address"
+                name="address"
+                autocomplete="street-address"
+                rows="3"
+                required
+              />
+            </label>
+
+            <div class="checkout-zone-field">
+              <span>{{ CONFIRM_COPY.zone }}</span>
+              <UiSelect
+                v-model="deliveryZoneName"
+                :options="zoneSelectOptions"
+                :label="CONFIRM_COPY.zone"
+                :placeholder="CONFIRM_COPY.zonePlaceholder"
+              />
+              <small>{{ CONFIRM_COPY.zoneHint }}</small>
+            </div>
           </fieldset>
 
           <fieldset class="confirm-measurements">

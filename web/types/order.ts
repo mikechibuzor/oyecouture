@@ -39,7 +39,7 @@ export interface CreateOrderRequest {
   readonly phone: string
   readonly items: readonly OrderItemRequest[]
   readonly measurements: MeasurementsRequest | null
-  // Ready-to-wear only; bespoke delivery is agreed on WhatsApp.
+  // Ready-to-wear uses this for delivery fees; bespoke stores it for WhatsApp follow-up.
   readonly address?: string
   readonly deliveryZone?: string
 }

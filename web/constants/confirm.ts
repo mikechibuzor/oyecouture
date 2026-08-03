@@ -8,6 +8,12 @@ export const CONFIRM_COPY = {
   email: 'Email address',
   phone: 'Phone number',
   phoneHint: 'Include your country code, e.g. +234',
+  deliveryHeading: 'Delivery',
+  address: 'Delivery address',
+  zone: 'Delivery area',
+  zonePlaceholder: 'Select a delivery area',
+  zoneHint: 'Delivery fees for bespoke pieces are confirmed on WhatsApp.',
+  zoneRequired: 'Please choose a delivery area.',
   measurementsHeading: 'Already know your measurements?',
   measurementsHint:
     'Optional — share them now and we can skip straight to fabric and delivery.',

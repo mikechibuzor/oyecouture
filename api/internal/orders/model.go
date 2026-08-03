@@ -60,7 +60,7 @@ type CreateOrderInput struct {
 	Phone        string          `json:"phone"`
 	Items        []RequestedItem `json:"items"`
 	Measurements *Measurements   `json:"measurements"`
-	// Ready-to-wear only: bespoke delivery is agreed on WhatsApp.
+	// Ready-to-wear uses these for delivery fees; bespoke stores them for WhatsApp follow-up.
 	Address      string `json:"address"`
 	DeliveryZone string `json:"deliveryZone"`
 }

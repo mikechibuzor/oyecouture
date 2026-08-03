@@ -48,8 +48,8 @@ const handleStorefrontAction = (storefrontActionId: StorefrontActionId): void =>
   emit('action', storefrontActionId)
 }
 
-// Desktop pointer hover opens a dropdown; the trigger's click still toggles it.
-// Only items that actually own a submenu respond.
+// Desktop pointer hover/focus opens a dropdown. The full nav item owns the
+// hover area so moving from trigger to menu does not flicker closed.
 const handleItemPointerEnter = (navigationItem: StorefrontNavigationItem): void => {
   if (navigationItem.children) {
     openDropdown(navigationItem.id)
@@ -62,23 +62,24 @@ const handleItemPointerLeave = (navigationItem: StorefrontNavigationItem): void 
   }
 }
 
-// Click has to mean different things per input type. A mouse click arrives after
-// hover has already opened the menu, so toggling there would close it the instant
-// the user clicks. Touch has no hover, and keyboard activation (Enter/Space, which
-// reports detail 0) needs a real toggle — both of those keep toggle semantics.
-const handleTriggerClick = (
-  navigationItem: StorefrontNavigationItem,
-  event: MouseEvent,
-): void => {
-  const isKeyboardActivation = event.detail === 0
-  const isHoverCapable = window.matchMedia('(hover: hover)').matches
+const handleItemFocusOut = (event: FocusEvent): void => {
+  const currentTarget = event.currentTarget
 
-  if (isHoverCapable && !isKeyboardActivation) {
-    openDropdown(navigationItem.id)
+  if (
+    currentTarget instanceof HTMLElement
+    && event.relatedTarget instanceof Node
+    && currentTarget.contains(event.relatedTarget)
+  ) {
     return
   }
 
-  toggleDropdown(navigationItem.id)
+  closeDropdown()
+}
+
+const handleTriggerClick = (navigationItem: StorefrontNavigationItem): void => {
+  if (navigationItem.children) {
+    openDropdown(navigationItem.id)
+  }
 }
 </script>
 
@@ -97,6 +98,8 @@ const handleTriggerClick = (
           class="desktop-navigation-item"
           @mouseenter="handleItemPointerEnter(navigationItem)"
           @mouseleave="handleItemPointerLeave(navigationItem)"
+          @focusin="handleItemPointerEnter(navigationItem)"
+          @focusout="handleItemFocusOut"
         >
           <NuxtLink
             v-if="navigationItem.to"
@@ -115,7 +118,7 @@ const handleTriggerClick = (
               :class="{ 'is-active': isNavigationItemActive(navigationItem) }"
               :aria-controls="navigationItem.menuId"
               :aria-expanded="isDropdownOpen(navigationItem.id)"
-              @click="handleTriggerClick(navigationItem, $event)"
+              @click="handleTriggerClick(navigationItem)"
             >
               <span>{{ navigationItem.label }}</span>
               <StorefrontIcon
