@@ -6,11 +6,28 @@
 
 ## Current status
 - **Phase:** 1 (MVP). First 40% milestone **paid**; build authorized.
-- **Milestone:** Milestone A complete; storefront (steps 8–11) complete. **Now building the ghost admin.**
-- **Step:** Paystack sandbox flow plus SendByte post-payment customer emails are implemented locally. Ghost admin **phase 1 complete**; next product work is phase 2 product/content management.
-- **Last worked by:** Codex · 2026-08-02.
-- **Repo / branch:** `/Users/chibuzoriwuagwu/Downloads/share/oyecouture` · `main`.
-- **Last implementation commits:** `2be9f3c` (row-click order detail navigation), `ac24935` (metrics/table alignment polish), `9619edc` (responsive admin filter popover), `d701dfd` (order detail/actions), `a8a372c` (order desk pagination + microinteractions), `966392e` (orders metrics + VBAN-style filters), `fddbe22` (admin orders desk), `93c564c` (admin orders API), `22065c9` (admin authentication).
+- **Milestone:** Storefront complete · ghost admin phase 1 complete · **staging is deployed and live** · the client's real catalogue is in.
+- **Last worked by:** Claude · 2026-08-03.
+- **Repo:** `/Users/chibuzoriwuagwu/Downloads/share/oyecouture` · `main` · **now has a GitHub remote: private repo `mikechibuzor/oyecouture`. Push to `origin`.**
+- **Staging:** **https://82-29-184-79.sslip.io** — real Let's Encrypt cert, all five containers healthy.
+- **Server access:** `ssh oyecouture` (config on the user's Mac, key `~/.ssh/oyecouture`). Deploy with `cd ~/oyecouture && git pull && ./deploy/deploy.sh`.
+- **Admin:** https://82-29-184-79.sslip.io/admin — the user seeded their own account on 3 Aug; **neither agent knows the password, and that is correct.** Re-seed or reset with `docker compose -f compose.prod.yaml --env-file .env.production exec -it api /admin`.
+
+## ▶ NEXT ACTION — run one order end to end (nobody has done this yet)
+
+Every component is now in place for the first time: a public HTTPS webhook URL, a verified sending domain, a live email key, and real products. **The full chain has never been exercised once:**
+
+```
+place order → Paystack sandbox card → webhook fires → order flips to paid → confirmation + receipt email arrives
+```
+
+Each part is tested in isolation; the joins between them are not. This is the highest-risk untested path in the project and the thing a client demo depends on. **Do this before starting phase 2.** Use the user's own email address — see the credentials note below, emails are real now.
+
+After that, in order: **(1)** client review of the 22 placeholder prices and the product groupings (casuals 7/8/9 and 23–26 are the least certain), **(2)** ghost admin **phase 2** — product create/edit with Cloudinary image upload, then editable home content, **(3)** chase the client for **suit photography** (suits are ₦275k–₦850k and still show a mockup mannequin).
+
+⏰ **Two clocks:** netcup withdrawal (€68.64, closes ~13 Aug — the user said they would send it) and the **Hostinger renewal at $19.49/mo (~₦26,900), which exceeds the whole ₦25k maintenance retainer** — move to the 12-month term (~₦9,646/mo) or cancel, ~28 days from 2 Aug.
+
+⚠️ **Staging is sandbox for money but LIVE for email.** Paystack is `sk_test_`; SendByte is `sk_live_`. Any order placed on staging sends a genuine email to the address entered. There are already **5 test orders** in the staging database that must be purged before go-live.
 
 ## 🔑 CREDENTIALS TO REGENERATE (Claude, 3 Aug)
 
@@ -80,7 +97,7 @@ Reviewed `internal/payments` end to end against the running stack. **The money p
 **▶ ONE ITEM STILL FOR THE USER TO DECIDE (not a bug, do not silently "fix"):**
 2. **`payment_attempts.provider_payload` stores Paystack's entire verify response.** That includes the customer's `email`, `phone`, `ip_address`, and an `authorization` object with `bin`, `last4`, `exp_month`, `exp_year`, `bank`, `account_name`, `receiver_bank_account_number` and a reusable `authorization_code`. No full PAN, so not PCI cardholder data, but it widens the blast radius of a database leak and is customer PII under Nigerian data-protection rules with no retention policy. Suggested: persist a trimmed payload (status, amount, currency, reference, paid_at, gateway_response, channel, last4/card_type for support) instead of the whole blob.
 
-## ▶ Next action — ghost admin, phase 2 product/content management (Codex, 2 Aug)
+## Ghost admin phase 1 — history and detail (superseded as the next action; see NEXT ACTION at the top)
 **Remember what the ghost admin is:** a full admin layer built in phase 1 but **not billed and not revealed** to the client, who declined it. Pre-priced at ₦300k as an add-on for when they ask. It must be genuinely usable, not a stub — that is the whole point.
 
 **✅ 1.1 AUTH — DONE (`22065c9`).** Session-cookie auth over `admin_users` + `admin_sessions` (migration `000006`). Seed or reset the owner account with:

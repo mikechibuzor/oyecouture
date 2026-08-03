@@ -5,6 +5,13 @@ One short entry per work session or meaningful chunk. Format:
 
 ---
 
+## 2026-08-03T02:10:00+01:00 · Claude · Handing the baton to Codex
+- **Did:** SendByte **production** key installed on the server (`sk_live_`); the local `.env` deliberately keeps the sandbox key so local runs cannot send real mail. Verified the live key is nowhere in git. User seeded their own admin account on staging and confirmed they can sign in.
+- **State:** Staging is fully working at **https://82-29-184-79.sslip.io** — 30 active products (22 real + 8 placeholder suits), 91 images all verified loading from Cloudinary, ghost admin reachable at `/admin`. **Sandbox for money (`sk_test_` Paystack), LIVE for email (`sk_live_` SendByte).** 5 test orders in the staging DB to purge before go-live.
+- **Baton correction:** the `Current status` block at the top of `HANDOFF-STATE.md` had gone stale — it still read "Last worked by: Codex · 2026-08-02" and described SendByte as local-only, while every section below it was current. Rewritten, and the superseded "next action" heading demoted so only one is live.
+- **Next (for Codex):** run **one order end to end** — order → Paystack sandbox card → webhook → `paid` → email in a real inbox. Every piece is in place; the joins have never been exercised together. Then client price review, then ghost admin phase 2 (product create/edit + Cloudinary upload).
+- **Blockers:** ⏰ netcup withdrawal (€68.64, ~13 Aug, user sending it) · ⏰ Hostinger renews at $19.49/mo which exceeds the ₦25k retainer — move to 12-month or cancel ~28 days from 2 Aug · no suit photography · three credentials pasted in chat need rotating.
+
 ## 2026-08-03T01:40:00+01:00 · Claude · Real catalogue live on Cloudinary
 - **Did:** Uploaded the client's photography (709MB → 102MB, 92 images) to Cloudinary and replaced the design-mockup catalogue with 22 real products — 11 aso-oke looks and 11 casual two-pieces (migration `000010`). Placeholders are **deactivated, not deleted**, so order history keeps its links. Suits stay on placeholders (no suit shoot yet). Also uploaded the 58 legacy mockup images, because `R2_PUBLIC_BASE` is a single value and pointing it at Cloudinary broke the remaining suits otherwise.
 - **State:** 30 active products, 91 image rows, **every image verified loading**. Credits at 0.4% of 25/month. `R2_PUBLIC_BASE=https://res.cloudinary.com/exgithrw/image/upload/f_auto,q_auto`. Category tiles for Trads/Casuals now use the client's own shots (`campaign-4`, `casual-14`); Suits still the mockup mannequin.
