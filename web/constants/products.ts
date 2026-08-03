@@ -175,6 +175,8 @@ export const PRODUCT_SECTION_NAVIGATION = {
   },
 } as const satisfies Readonly<Record<ProductSection, ProductSectionNavigation>>
 
+// Trads and Casuals use the client's own photography from Cloudinary. Suits
+// still points at the design-mockup mannequin — there is no suit shoot yet.
 export const CATEGORY_TILES = [
   {
     label: 'Shop',
@@ -186,14 +188,16 @@ export const CATEGORY_TILES = [
   {
     label: 'Shop',
     heading: 'Trads',
-    imagePath: '/images/catalogue/oye-cat-trads.webp',
+    imagePath:
+      'https://res.cloudinary.com/exgithrw/image/upload/f_auto,q_auto,w_900/oyecouture/campaign-4',
     imageAlt: 'Oyecouture traditional attire',
     to: StorefrontRoute.TradAttires,
   },
   {
     label: 'Shop',
     heading: 'Casuals',
-    imagePath: '/images/catalogue/oye-cat-casuals.webp',
+    imagePath:
+      'https://res.cloudinary.com/exgithrw/image/upload/f_auto,q_auto,w_900/oyecouture/casual-14',
     imageAlt: 'Oyecouture casual clothing',
     to: StorefrontRoute.CasualsMen,
   },
