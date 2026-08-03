@@ -5,6 +5,14 @@ One short entry per work session or meaningful chunk. Format:
 
 ---
 
+## 2026-08-03T01:40:00+01:00 · Claude · Real catalogue live on Cloudinary
+- **Did:** Uploaded the client's photography (709MB → 102MB, 92 images) to Cloudinary and replaced the design-mockup catalogue with 22 real products — 11 aso-oke looks and 11 casual two-pieces (migration `000010`). Placeholders are **deactivated, not deleted**, so order history keeps its links. Suits stay on placeholders (no suit shoot yet). Also uploaded the 58 legacy mockup images, because `R2_PUBLIC_BASE` is a single value and pointing it at Cloudinary broke the remaining suits otherwise.
+- **State:** 30 active products, 91 image rows, **every image verified loading**. Credits at 0.4% of 25/month. `R2_PUBLIC_BASE=https://res.cloudinary.com/exgithrw/image/upload/f_auto,q_auto`. Category tiles for Trads/Casuals now use the client's own shots (`campaign-4`, `casual-14`); Suits still the mockup mannequin.
+- **Three things worth not repeating:** (1) `product_images_position_valid` capped position at **3** — a mockup-era assumption — while real looks run to 6 frames; migration 000010 lifts it to 12 first. (2) Resetting a dirty migration while the API is **crash-looping** does not work — the old container re-applies and re-dirties it within seconds; stop the api container first. (3) `.product-card` carried `reveal-on-scroll`, which ties opacity to scroll progress; a tall card low in the viewport never completes its range and renders at ~0.96 opacity the whole time it is visible, so identical garments looked different depending on grid position. Removed from cards, kept on headings. Verified opacity 1 at seven scroll positions.
+- **Measured delivery sizes (do not re-estimate):** casuals ~99KB, aso-oke 125KB at w_600 / 408KB at w_1200. Realistic ceiling ≈ **16,000 page views/month**, not the 29–40k first projected.
+- **Next:** SendByte **production** key still to go into `SENDBYTE_API_KEY` (DKIM + merged SPF are both propagated, so the domain should verify) — note that real order emails start sending once it is in. Then client review of the 22 dummy prices, and ghost admin phase 2 product/image management.
+- **Blockers:** ⏰ **netcup withdrawal drafted but UNSENT — €68.64, window closes ~13 Aug.** Hostinger renews at $19.49/mo unless moved to a 12-month term. No suit photography. Cloudinary API secret was pasted in chat — regenerate.
+
 ## 2026-08-02T20:30:30+01:00 · Codex · Polished paid-order email templates
 - **Did:** Reworked the order confirmation and payment receipt templates with a premium image-free Oyecouture wordmark, warmer framed layout, preheaders, summary/status blocks, cleaner totals, and a fulfilment note. Removed reliance on a hosted logo so SendByte/local previews no longer show a broken image.
 - **State:** Verified `go test ./...` and `git diff --check`; new test asserts paid-order emails do not include external `<img>` tags and do include the brand wordmark.
