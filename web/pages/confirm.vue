@@ -45,10 +45,13 @@ const zoneSelectOptions = computed<SelectOption[]>(() =>
     label: zone.name,
   })),
 )
+const configuredWhatsAppNumber = computed(() =>
+  String(runtimeConfig.public.whatsappNumber ?? ''),
+)
 const whatsAppUrl = computed(() =>
   placedOrder.value
     ? buildWhatsAppOrderUrl(
-        runtimeConfig.public.whatsappNumber,
+        configuredWhatsAppNumber.value,
         placedLines.value,
         placedSubtotalKobo.value,
         placedOrder.value.orderNo,
@@ -57,7 +60,7 @@ const whatsAppUrl = computed(() =>
     : '',
 )
 const isWhatsAppConfigured = computed(
-  () => runtimeConfig.public.whatsappNumber.replace(/\D/g, '').length > 0,
+  () => configuredWhatsAppNumber.value.replace(/\D/g, '').length > 0,
 )
 
 // Converts the free-text measurement inputs into numbers, dropping blanks so an
