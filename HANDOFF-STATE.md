@@ -10,8 +10,22 @@
 - **Last worked by:** Codex · 2026-08-04.
 - **Repo:** `/Users/chibuzoriwuagwu/Downloads/share/oyecouture` · `main` · **now has a GitHub remote: private repo `mikechibuzor/oyecouture`. Push to `origin`.**
 - **Staging:** **https://82-29-184-79.sslip.io** — real Let's Encrypt cert, all five containers healthy.
+- **Latest deployed commit:** `a773f80` (`feat(web): polish admin product workflows`) — pushed to `origin/main` and deployed on 2026-08-04.
 - **Server access:** `ssh oyecouture` (config on the user's Mac, key `~/.ssh/oyecouture`). Deploy with `cd ~/oyecouture && git pull && ./deploy/deploy.sh`.
 - **Admin:** https://82-29-184-79.sslip.io/admin — the user seeded their own account on 3 Aug; **neither agent knows the password, and that is correct.** Re-seed or reset with `docker compose -f compose.prod.yaml --env-file .env.production exec -it api /admin`.
+
+## 🧭 CODEx worklog — 2026-08-04, 12 commits since handoff
+
+This is the missing worklog entry for everything after `cf4c95f` (`docs: refresh the baton for handoff to Codex`) through `a773f80`. The tree was clean after `a773f80`; this entry documents what those commits actually changed.
+
+- `c850997`, `3347394`, `c097cc7` — exposed the WhatsApp number to the storefront, restored bespoke delivery details on the confirm flow, fixed the nav dropdown hover/click behavior, and made numeric runtime WhatsApp config safe.
+- `2338f00` — imported the client's updated standalone/design drop into the Nuxt app: About, Contact, Wishlist, brand logo assets, and updated storefront page structure.
+- `791bb62`, `b936172` — improved catalogue image loading/preloading and made Wishlist functional: saved items render images reliably, live-update without a full reload, and can be removed one by one.
+- `bf1d26c` — polished catalogue mobile layout so product cards behave better on small screens.
+- `a4574b9`, `a99734e`, `f0c4014`, `c72b4ee` — built ghost-admin product management: authenticated products desk, filters/search/pagination aligned with Orders, archive/restore as a non-destructive `active=false` flow, create/edit APIs and forms, VBAN-style drawer workflow, section-aware category dropdown, and Cloudinary-backed image upload/reorder/delete.
+- `a773f80` — finished the admin product workflow polish and deployed it: global loader/toasts, top-right success notifications, drawer closes after successful create/update/archive/restore while failures keep it open, customer order-submit loaders, expired-session login hardening, and local `127.0.0.1`/`localhost` API-cookie fix.
+
+**Verification for the deployed head (`a773f80`):** local `npm run typecheck` and `npm run build` passed before commit; production deploy script completed successfully; live `https://82-29-184-79.sslip.io/api/healthz`, `/admin/login`, and `/admin/products` all returned HTTP 200 after deploy.
 
 ## ▶ NEXT ACTION — run one order end to end (nobody has done this yet)
 
@@ -23,7 +37,7 @@ place order → Paystack sandbox card → webhook fires → order flips to paid 
 
 Each part is tested in isolation; the joins between them are not. This is the highest-risk untested path in the project and the thing a client demo depends on. **Do this before starting phase 2.** Use the user's own email address — see the credentials note below, emails are real now.
 
-After that, in order: **(1)** client review of the 22 placeholder prices and the product groupings (casuals 7/8/9 and 23–26 are the least certain), **(2)** ghost admin **phase 2** — product create/edit with Cloudinary image upload, then editable home content, **(3)** chase the client for **suit photography** (suits are ₦275k–₦850k and still show a mockup mannequin).
+After that, in order: **(1)** client review of the 22 placeholder prices and the product groupings (casuals 7/8/9 and 23–26 are the least certain), **(2)** ghost admin **phase 2 remaining work** — editable home/content settings, delivery settings, WhatsApp/settings controls, and any richer product-detail controls still worth adding after client review, **(3)** chase the client for **suit photography** (suits are ₦275k–₦850k and still show a mockup mannequin).
 
 ⏰ **Two clocks:** netcup withdrawal (€68.64, closes ~13 Aug — the user said they would send it) and the **Hostinger renewal at $19.49/mo (~₦26,900), which exceeds the whole ₦25k maintenance retainer** — move to the 12-month term (~₦9,646/mo) or cancel, ~28 days from 2 Aug.
 
@@ -202,8 +216,8 @@ Compared every page against `design-source/` by extracting rendered text and com
 
 ## In progress (exact state)
 - Paystack checkout/webhook work is implemented and locally verified but not deployed. SendByte-backed post-payment customer emails are implemented: two separate emails (order confirmation + payment receipt) are sent after server-side successful verification, protected by an `outbound_emails` outbox table and deterministic idempotency keys. Templates now use an image-free Oyecouture wordmark so SendByte/local previews do not show a broken hosted logo. Ghost admin phase 2 product/content management remains next after payment/email verification.
-- Admin product management now follows the VBAN drawer pattern: product rows open an in-page right drawer, `New product` opens the same drawer in create mode, row-level Edit/Archive buttons have been removed from the table, and archive/restore lives in the drawer header beside close after a product exists. The existing product form and image manager are reused inside the drawer, so product metadata, visibility, upload, reorder, and delete all operate from one contextual surface. Category is now a section-aware dropdown, using the canonical catalogue categories and preserving any legacy current category value. A global loader/toast system has started: route changes, customer order submission, and admin product actions show a shared loader; successful create/update/archive/restore closes the drawer and shows a success toast, while failures keep the drawer open with inline errors. Image upload/reorder/delete use the same loader/toasts but keep the drawer open because gallery editing is multi-step. Verified with `npm run typecheck`, `npm run build`, and running local services (`web:3010`, `api:8080`). Browser verification is blocked only by the in-app browser not being signed in to admin.
-- Admin expired-session login redirect was hardened after the bug resurfaced locally: stale `/admin/me` refreshes can no longer overwrite a newer successful login, successful login is now authoritative over in-flight refreshes, `?next=` rejects `/admin/login` loop destinations before falling back to `/admin`, and local browser API calls now derive from the current hostname so `127.0.0.1:3010` talks to `127.0.0.1:8080` instead of splitting cookies across `127.0.0.1` and `localhost`.
+- Admin product management is deployed on staging/prod at `a773f80`. It follows the VBAN drawer pattern: product rows open an in-page right drawer, `New product` opens the same drawer in create mode, row-level Edit/Archive buttons are removed from the table, and archive/restore lives in the drawer header beside close after a product exists. The existing product form and image manager are reused inside the drawer, so product metadata, visibility, upload, reorder, and delete all operate from one contextual surface. Category is a section-aware dropdown, using the canonical catalogue categories and preserving any legacy current category value. Global loader/toast primitives now cover route changes, customer order submission, and admin product actions; successful create/update/archive/restore closes the drawer and shows a top-right success toast, while failures keep the drawer open with inline errors. Image upload/reorder/delete use the same loader/toasts but keep the drawer open because gallery editing is multi-step.
+- Admin expired-session login redirect is hardened and deployed: stale `/admin/me` refreshes can no longer overwrite a newer successful login, successful login is authoritative over in-flight refreshes, `?next=` rejects `/admin/login` loop destinations before falling back to `/admin`, and local browser API calls derive from the current hostname so `127.0.0.1:3010` talks to `127.0.0.1:8080` instead of splitting cookies across `127.0.0.1` and `localhost`. Production stays same-origin through `/api`.
 
 ## How to run / verify current state
 ```bash
