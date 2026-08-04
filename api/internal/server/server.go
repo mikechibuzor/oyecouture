@@ -96,6 +96,15 @@ func New(applicationConfig config.Config, databasePool *pgxpool.Pool) *http.Serv
 	requestMux.Handle("GET /admin/products", adminHandler.RequireSession(
 		http.HandlerFunc(adminProductHandler.List),
 	))
+	requestMux.Handle("POST /admin/products", adminHandler.RequireSession(
+		http.HandlerFunc(adminProductHandler.Create),
+	))
+	requestMux.Handle("GET /admin/products/{slug}", adminHandler.RequireSession(
+		http.HandlerFunc(adminProductHandler.GetBySlug),
+	))
+	requestMux.Handle("PUT /admin/products/{slug}", adminHandler.RequireSession(
+		http.HandlerFunc(adminProductHandler.Update),
+	))
 	requestMux.Handle("PATCH /admin/products/{slug}/active", adminHandler.RequireSession(
 		http.HandlerFunc(adminProductHandler.UpdateActive),
 	))
@@ -159,7 +168,7 @@ func allowOrigin(allowedOrigin string, next http.Handler) http.Handler {
 		}
 
 		if request.Method == http.MethodOptions {
-			responseWriter.Header().Set("Access-Control-Allow-Methods", "GET, POST, PATCH, OPTIONS")
+			responseWriter.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, OPTIONS")
 			responseWriter.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 			responseWriter.WriteHeader(http.StatusNoContent)
 			return

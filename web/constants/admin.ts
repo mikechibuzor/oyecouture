@@ -15,6 +15,8 @@ export const ADMIN_ROUTES = {
   orders: '/admin',
   orderDetail: (orderNo: string) => `/admin/orders/${encodeURIComponent(orderNo)}`,
   products: '/admin/products',
+  productNew: '/admin/products/new',
+  productEdit: (slug: string) => `/admin/products/${encodeURIComponent(slug)}`,
 } as const
 
 export const ADMIN_API_ROUTES = {
@@ -26,6 +28,7 @@ export const ADMIN_API_ROUTES = {
   orderDetail: (orderNo: string) => `/admin/orders/${encodeURIComponent(orderNo)}`,
   orderStatus: (orderNo: string) => `/admin/orders/${encodeURIComponent(orderNo)}/status`,
   products: '/admin/products',
+  productDetail: (slug: string) => `/admin/products/${encodeURIComponent(slug)}`,
   productActive: (slug: string) => `/admin/products/${encodeURIComponent(slug)}/active`,
 } as const
 
@@ -46,6 +49,27 @@ export const ADMIN_COPY = {
   ordersSubheading: 'Manage orders',
   productsHeading: 'Products',
   productsSubheading: 'Manage catalogue availability',
+  newProduct: 'New product',
+  editProduct: 'Edit',
+  productNewHeading: 'New product',
+  productEditHeading: 'Edit product',
+  saveProduct: 'Save product',
+  savingProduct: 'Saving…',
+  productSaved: 'Product saved.',
+  productSaveFailed: 'The product could not be saved.',
+  productDuplicateSlug: 'That slug already exists.',
+  productDetailLoading: 'Loading product…',
+  productDetailFailed: 'The product could not be loaded.',
+  backToProducts: 'Back to products',
+  slugLabel: 'Slug',
+  nameLabel: 'Name',
+  categoryLabel: 'Category',
+  priceKoboLabel: 'Price in kobo',
+  descriptionLabel: 'Description',
+  tagLabel: 'Tag',
+  sortOrderLabel: 'Sort order',
+  hasSizesLabel: 'Ready-to-wear sizes',
+  activeLabel: 'Visible on storefront',
   searchLabel: 'Search orders',
   searchPlaceholder: 'Order number, name, email or phone',
   productSearchLabel: 'Search products',
@@ -218,6 +242,12 @@ export const PRODUCT_SECTION_OPTIONS: readonly SelectOption<ProductSection | ''>
     label: PRODUCT_SECTION_LABELS[section],
   })),
 ]
+
+export const PRODUCT_FORM_SECTION_OPTIONS: readonly SelectOption<ProductSection>[] =
+  Object.values(ProductSection).map((section) => ({
+    value: section,
+    label: PRODUCT_SECTION_LABELS[section],
+  }))
 
 export const PRODUCT_ACTIVE_LABELS: Readonly<Record<AdminProductActiveFilter, string>> = {
   '': 'All availability',

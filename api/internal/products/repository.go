@@ -2,10 +2,12 @@ package products
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -156,6 +158,103 @@ func (repository *PostgresRepository) ListAdmin(
 	}, nil
 }
 
+// GetAdminBySlug returns one product for editing, regardless of active state.
+func (repository *PostgresRepository) GetAdminBySlug(
+	requestContext context.Context,
+	productSlug string,
+) (AdminProduct, error) {
+	query := adminProductSelectQuery + `
+WHERE product.slug = $1
+GROUP BY product.id`
+
+	products, err := repository.queryAdminProducts(requestContext, query, productSlug)
+	if err != nil {
+		return AdminProduct{}, fmt.Errorf("get admin product by slug: %w", err)
+	}
+	if len(products) == 0 {
+		return AdminProduct{}, ErrProductNotFound
+	}
+
+	return products[0], nil
+}
+
+// CreateAdmin inserts one owner-managed product.
+func (repository *PostgresRepository) CreateAdmin(
+	requestContext context.Context,
+	draft AdminProductDraft,
+) (AdminProduct, error) {
+	_, err := repository.databasePool.Exec(
+		requestContext,
+		`INSERT INTO products (
+			slug, name, section, category, price_kobo, description, tag,
+			has_sizes, active, sort_order
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+		draft.Slug,
+		draft.Name,
+		draft.Section,
+		draft.Category,
+		draft.PriceKobo,
+		draft.Description,
+		draft.Tag,
+		draft.HasSizes,
+		draft.Active,
+		draft.SortOrder,
+	)
+	if err != nil {
+		if isUniqueConstraintViolation(err, "products_slug_key") {
+			return AdminProduct{}, ErrDuplicateProductSlug
+		}
+		return AdminProduct{}, fmt.Errorf("create admin product: %w", err)
+	}
+
+	return repository.GetAdminBySlug(requestContext, draft.Slug)
+}
+
+// UpdateAdmin changes owner-editable product metadata.
+func (repository *PostgresRepository) UpdateAdmin(
+	requestContext context.Context,
+	currentSlug string,
+	draft AdminProductDraft,
+) (AdminProduct, error) {
+	commandTag, err := repository.databasePool.Exec(
+		requestContext,
+		`UPDATE products
+		SET slug = $2,
+			name = $3,
+			section = $4,
+			category = $5,
+			price_kobo = $6,
+			description = $7,
+			tag = $8,
+			has_sizes = $9,
+			active = $10,
+			sort_order = $11
+		WHERE slug = $1`,
+		currentSlug,
+		draft.Slug,
+		draft.Name,
+		draft.Section,
+		draft.Category,
+		draft.PriceKobo,
+		draft.Description,
+		draft.Tag,
+		draft.HasSizes,
+		draft.Active,
+		draft.SortOrder,
+	)
+	if err != nil {
+		if isUniqueConstraintViolation(err, "products_slug_key") {
+			return AdminProduct{}, ErrDuplicateProductSlug
+		}
+		return AdminProduct{}, fmt.Errorf("update admin product: %w", err)
+	}
+	if commandTag.RowsAffected() == 0 {
+		return AdminProduct{}, ErrProductNotFound
+	}
+
+	return repository.GetAdminBySlug(requestContext, draft.Slug)
+}
+
 // UpdateActive changes one product's storefront availability.
 func (repository *PostgresRepository) UpdateActive(
 	requestContext context.Context,
@@ -176,6 +275,16 @@ func (repository *PostgresRepository) UpdateActive(
 	}
 
 	return nil
+}
+
+// isUniqueConstraintViolation identifies a named PostgreSQL unique constraint failure.
+func isUniqueConstraintViolation(err error, constraintName string) bool {
+	var postgresError *pgconn.PgError
+	if !errors.As(err, &postgresError) {
+		return false
+	}
+
+	return postgresError.Code == "23505" && postgresError.ConstraintName == constraintName
 }
 
 // buildListQuery creates parameterized SQL for the validated optional filters.

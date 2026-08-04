@@ -16,6 +16,8 @@ const (
 	ErrorCodeInvalidProductSection ErrorCode = "invalid_product_section"
 	ErrorCodeInvalidProductSlug    ErrorCode = "invalid_product_slug"
 	ErrorCodeInvalidActiveFilter   ErrorCode = "invalid_active_filter"
+	ErrorCodeInvalidProductDraft   ErrorCode = "invalid_product_draft"
+	ErrorCodeDuplicateProductSlug  ErrorCode = "duplicate_product_slug"
 	ErrorCodeProductNotFound       ErrorCode = "product_not_found"
 	ErrorCodeSearchQueryTooLong    ErrorCode = "search_query_too_long"
 	ErrorCodeInvalidBody           ErrorCode = "invalid_body"
@@ -36,6 +38,9 @@ type Handler struct {
 // AdminProductManager defines the owner-facing product operations exposed over HTTP.
 type AdminProductManager interface {
 	List(context.Context, AdminListInput) (AdminProductPage, error)
+	GetBySlug(context.Context, string) (AdminProduct, error)
+	Create(context.Context, AdminProductDraft) (AdminProduct, error)
+	Update(context.Context, string, AdminProductDraft) (AdminProduct, error)
 	UpdateActive(context.Context, string, AdminActiveUpdate) error
 }
 
@@ -51,6 +56,10 @@ type listResponse struct {
 
 type detailResponse struct {
 	Product Product `json:"product"`
+}
+
+type adminDetailResponse struct {
+	Product AdminProduct `json:"product"`
 }
 
 type errorDetail struct {
@@ -135,6 +144,59 @@ func (handler *AdminHandler) List(responseWriter http.ResponseWriter, request *h
 	writeJSON(responseWriter, http.StatusOK, page)
 }
 
+// GetBySlug returns one owner-facing product for editing.
+func (handler *AdminHandler) GetBySlug(
+	responseWriter http.ResponseWriter,
+	request *http.Request,
+) {
+	product, err := handler.productManager.GetBySlug(
+		request.Context(),
+		request.PathValue("slug"),
+	)
+	if err != nil {
+		handler.writeServiceError(responseWriter, err)
+		return
+	}
+
+	writeJSON(responseWriter, http.StatusOK, adminDetailResponse{Product: product})
+}
+
+// Create inserts one owner-managed product.
+func (handler *AdminHandler) Create(responseWriter http.ResponseWriter, request *http.Request) {
+	draft, ok := decodeProductDraft(responseWriter, request)
+	if !ok {
+		return
+	}
+
+	product, err := handler.productManager.Create(request.Context(), draft)
+	if err != nil {
+		handler.writeServiceError(responseWriter, err)
+		return
+	}
+
+	writeJSON(responseWriter, http.StatusCreated, adminDetailResponse{Product: product})
+}
+
+// Update changes owner-editable product metadata.
+func (handler *AdminHandler) Update(responseWriter http.ResponseWriter, request *http.Request) {
+	draft, ok := decodeProductDraft(responseWriter, request)
+	if !ok {
+		return
+	}
+
+	product, err := handler.productManager.Update(
+		request.Context(),
+		request.PathValue("slug"),
+		draft,
+	)
+	if err != nil {
+		handler.writeServiceError(responseWriter, err)
+		return
+	}
+
+	writeJSON(responseWriter, http.StatusOK, adminDetailResponse{Product: product})
+}
+
 // UpdateActive archives or restores one product from the public catalogue.
 func (handler *AdminHandler) UpdateActive(
 	responseWriter http.ResponseWriter,
@@ -161,6 +223,24 @@ func (handler *AdminHandler) UpdateActive(
 	}
 
 	responseWriter.WriteHeader(http.StatusNoContent)
+}
+
+// decodeProductDraft reads a strict owner-editable product payload.
+func decodeProductDraft(
+	responseWriter http.ResponseWriter,
+	request *http.Request,
+) (AdminProductDraft, bool) {
+	var draft AdminProductDraft
+
+	decoder := json.NewDecoder(http.MaxBytesReader(responseWriter, request.Body, 1<<20))
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(&draft); err != nil {
+		writeError(responseWriter, http.StatusBadRequest, ErrorCodeInvalidBody,
+			"the product could not be read")
+		return AdminProductDraft{}, false
+	}
+
+	return draft, true
 }
 
 // writeServiceError maps domain errors to stable public status codes and messages.
@@ -206,6 +286,20 @@ func writeServiceError(
 			http.StatusBadRequest,
 			ErrorCodeInvalidActiveFilter,
 			"active must be true or false",
+		)
+	case errors.Is(serviceError, ErrInvalidProductDraft):
+		writeError(
+			responseWriter,
+			http.StatusBadRequest,
+			ErrorCodeInvalidProductDraft,
+			"product fields are incomplete or invalid",
+		)
+	case errors.Is(serviceError, ErrDuplicateProductSlug):
+		writeError(
+			responseWriter,
+			http.StatusConflict,
+			ErrorCodeDuplicateProductSlug,
+			"product slug already exists",
 		)
 	case errors.Is(serviceError, ErrSearchQueryTooLong):
 		writeError(

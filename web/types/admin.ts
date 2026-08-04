@@ -150,6 +150,23 @@ export interface AdminProductPage {
   readonly offset: number
 }
 
+export interface AdminProductDetailResponse {
+  readonly product: AdminProduct
+}
+
+export interface AdminProductDraft {
+  slug: string
+  name: string
+  section: ProductSection
+  category: string
+  priceKobo: number
+  description: string
+  tag: string
+  hasSizes: boolean
+  active: boolean
+  sortOrder: number
+}
+
 export type AdminProductActiveFilter = '' | 'true' | 'false'
 
 export interface AdminProductQuery {

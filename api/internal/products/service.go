@@ -13,6 +13,8 @@ var (
 	ErrInvalidProductSection = errors.New("invalid product section")
 	ErrInvalidProductSlug    = errors.New("invalid product slug")
 	ErrInvalidActiveFilter   = errors.New("invalid product active filter")
+	ErrInvalidProductDraft   = errors.New("invalid product draft")
+	ErrDuplicateProductSlug  = errors.New("duplicate product slug")
 	ErrProductNotFound       = errors.New("product not found")
 	ErrSearchQueryTooLong    = errors.New("search query is too long")
 )
@@ -35,6 +37,9 @@ type Service struct {
 // AdminRepository is the persistence contract for owner-facing product management.
 type AdminRepository interface {
 	ListAdmin(context.Context, AdminListFilter) (AdminProductPage, error)
+	GetAdminBySlug(context.Context, string) (AdminProduct, error)
+	CreateAdmin(context.Context, AdminProductDraft) (AdminProduct, error)
+	UpdateAdmin(context.Context, string, AdminProductDraft) (AdminProduct, error)
 	UpdateActive(context.Context, string, bool) error
 }
 
@@ -144,6 +149,79 @@ func (service *AdminService) List(
 	return page, nil
 }
 
+// GetBySlug returns one owner-facing product for editing.
+func (service *AdminService) GetBySlug(
+	requestContext context.Context,
+	productSlug string,
+) (AdminProduct, error) {
+	normalizedSlug := strings.TrimSpace(productSlug)
+	if !productSlugPattern.MatchString(normalizedSlug) {
+		return AdminProduct{}, ErrInvalidProductSlug
+	}
+
+	product, err := service.productRepository.GetAdminBySlug(requestContext, normalizedSlug)
+	if err != nil {
+		return AdminProduct{}, err
+	}
+
+	products := []AdminProduct{product}
+	service.attachAdminPublicImageURLs(products)
+
+	return products[0], nil
+}
+
+// Create validates and inserts one product.
+func (service *AdminService) Create(
+	requestContext context.Context,
+	draft AdminProductDraft,
+) (AdminProduct, error) {
+	normalizedDraft, err := normalizeProductDraft(draft)
+	if err != nil {
+		return AdminProduct{}, err
+	}
+
+	product, err := service.productRepository.CreateAdmin(requestContext, normalizedDraft)
+	if err != nil {
+		return AdminProduct{}, err
+	}
+
+	products := []AdminProduct{product}
+	service.attachAdminPublicImageURLs(products)
+
+	return products[0], nil
+}
+
+// Update validates and applies owner-editable product metadata.
+func (service *AdminService) Update(
+	requestContext context.Context,
+	productSlug string,
+	draft AdminProductDraft,
+) (AdminProduct, error) {
+	normalizedSlug := strings.TrimSpace(productSlug)
+	if !productSlugPattern.MatchString(normalizedSlug) {
+		return AdminProduct{}, ErrInvalidProductSlug
+	}
+
+	normalizedDraft, err := normalizeProductDraft(draft)
+	if err != nil {
+		return AdminProduct{}, err
+	}
+
+	product, err := service.productRepository.UpdateAdmin(
+		requestContext,
+		normalizedSlug,
+		normalizedDraft,
+	)
+	if err != nil {
+		return AdminProduct{}, err
+	}
+
+	products := []AdminProduct{product}
+	service.attachAdminPublicImageURLs(products)
+
+	return products[0], nil
+}
+
 // UpdateActive changes one product's public availability.
 func (service *AdminService) UpdateActive(
 	requestContext context.Context,
@@ -156,6 +234,36 @@ func (service *AdminService) UpdateActive(
 	}
 
 	return service.productRepository.UpdateActive(requestContext, normalizedSlug, update.Active)
+}
+
+// normalizeProductDraft trims text and enforces admin-editable product invariants.
+func normalizeProductDraft(draft AdminProductDraft) (AdminProductDraft, error) {
+	draft.Slug = strings.TrimSpace(draft.Slug)
+	draft.Name = strings.TrimSpace(draft.Name)
+	draft.Section = strings.TrimSpace(draft.Section)
+	draft.Category = strings.TrimSpace(draft.Category)
+	draft.Description = strings.TrimSpace(draft.Description)
+	draft.Tag = strings.TrimSpace(draft.Tag)
+
+	if !productSlugPattern.MatchString(draft.Slug) {
+		return AdminProductDraft{}, ErrInvalidProductSlug
+	}
+
+	section, err := parseProductSection(draft.Section)
+	if err != nil {
+		return AdminProductDraft{}, err
+	}
+	if section == "" ||
+		draft.Name == "" ||
+		draft.Category == "" ||
+		draft.Description == "" ||
+		draft.PriceKobo < 0 ||
+		draft.SortOrder < 0 {
+		return AdminProductDraft{}, ErrInvalidProductDraft
+	}
+
+	draft.Section = string(section)
+	return draft, nil
 }
 
 // parseProductSection converts an optional section value into a validated enum.

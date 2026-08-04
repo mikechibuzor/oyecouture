@@ -189,6 +189,10 @@ onMounted(() => {
         <h1>{{ ADMIN_COPY.productsHeading }}</h1>
         <p class="admin-page-subheading">{{ ADMIN_COPY.productsSubheading }}</p>
       </div>
+
+      <NuxtLink class="admin-inline-action" :to="ADMIN_ROUTES.productNew">
+        {{ ADMIN_COPY.newProduct }}
+      </NuxtLink>
     </header>
 
     <div class="admin-toolbar">
@@ -268,7 +272,7 @@ onMounted(() => {
               <th scope="col" class="admin-table-number">Price</th>
               <th scope="col">Status</th>
               <th scope="col">Updated</th>
-              <th scope="col">Action</th>
+              <th scope="col">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -302,14 +306,22 @@ onMounted(() => {
               </td>
               <td class="admin-table-placed">{{ formatOrderDate(product.createdAt) }}</td>
               <td>
-                <button
-                  type="button"
-                  class="admin-inline-action"
-                  :disabled="isUpdatingProduct(product)"
-                  @click="toggleProductActive(product)"
-                >
-                  {{ productActionButtonLabel(product) }}
-                </button>
+                <div class="admin-product-actions">
+                  <NuxtLink
+                    class="admin-inline-action"
+                    :to="ADMIN_ROUTES.productEdit(product.slug)"
+                  >
+                    {{ ADMIN_COPY.editProduct }}
+                  </NuxtLink>
+                  <button
+                    type="button"
+                    class="admin-inline-action"
+                    :disabled="isUpdatingProduct(product)"
+                    @click="toggleProductActive(product)"
+                  >
+                    {{ productActionButtonLabel(product) }}
+                  </button>
+                </div>
               </td>
             </tr>
           </tbody>

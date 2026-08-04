@@ -94,6 +94,20 @@ type AdminProductPage struct {
 	Offset   int            `json:"offset"`
 }
 
+// AdminProductDraft is the owner-editable product metadata.
+type AdminProductDraft struct {
+	Slug        string `json:"slug"`
+	Name        string `json:"name"`
+	Section     string `json:"section"`
+	Category    string `json:"category"`
+	PriceKobo   int64  `json:"priceKobo"`
+	Description string `json:"description"`
+	Tag         string `json:"tag"`
+	HasSizes    bool   `json:"hasSizes"`
+	Active      bool   `json:"active"`
+	SortOrder   int32  `json:"sortOrder"`
+}
+
 // AdminActiveUpdate is the availability mutation exposed to the owner.
 type AdminActiveUpdate struct {
 	Active bool `json:"active"`

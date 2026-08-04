@@ -25,7 +25,17 @@ type adminProductManagerStub struct {
 	listInput          AdminListInput
 	listPage           AdminProductPage
 	listError          error
+	detailSlug         string
+	detailProduct      AdminProduct
+	detailError        error
+	createDraft        AdminProductDraft
+	createProduct      AdminProduct
+	createError        error
 	updateSlug         string
+	updateDraft        AdminProductDraft
+	updateProduct      AdminProduct
+	updateError        error
+	updateActiveSlug   string
 	updateActive       bool
 	updateActiveError  error
 	updateActiveCalled bool
@@ -58,6 +68,35 @@ func (manager *adminProductManagerStub) List(
 	return manager.listPage, manager.listError
 }
 
+// GetBySlug records admin detail input.
+func (manager *adminProductManagerStub) GetBySlug(
+	_ context.Context,
+	productSlug string,
+) (AdminProduct, error) {
+	manager.detailSlug = productSlug
+	return manager.detailProduct, manager.detailError
+}
+
+// Create records admin create input.
+func (manager *adminProductManagerStub) Create(
+	_ context.Context,
+	draft AdminProductDraft,
+) (AdminProduct, error) {
+	manager.createDraft = draft
+	return manager.createProduct, manager.createError
+}
+
+// Update records admin update input.
+func (manager *adminProductManagerStub) Update(
+	_ context.Context,
+	productSlug string,
+	draft AdminProductDraft,
+) (AdminProduct, error) {
+	manager.updateSlug = productSlug
+	manager.updateDraft = draft
+	return manager.updateProduct, manager.updateError
+}
+
 // UpdateActive records one admin availability mutation.
 func (manager *adminProductManagerStub) UpdateActive(
 	_ context.Context,
@@ -65,7 +104,7 @@ func (manager *adminProductManagerStub) UpdateActive(
 	update AdminActiveUpdate,
 ) error {
 	manager.updateActiveCalled = true
-	manager.updateSlug = productSlug
+	manager.updateActiveSlug = productSlug
 	manager.updateActive = update.Active
 	return manager.updateActiveError
 }
@@ -285,6 +324,137 @@ func TestAdminHandlerMapsInvalidActiveFilter(t *testing.T) {
 	}
 }
 
+// TestAdminHandlerGetBySlugReturnsProduct verifies edit-detail responses.
+func TestAdminHandlerGetBySlugReturnsProduct(t *testing.T) {
+	t.Parallel()
+
+	manager := &adminProductManagerStub{
+		detailProduct: AdminProduct{Slug: "gold-agbada", Active: true},
+	}
+	handler := NewAdminHandler(manager)
+	request := httptest.NewRequest(http.MethodGet, "/admin/products/gold-agbada", nil)
+	request.SetPathValue("slug", "gold-agbada")
+	responseRecorder := httptest.NewRecorder()
+
+	handler.GetBySlug(responseRecorder, request)
+
+	if responseRecorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d", http.StatusOK, responseRecorder.Code)
+	}
+	if manager.detailSlug != "gold-agbada" {
+		t.Fatalf("expected detail slug, got %q", manager.detailSlug)
+	}
+
+	var response adminDetailResponse
+	if err := json.NewDecoder(responseRecorder.Body).Decode(&response); err != nil {
+		t.Fatalf("decode admin detail response: %v", err)
+	}
+	if response.Product.Slug != "gold-agbada" || !response.Product.Active {
+		t.Fatalf("unexpected admin detail response: %+v", response.Product)
+	}
+}
+
+// TestAdminHandlerCreateReturnsCreatedProduct verifies product create decoding.
+func TestAdminHandlerCreateReturnsCreatedProduct(t *testing.T) {
+	t.Parallel()
+
+	manager := &adminProductManagerStub{
+		createProduct: AdminProduct{Slug: "linen-shirt", Active: true},
+	}
+	handler := NewAdminHandler(manager)
+	request := httptest.NewRequest(http.MethodPost, "/admin/products",
+		strings.NewReader(`{
+			"slug":"linen-shirt",
+			"name":"Linen Shirt",
+			"section":"casuals-men",
+			"category":"Shirts",
+			"priceKobo":12000000,
+			"description":"A linen shirt.",
+			"tag":"",
+			"hasSizes":true,
+			"active":true,
+			"sortOrder":3
+		}`))
+	responseRecorder := httptest.NewRecorder()
+
+	handler.Create(responseRecorder, request)
+
+	if responseRecorder.Code != http.StatusCreated {
+		t.Fatalf("expected status %d, got %d", http.StatusCreated, responseRecorder.Code)
+	}
+	if manager.createDraft.Slug != "linen-shirt" || manager.createDraft.PriceKobo != 12_000_000 {
+		t.Fatalf("unexpected create draft: %+v", manager.createDraft)
+	}
+}
+
+// TestAdminHandlerUpdateReturnsProduct verifies product update decoding.
+func TestAdminHandlerUpdateReturnsProduct(t *testing.T) {
+	t.Parallel()
+
+	manager := &adminProductManagerStub{
+		updateProduct: AdminProduct{Slug: "edited-shirt", Active: false},
+	}
+	handler := NewAdminHandler(manager)
+	request := httptest.NewRequest(http.MethodPut, "/admin/products/linen-shirt",
+		strings.NewReader(`{
+			"slug":"edited-shirt",
+			"name":"Edited Shirt",
+			"section":"casuals-women",
+			"category":"Sets",
+			"priceKobo":10500000,
+			"description":"Edited.",
+			"tag":"New",
+			"hasSizes":true,
+			"active":false,
+			"sortOrder":8
+		}`))
+	request.SetPathValue("slug", "linen-shirt")
+	responseRecorder := httptest.NewRecorder()
+
+	handler.Update(responseRecorder, request)
+
+	if responseRecorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d", http.StatusOK, responseRecorder.Code)
+	}
+	if manager.updateSlug != "linen-shirt" || manager.updateDraft.Slug != "edited-shirt" {
+		t.Fatalf("unexpected update call: %+v", manager)
+	}
+}
+
+// TestAdminHandlerCreateMapsDuplicateSlug verifies conflict mapping.
+func TestAdminHandlerCreateMapsDuplicateSlug(t *testing.T) {
+	t.Parallel()
+
+	handler := NewAdminHandler(&adminProductManagerStub{createError: ErrDuplicateProductSlug})
+	request := httptest.NewRequest(http.MethodPost, "/admin/products",
+		strings.NewReader(`{
+			"slug":"linen-shirt",
+			"name":"Linen Shirt",
+			"section":"casuals-men",
+			"category":"Shirts",
+			"priceKobo":12000000,
+			"description":"A linen shirt.",
+			"tag":"",
+			"hasSizes":true,
+			"active":true,
+			"sortOrder":3
+		}`))
+	responseRecorder := httptest.NewRecorder()
+
+	handler.Create(responseRecorder, request)
+
+	if responseRecorder.Code != http.StatusConflict {
+		t.Fatalf("expected status %d, got %d", http.StatusConflict, responseRecorder.Code)
+	}
+	var response errorResponse
+	if err := json.NewDecoder(responseRecorder.Body).Decode(&response); err != nil {
+		t.Fatalf("decode error response: %v", err)
+	}
+	if response.Error.Code != ErrorCodeDuplicateProductSlug {
+		t.Fatalf("expected duplicate slug code, got %q", response.Error.Code)
+	}
+}
+
 // TestAdminHandlerUpdateActiveReturnsNoContent verifies active-state mutation.
 func TestAdminHandlerUpdateActiveReturnsNoContent(t *testing.T) {
 	t.Parallel()
@@ -301,7 +471,7 @@ func TestAdminHandlerUpdateActiveReturnsNoContent(t *testing.T) {
 	if responseRecorder.Code != http.StatusNoContent {
 		t.Fatalf("expected status %d, got %d", http.StatusNoContent, responseRecorder.Code)
 	}
-	if !manager.updateActiveCalled || manager.updateSlug != "gold-agbada" || manager.updateActive {
+	if !manager.updateActiveCalled || manager.updateActiveSlug != "gold-agbada" || manager.updateActive {
 		t.Fatalf("unexpected update call: %+v", manager)
 	}
 }

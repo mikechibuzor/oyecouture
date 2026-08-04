@@ -24,10 +24,23 @@ type adminRepositoryStub struct {
 	listFilter            AdminListFilter
 	listPage              AdminProductPage
 	listError             error
+	getSlug               string
+	getProduct            AdminProduct
+	getError              error
+	createDraft           AdminProductDraft
+	createProduct         AdminProduct
+	createError           error
+	updateSlug            string
+	updateDraft           AdminProductDraft
+	updateProduct         AdminProduct
+	updateError           error
 	updateActiveSlug      string
 	updateActiveValue     bool
 	updateActiveError     error
 	listCallCount         int
+	getCallCount          int
+	createCallCount       int
+	updateCallCount       int
 	updateActiveCallCount int
 }
 
@@ -59,6 +72,38 @@ func (repository *adminRepositoryStub) ListAdmin(
 	repository.listCallCount++
 	repository.listFilter = filter
 	return repository.listPage, repository.listError
+}
+
+// GetAdminBySlug records the edit-detail slug.
+func (repository *adminRepositoryStub) GetAdminBySlug(
+	_ context.Context,
+	productSlug string,
+) (AdminProduct, error) {
+	repository.getCallCount++
+	repository.getSlug = productSlug
+	return repository.getProduct, repository.getError
+}
+
+// CreateAdmin records the normalized create draft.
+func (repository *adminRepositoryStub) CreateAdmin(
+	_ context.Context,
+	draft AdminProductDraft,
+) (AdminProduct, error) {
+	repository.createCallCount++
+	repository.createDraft = draft
+	return repository.createProduct, repository.createError
+}
+
+// UpdateAdmin records the normalized update draft.
+func (repository *adminRepositoryStub) UpdateAdmin(
+	_ context.Context,
+	productSlug string,
+	draft AdminProductDraft,
+) (AdminProduct, error) {
+	repository.updateCallCount++
+	repository.updateSlug = productSlug
+	repository.updateDraft = draft
+	return repository.updateProduct, repository.updateError
 }
 
 // UpdateActive records the active-state mutation.
@@ -251,5 +296,87 @@ func TestAdminServiceUpdateActiveCallsRepository(t *testing.T) {
 	}
 	if repository.updateActiveValue {
 		t.Fatalf("expected active=false mutation")
+	}
+}
+
+// TestAdminServiceCreateNormalizesDraft verifies owner create validation.
+func TestAdminServiceCreateNormalizesDraft(t *testing.T) {
+	t.Parallel()
+
+	repository := &adminRepositoryStub{
+		createProduct: AdminProduct{Slug: "linen-shirt"},
+	}
+	service := NewAdminService(repository, "")
+
+	_, err := service.Create(context.Background(), AdminProductDraft{
+		Slug:        " linen-shirt ",
+		Name:        " Linen Shirt ",
+		Section:     string(SectionCasualsMen),
+		Category:    " Shirts ",
+		PriceKobo:   12_000_000,
+		Description: " Lightweight linen. ",
+		Tag:         " New ",
+		HasSizes:    true,
+		Active:      true,
+		SortOrder:   4,
+	})
+	if err != nil {
+		t.Fatalf("expected create success, got %v", err)
+	}
+	if repository.createDraft.Slug != "linen-shirt" ||
+		repository.createDraft.Name != "Linen Shirt" ||
+		repository.createDraft.Category != "Shirts" ||
+		repository.createDraft.Description != "Lightweight linen." ||
+		repository.createDraft.Tag != "New" {
+		t.Fatalf("draft was not normalized: %+v", repository.createDraft)
+	}
+}
+
+// TestAdminServiceCreateRejectsIncompleteDraft verifies required-field validation.
+func TestAdminServiceCreateRejectsIncompleteDraft(t *testing.T) {
+	t.Parallel()
+
+	repository := &adminRepositoryStub{}
+	service := NewAdminService(repository, "")
+
+	_, err := service.Create(context.Background(), AdminProductDraft{
+		Slug:      "linen-shirt",
+		Section:   string(SectionCasualsMen),
+		PriceKobo: -1,
+	})
+	if !errors.Is(err, ErrInvalidProductDraft) {
+		t.Fatalf("expected invalid draft error, got %v", err)
+	}
+	if repository.createCallCount != 0 {
+		t.Fatalf("expected no repository calls, got %d", repository.createCallCount)
+	}
+}
+
+// TestAdminServiceUpdateNormalizesSlugAndDraft verifies update validation.
+func TestAdminServiceUpdateNormalizesSlugAndDraft(t *testing.T) {
+	t.Parallel()
+
+	repository := &adminRepositoryStub{
+		updateProduct: AdminProduct{Slug: "new-linen-shirt"},
+	}
+	service := NewAdminService(repository, "")
+
+	_, err := service.Update(context.Background(), " linen-shirt ", AdminProductDraft{
+		Slug:        "new-linen-shirt",
+		Name:        "New Linen Shirt",
+		Section:     string(SectionCasualsWomen),
+		Category:    "Sets",
+		PriceKobo:   10_000_000,
+		Description: "Edited description.",
+		Active:      true,
+	})
+	if err != nil {
+		t.Fatalf("expected update success, got %v", err)
+	}
+	if repository.updateSlug != "linen-shirt" {
+		t.Fatalf("expected normalized current slug, got %q", repository.updateSlug)
+	}
+	if repository.updateDraft.Section != string(SectionCasualsWomen) {
+		t.Fatalf("expected normalized section, got %q", repository.updateDraft.Section)
 	}
 }
