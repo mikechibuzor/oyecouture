@@ -5,11 +5,10 @@ import (
 	"encoding/json"
 	"errors"
 	"log"
-	"net"
 	"net/http"
-	"strings"
-	"sync"
 	"time"
+
+	"github.com/uzor-co/oyecouture/api/internal/ratelimit"
 )
 
 type contextKey string
@@ -27,14 +26,14 @@ type Handler struct {
 	// Production serves the admin over HTTPS; the Secure cookie flag is only
 	// dropped in development, where the browser would otherwise discard it.
 	useSecureCookie bool
-	limiter         *loginLimiter
+	limiter         *ratelimit.Limiter
 }
 
 func NewHandler(authService *AuthService, useSecureCookie bool) *Handler {
 	return &Handler{
 		authService:     authService,
 		useSecureCookie: useSecureCookie,
-		limiter:         newLoginLimiter(),
+		limiter:         ratelimit.New(loginAttemptWindow, loginAttemptsAllowed),
 	}
 }
 
@@ -51,8 +50,8 @@ type sessionResponse struct {
 // LogIn authenticates and sets the session cookie.
 func (handler *Handler) LogIn(responseWriter http.ResponseWriter, request *http.Request) {
 	// Throttle by client address so the login form cannot be brute forced.
-	address := clientAddress(request)
-	if !handler.limiter.allow(address) {
+	address := ratelimit.ClientAddress(request)
+	if !handler.limiter.Allow(address) {
 		writeJSON(responseWriter, http.StatusTooManyRequests,
 			map[string]string{"error": "too many attempts, try again shortly"})
 		return
@@ -71,7 +70,7 @@ func (handler *Handler) LogIn(responseWriter http.ResponseWriter, request *http.
 	if err != nil {
 		// Only failures count, so signing in and out through the day never
 		// locks the owner out of their own shop.
-		handler.limiter.recordFailure(address)
+		handler.limiter.Record(address)
 
 		// One message for every failure: no hint about which part was wrong.
 		writeJSON(responseWriter, http.StatusUnauthorized,
@@ -157,70 +156,6 @@ func SessionFrom(requestContext context.Context) (Session, bool) {
 	session, ok := requestContext.Value(sessionContextKey).(Session)
 
 	return session, ok
-}
-
-// loginLimiter is a small in-memory throttle. A single admin does not justify
-// shared state; the process restarting simply resets the window.
-type loginLimiter struct {
-	mutex    sync.Mutex
-	attempts map[string][]time.Time
-}
-
-func newLoginLimiter() *loginLimiter {
-	return &loginLimiter{attempts: make(map[string][]time.Time)}
-}
-
-// allow reports whether the caller still has failed attempts left in the window.
-func (limiter *loginLimiter) allow(key string) bool {
-	limiter.mutex.Lock()
-	defer limiter.mutex.Unlock()
-
-	recent := limiter.pruneLocked(key)
-
-	return len(recent) < loginAttemptsAllowed
-}
-
-// recordFailure charges one attempt against the window.
-func (limiter *loginLimiter) recordFailure(key string) {
-	limiter.mutex.Lock()
-	defer limiter.mutex.Unlock()
-
-	limiter.attempts[key] = append(limiter.pruneLocked(key), time.Now())
-}
-
-// pruneLocked drops attempts that have aged out. Callers hold the mutex.
-func (limiter *loginLimiter) pruneLocked(key string) []time.Time {
-	cutoff := time.Now().Add(-loginAttemptWindow)
-	recent := make([]time.Time, 0, loginAttemptsAllowed)
-	for _, attempt := range limiter.attempts[key] {
-		if attempt.After(cutoff) {
-			recent = append(recent, attempt)
-		}
-	}
-	limiter.attempts[key] = recent
-
-	return recent
-}
-
-// clientAddress keys the throttle by IP only. RemoteAddr carries a fresh port
-// per connection, so including it would give every attempt its own bucket and
-// the limiter would never fire.
-func clientAddress(request *http.Request) string {
-	if forwarded := request.Header.Get("X-Forwarded-For"); forwarded != "" {
-		// Caddy appends; the original client is first.
-		if comma := strings.IndexByte(forwarded, ','); comma > 0 {
-			return strings.TrimSpace(forwarded[:comma])
-		}
-
-		return strings.TrimSpace(forwarded)
-	}
-
-	host, _, err := net.SplitHostPort(request.RemoteAddr)
-	if err != nil {
-		return request.RemoteAddr
-	}
-
-	return host
 }
 
 func writeJSON(responseWriter http.ResponseWriter, statusCode int, payload any) {

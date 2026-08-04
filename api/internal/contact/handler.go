@@ -6,6 +6,9 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"time"
+
+	"github.com/uzor-co/oyecouture/api/internal/ratelimit"
 )
 
 type ErrorCode string
@@ -15,8 +18,17 @@ const (
 	ErrorCodeInvalidSubmission ErrorCode = "invalid_submission"
 	ErrorCodeEmailUnavailable  ErrorCode = "email_unavailable"
 	ErrorCodeInternal          ErrorCode = "internal_error"
+	ErrorCodeTooManyRequests   ErrorCode = "too_many_requests"
 
 	maximumRequestBytes = 8 << 10
+
+	// The form is public and every accepted submission sends an email, so the
+	// abuse here is volume rather than guessing. A real enquiry is one message;
+	// this leaves room to correct a typo and resend without ever letting a
+	// script flood the owner's inbox, burn the SendByte quota, or damage the
+	// sending domain's reputation — which would take order emails down with it.
+	submissionWindow   = time.Hour
+	submissionsPerHour = 5
 )
 
 type Submitter interface {
@@ -25,10 +37,14 @@ type Submitter interface {
 
 type Handler struct {
 	submitter Submitter
+	limiter   *ratelimit.Limiter
 }
 
 func NewHandler(submitter Submitter) *Handler {
-	return &Handler{submitter: submitter}
+	return &Handler{
+		submitter: submitter,
+		limiter:   ratelimit.New(submissionWindow, submissionsPerHour),
+	}
 }
 
 type errorDetail struct {
@@ -41,6 +57,13 @@ type errorResponse struct {
 }
 
 func (handler *Handler) Submit(responseWriter http.ResponseWriter, request *http.Request) {
+	address := ratelimit.ClientAddress(request)
+	if !handler.limiter.Allow(address) {
+		writeError(responseWriter, http.StatusTooManyRequests, ErrorCodeTooManyRequests,
+			"too many messages, please try again later")
+		return
+	}
+
 	var submission Submission
 
 	decoder := json.NewDecoder(http.MaxBytesReader(responseWriter, request.Body, maximumRequestBytes))
@@ -55,6 +78,8 @@ func (handler *Handler) Submit(responseWriter http.ResponseWriter, request *http
 		handler.writeServiceError(responseWriter, err)
 		return
 	}
+
+	handler.limiter.Record(address)
 
 	writeJSON(responseWriter, http.StatusCreated, Response{Received: true})
 }
