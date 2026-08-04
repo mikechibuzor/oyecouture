@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Search } from 'lucide'
+import { Search, X } from 'lucide'
 import {
   ADMIN_COPY,
   ADMIN_PRODUCT_FILTER_OPTIONS,
@@ -12,10 +12,11 @@ import type {
   AdminFilterKey,
   AdminProduct,
   AdminProductActiveFilter,
+  AdminProductDraft,
   AdminProductFilterKey,
   AdminProductFilterValues,
 } from '~/types/admin'
-import type { ProductSection } from '~/types/product'
+import { ProductSection } from '~/types/product'
 import { formatOrderDate } from '~/utils/admin'
 import { formatProductPrice } from '~/utils/product'
 
@@ -23,9 +24,19 @@ definePageMeta({ layout: 'admin', middleware: 'admin' })
 
 useHead({ title: `${ADMIN_COPY.productsHeading} · ${ADMIN_COPY.brand}` })
 
-const { fetchProducts, updateProductActive } = useAdminProducts()
+type ProductEditorMode = 'create' | 'edit'
+
+const {
+  createProduct,
+  fetchProducts,
+  fetchProduct,
+  updateProduct,
+  updateProductActive,
+} = useAdminProducts()
 const { session } = useAdminSession()
 const router = useRouter()
+const { notifySuccess } = useAppNotifications()
+const { withLoading } = useAppLoading()
 
 const searchTerm = ref('')
 const sectionFilter = ref<ProductSection | ''>('')
@@ -38,6 +49,15 @@ const isLoading = ref(true)
 const hasFailed = ref(false)
 const updateError = ref('')
 const updatingSlug = ref<string | null>(null)
+const productEditorMode = ref<ProductEditorMode | null>(null)
+const selectedProductSlug = ref<string | null>(null)
+const selectedProduct = ref<AdminProduct | null>(null)
+const selectedDraft = ref<AdminProductDraft | null>(null)
+const isEditorLoading = ref(false)
+const hasEditorFailed = ref(false)
+const isEditorSaving = ref(false)
+const editorErrorMessage = ref('')
+const editorSuccessMessage = ref('')
 
 // Any active filter changes the empty state from "no products" to "no matches".
 const hasFilters = computed(
@@ -65,6 +85,18 @@ const currentPage = computed(() => Math.floor(offset.value / ADMIN_PRODUCTS_PAGE
 // Total pages bottoms out at one so the pagination area never divides by zero.
 const totalPages = computed(() =>
   Math.max(1, Math.ceil(total.value / ADMIN_PRODUCTS_PAGE_SIZE)),
+)
+
+const isEditorOpen = computed(() => productEditorMode.value !== null)
+
+const selectedProductTitle = computed(() =>
+  productEditorMode.value === 'create'
+    ? ADMIN_COPY.productNewHeading
+    : selectedProduct.value?.name ?? ADMIN_COPY.productEditHeading,
+)
+
+const canManageSelectedProduct = computed(
+  () => productEditorMode.value === 'edit' && selectedProduct.value !== null,
 )
 
 // Products now use the same numbered pagination model as orders.
@@ -111,13 +143,16 @@ const load = async (): Promise<void> => {
   updateError.value = ''
 
   try {
-    const page = await fetchProducts({
-      section: sectionFilter.value,
-      active: activeFilter.value,
-      q: searchTerm.value,
-      limit: ADMIN_PRODUCTS_PAGE_SIZE,
-      offset: offset.value,
-    })
+    const page = await withLoading(
+      () => fetchProducts({
+        section: sectionFilter.value,
+        active: activeFilter.value,
+        q: searchTerm.value,
+        limit: ADMIN_PRODUCTS_PAGE_SIZE,
+        offset: offset.value,
+      }),
+      ADMIN_COPY.productLoading,
+    )
 
     if (requestId !== latestRequestId) {
       return
@@ -223,17 +258,76 @@ const productStatusTone = (product: AdminProduct): string =>
 const isUpdatingProduct = (product: AdminProduct): boolean =>
   updatingSlug.value === product.slug
 
-const toggleProductActive = async (product: AdminProduct): Promise<void> => {
+const productErrorMessage = (requestError: unknown): string => {
+  const errorCode = (requestError as { data?: { error?: { code?: string } } } | null)
+    ?.data?.error?.code
+
+  return errorCode === 'duplicate_product_slug'
+    ? ADMIN_COPY.productDuplicateSlug
+    : ADMIN_COPY.productSaveFailed
+}
+
+const toDraft = (adminProduct: AdminProduct): AdminProductDraft => ({
+  slug: adminProduct.slug,
+  name: adminProduct.name,
+  section: adminProduct.section,
+  category: adminProduct.category,
+  priceKobo: adminProduct.priceKobo,
+  description: adminProduct.description,
+  tag: adminProduct.tag,
+  hasSizes: adminProduct.hasSizes,
+  active: adminProduct.active,
+  sortOrder: adminProduct.sortOrder,
+})
+
+const createEmptyDraft = (): AdminProductDraft => ({
+  slug: '',
+  name: '',
+  section: ProductSection.CasualsMen,
+  category: '',
+  priceKobo: 0,
+  description: '',
+  tag: '',
+  hasSizes: true,
+  active: true,
+  sortOrder: 0,
+})
+
+const syncProductInList = (updatedProduct: AdminProduct): void => {
+  products.value = products.value.map((product) =>
+    product.id === updatedProduct.id ? updatedProduct : product,
+  )
+}
+
+const toggleProductActive = async (
+  product: AdminProduct,
+  onError: (message: string) => void = (message) => {
+    updateError.value = message
+  },
+): Promise<AdminProduct | null> => {
   updatingSlug.value = product.slug
-  updateError.value = ''
+  onError('')
 
   try {
-    await updateProductActive(product.slug, !product.active)
-    await load()
+    await withLoading(
+      () => updateProductActive(product.slug, !product.active),
+      productPendingLabel(product),
+    )
+    const updatedProduct: AdminProduct = { ...product, active: !product.active }
+    syncProductInList(updatedProduct)
+
+    if (selectedProduct.value?.id === updatedProduct.id) {
+      selectedProduct.value = updatedProduct
+      selectedDraft.value = toDraft(updatedProduct)
+    }
+
+    return updatedProduct
   } catch (updateActiveError) {
     if (!(await isExpiredSession(updateActiveError))) {
-      updateError.value = ADMIN_COPY.productUpdateFailed
+      onError(ADMIN_COPY.productUpdateFailed)
     }
+
+    return null
   } finally {
     updatingSlug.value = null
   }
@@ -244,13 +338,145 @@ const isInteractiveRowTarget = (eventTarget: EventTarget | null): boolean =>
   eventTarget instanceof Element &&
   Boolean(eventTarget.closest('a, button, input, select, textarea, summary'))
 
-const openProductEdit = (productSlug: string): void => {
-  void router.push(ADMIN_ROUTES.productEdit(productSlug))
+const openProductEditor = async (productSlug: string): Promise<void> => {
+  productEditorMode.value = 'edit'
+  selectedProductSlug.value = productSlug
+  selectedProduct.value = products.value.find((product) => product.slug === productSlug) ?? null
+  selectedDraft.value = selectedProduct.value ? toDraft(selectedProduct.value) : null
+  isEditorLoading.value = true
+  hasEditorFailed.value = false
+  editorErrorMessage.value = ''
+  editorSuccessMessage.value = ''
+
+  try {
+    const loadedProduct = await withLoading(
+      () => fetchProduct(productSlug),
+      ADMIN_COPY.productDetailLoading,
+    )
+    selectedProduct.value = loadedProduct
+    selectedDraft.value = toDraft(loadedProduct)
+    syncProductInList(loadedProduct)
+  } catch (loadError) {
+    if (!(await isExpiredSession(loadError))) {
+      hasEditorFailed.value = true
+      selectedProduct.value = null
+      selectedDraft.value = null
+    }
+  } finally {
+    isEditorLoading.value = false
+  }
+}
+
+const openNewProductEditor = (): void => {
+  productEditorMode.value = 'create'
+  selectedProductSlug.value = null
+  selectedProduct.value = null
+  selectedDraft.value = createEmptyDraft()
+  isEditorLoading.value = false
+  hasEditorFailed.value = false
+  editorErrorMessage.value = ''
+  editorSuccessMessage.value = ''
+}
+
+const closeProductEditor = (): void => {
+  productEditorMode.value = null
+  selectedProductSlug.value = null
+  selectedProduct.value = null
+  selectedDraft.value = null
+  hasEditorFailed.value = false
+  editorErrorMessage.value = ''
+  editorSuccessMessage.value = ''
+}
+
+const saveSelectedProduct = async (): Promise<void> => {
+  if (!selectedDraft.value) {
+    return
+  }
+
+  isEditorSaving.value = true
+  editorErrorMessage.value = ''
+  editorSuccessMessage.value = ''
+
+  try {
+    const productDraft = selectedDraft.value
+    const wasCreatingProduct = productEditorMode.value === 'create'
+    const savedProduct = await withLoading(
+      () => wasCreatingProduct
+        ? createProduct(productDraft)
+        : selectedProductSlug.value
+          ? updateProduct(selectedProductSlug.value, productDraft)
+          : Promise.resolve(null),
+      ADMIN_COPY.savingProduct,
+    )
+
+    if (!savedProduct) {
+      return
+    }
+
+    productEditorMode.value = 'edit'
+    selectedProductSlug.value = savedProduct.slug
+    selectedProduct.value = savedProduct
+    selectedDraft.value = toDraft(savedProduct)
+    syncProductInList(savedProduct)
+
+    await load()
+    closeProductEditor()
+    notifySuccess(
+      wasCreatingProduct ? ADMIN_COPY.productCreatedNotice : ADMIN_COPY.productUpdatedNotice,
+      savedProduct.name,
+    )
+  } catch (saveError) {
+    if (!(await isExpiredSession(saveError))) {
+      editorErrorMessage.value = productErrorMessage(saveError)
+    }
+  } finally {
+    isEditorSaving.value = false
+  }
+}
+
+const toggleSelectedProductActive = async (): Promise<void> => {
+  if (!canManageSelectedProduct.value || !selectedProduct.value) {
+    return
+  }
+
+  const wasActive = selectedProduct.value.active
+  const updatedProduct = await toggleProductActive(selectedProduct.value, (message) => {
+    editorErrorMessage.value = message
+  })
+
+  if (!updatedProduct) {
+    return
+  }
+
+  await load()
+  closeProductEditor()
+  notifySuccess(
+    wasActive ? ADMIN_COPY.productArchivedNotice : ADMIN_COPY.productRestoredNotice,
+    updatedProduct.name,
+  )
+}
+
+const handleProductImagesUpdated = (updatedProduct: AdminProduct): void => {
+  selectedProduct.value = updatedProduct
+  selectedDraft.value = toDraft(updatedProduct)
+  syncProductInList(updatedProduct)
+}
+
+const retrySelectedProductEditor = (): void => {
+  if (selectedProductSlug.value) {
+    void openProductEditor(selectedProductSlug.value)
+  }
+}
+
+const handleEditorKeydown = (keyboardEvent: KeyboardEvent): void => {
+  if (keyboardEvent.key === 'Escape') {
+    closeProductEditor()
+  }
 }
 
 const handleProductRowClick = (mouseEvent: MouseEvent, productSlug: string): void => {
   if (!isInteractiveRowTarget(mouseEvent.target)) {
-    openProductEdit(productSlug)
+    void openProductEditor(productSlug)
   }
 }
 
@@ -263,11 +489,31 @@ const handleProductRowKeydown = (keyboardEvent: KeyboardEvent, productSlug: stri
   }
 
   keyboardEvent.preventDefault()
-  openProductEdit(productSlug)
+  void openProductEditor(productSlug)
 }
+
+watch(isEditorOpen, (isOpen) => {
+  if (!import.meta.client) {
+    return
+  }
+
+  document.body.classList.toggle('has-admin-drawer', isOpen)
+
+  if (isOpen) {
+    document.addEventListener('keydown', handleEditorKeydown)
+    return
+  }
+
+  document.removeEventListener('keydown', handleEditorKeydown)
+})
 
 onMounted(() => {
   void load()
+})
+
+onBeforeUnmount(() => {
+  document.body.classList.remove('has-admin-drawer')
+  document.removeEventListener('keydown', handleEditorKeydown)
 })
 </script>
 
@@ -279,9 +525,9 @@ onMounted(() => {
         <p class="admin-page-subheading">{{ ADMIN_COPY.productsSubheading }}</p>
       </div>
 
-      <NuxtLink class="admin-inline-action" :to="ADMIN_ROUTES.productNew">
+      <button type="button" class="admin-inline-action" @click="openNewProductEditor">
         {{ ADMIN_COPY.newProduct }}
-      </NuxtLink>
+      </button>
     </header>
 
     <div class="admin-toolbar">
@@ -351,7 +597,6 @@ onMounted(() => {
               <th scope="col" class="admin-table-number">Price</th>
               <th scope="col">Status</th>
               <th scope="col">Updated</th>
-              <th scope="col">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -360,7 +605,7 @@ onMounted(() => {
               :key="product.id"
               class="admin-table-row"
               tabindex="0"
-              role="link"
+              role="button"
               :aria-label="`Edit ${product.name}`"
               @click="handleProductRowClick($event, product.slug)"
               @keydown="handleProductRowKeydown($event, product.slug)"
@@ -393,24 +638,6 @@ onMounted(() => {
                 </span>
               </td>
               <td class="admin-table-placed">{{ formatOrderDate(product.createdAt) }}</td>
-              <td>
-                <div class="admin-product-actions">
-                  <NuxtLink
-                    class="admin-inline-action"
-                    :to="ADMIN_ROUTES.productEdit(product.slug)"
-                  >
-                    {{ ADMIN_COPY.editProduct }}
-                  </NuxtLink>
-                  <button
-                    type="button"
-                    class="admin-inline-action"
-                    :disabled="isUpdatingProduct(product)"
-                    @click="toggleProductActive(product)"
-                  >
-                    {{ productActionButtonLabel(product) }}
-                  </button>
-                </div>
-              </td>
             </tr>
           </tbody>
         </table>
@@ -456,5 +683,79 @@ onMounted(() => {
         </div>
       </nav>
     </template>
+
+    <Teleport to="body">
+      <div
+        v-if="isEditorOpen"
+        class="admin-drawer-backdrop"
+        role="presentation"
+        @click.self="closeProductEditor"
+      >
+        <aside
+          class="admin-drawer"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="admin-product-editor-title"
+        >
+          <header class="admin-drawer-head">
+            <div>
+              <p class="admin-detail-eyebrow">{{ ADMIN_COPY.productsHeading }}</p>
+              <h2 id="admin-product-editor-title">{{ selectedProductTitle }}</h2>
+            </div>
+
+            <div class="admin-drawer-actions">
+              <button
+                v-if="canManageSelectedProduct && selectedProduct"
+                type="button"
+                class="admin-inline-action"
+                :disabled="isUpdatingProduct(selectedProduct)"
+                @click="toggleSelectedProductActive"
+              >
+                {{ productActionButtonLabel(selectedProduct) }}
+              </button>
+              <button
+                type="button"
+                class="admin-drawer-close"
+                :aria-label="ADMIN_COPY.closeProductEditor"
+                @click="closeProductEditor"
+              >
+                <StorefrontIcon :icon-node="X" :size="18" :stroke-width="1.75" />
+              </button>
+            </div>
+          </header>
+
+          <p v-if="isEditorLoading" class="admin-orders-message">
+            {{ ADMIN_COPY.productDetailLoading }}
+          </p>
+
+          <div v-else-if="hasEditorFailed" class="admin-orders-message" role="alert">
+            <p>{{ ADMIN_COPY.productDetailFailed }}</p>
+            <button
+              type="button"
+              class="admin-inline-action"
+              @click="retrySelectedProductEditor"
+            >
+              {{ ADMIN_COPY.retry }}
+            </button>
+          </div>
+
+          <template v-else-if="selectedDraft">
+            <AdminProductForm
+              v-model="selectedDraft"
+              :is-saving="isEditorSaving"
+              :error-message="editorErrorMessage"
+              :success-message="editorSuccessMessage"
+              @submit="saveSelectedProduct"
+            />
+
+            <AdminProductImageManager
+              v-if="selectedProduct"
+              :product="selectedProduct"
+              @updated="handleProductImagesUpdated"
+            />
+          </template>
+        </aside>
+      </div>
+    </Teleport>
   </div>
 </template>

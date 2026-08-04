@@ -9,6 +9,7 @@ export const useAdminSession = () => {
     'admin-session',
     () => undefined,
   )
+  const sessionRequestVersion = useState<number>('admin-session-request-version', () => 0)
 
   // Every admin call carries the session cookie. In development the storefront
   // and API sit on different ports, so the request must be credentialed.
@@ -24,29 +25,44 @@ export const useAdminSession = () => {
 
   // Asks the server who we are. A 401 is an answer, not a failure.
   const refresh = async (): Promise<AdminSession | null> => {
+    const requestVersion = ++sessionRequestVersion.value
+
     try {
-      session.value = await request<AdminSession>(ADMIN_API_ROUTES.me)
+      const refreshedSession = await request<AdminSession>(ADMIN_API_ROUTES.me)
+
+      if (requestVersion === sessionRequestVersion.value) {
+        session.value = refreshedSession
+      }
     } catch {
-      session.value = null
+      if (requestVersion === sessionRequestVersion.value) {
+        session.value = null
+      }
     }
 
-    return session.value
+    return session.value ?? null
   }
 
   const logIn = async (email: string, password: string): Promise<void> => {
-    session.value = await request<AdminSession>(ADMIN_API_ROUTES.login, {
+    const loggedInSession = await request<AdminSession>(ADMIN_API_ROUTES.login, {
       method: 'POST',
       body: { email, password },
     })
+
+    sessionRequestVersion.value += 1
+    session.value = loggedInSession
   }
 
   // Clearing local state matters even if the request fails: the cookie may
   // already be gone, and the UI must not keep showing a signed-in shell.
   const logOut = async (): Promise<void> => {
+    const requestVersion = ++sessionRequestVersion.value
+
     try {
       await request(ADMIN_API_ROUTES.logout, { method: 'POST' })
     } finally {
-      session.value = null
+      if (requestVersion === sessionRequestVersion.value) {
+        session.value = null
+      }
     }
   }
 

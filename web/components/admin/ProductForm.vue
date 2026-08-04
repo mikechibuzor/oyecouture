@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import {
   ADMIN_COPY,
+  PRODUCT_CATEGORY_OPTIONS_BY_SECTION,
   PRODUCT_FORM_SECTION_OPTIONS,
 } from '~/constants/admin'
 import type { AdminProductDraft } from '~/types/admin'
@@ -16,6 +17,36 @@ defineProps<AdminProductFormProps>()
 const draft = defineModel<AdminProductDraft>({ required: true })
 
 const emit = defineEmits<{ submit: [] }>()
+
+const categoryOptions = computed(() => {
+  const sectionOptions = PRODUCT_CATEGORY_OPTIONS_BY_SECTION[draft.value.section]
+  const hasCurrentCategory = sectionOptions.some(
+    (option) => option.value === draft.value.category,
+  )
+
+  if (!draft.value.category || hasCurrentCategory) {
+    return sectionOptions
+  }
+
+  return [
+    { value: draft.value.category, label: draft.value.category },
+    ...sectionOptions,
+  ]
+})
+
+watch(
+  () => draft.value.section,
+  () => {
+    const hasCategory = categoryOptions.value.some(
+      (option) => option.value === draft.value.category,
+    )
+
+    if (!hasCategory) {
+      draft.value.category = categoryOptions.value[0]?.value ?? ''
+    }
+  },
+  { immediate: true },
+)
 
 const submit = (): void => {
   emit('submit')
@@ -44,10 +75,14 @@ const submit = (): void => {
         />
       </div>
 
-      <label class="admin-field">
+      <div class="admin-field">
         <span>{{ ADMIN_COPY.categoryLabel }}</span>
-        <input v-model.trim="draft.category" type="text" required autocomplete="off">
-      </label>
+        <UiSelect
+          v-model="draft.category"
+          :options="categoryOptions"
+          :label="ADMIN_COPY.categoryLabel"
+        />
+      </div>
 
       <label class="admin-field">
         <span>{{ ADMIN_COPY.priceKoboLabel }}</span>

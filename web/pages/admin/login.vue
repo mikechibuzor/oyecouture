@@ -14,13 +14,21 @@ const password = ref('')
 const errorMessage = ref('')
 const isSubmitting = ref(false)
 
+const isSafeAdminDestination = (path: string): boolean =>
+  path.startsWith('/admin') &&
+  !path.startsWith('//') &&
+  path !== ADMIN_ROUTES.login &&
+  !path.startsWith(`${ADMIN_ROUTES.login}/`) &&
+  !path.startsWith(`${ADMIN_ROUTES.login}?`) &&
+  !path.startsWith(`${ADMIN_ROUTES.login}#`)
+
 // Where to land after signing in. Only in-app paths are honoured, so a crafted
-// ?next= cannot bounce the owner to another site.
+// ?next= cannot bounce the owner to another site or back to the sign-in page.
 const destination = computed(() => {
   const next = route.query.next
   const path = typeof next === 'string' ? next : ''
 
-  return path.startsWith('/') && !path.startsWith('//')
+  return isSafeAdminDestination(path)
     ? path
     : ADMIN_ROUTES.orders
 })

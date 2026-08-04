@@ -17,6 +17,8 @@ const emit = defineEmits<{
 const router = useRouter()
 const { session } = useAdminSession()
 const { uploadProductImage, reorderProductImages, deleteProductImage } = useAdminProducts()
+const { notifySuccess } = useAppNotifications()
+const { withLoading } = useAppLoading()
 
 const selectedFile = ref<File | null>(null)
 const fileInput = ref<HTMLInputElement | null>(null)
@@ -54,16 +56,21 @@ const uploadSelectedImage = async (): Promise<void> => {
     return
   }
 
+  const imageFile = selectedFile.value
   isUploading.value = true
   errorMessage.value = ''
 
   try {
-    const updatedProduct = await uploadProductImage(props.product.slug, selectedFile.value)
+    const updatedProduct = await withLoading(
+      () => uploadProductImage(props.product.slug, imageFile),
+      ADMIN_COPY.uploadingProductImage,
+    )
     selectedFile.value = null
     if (fileInput.value) {
       fileInput.value.value = ''
     }
     updateProduct(updatedProduct)
+    notifySuccess(ADMIN_COPY.productImageUploadedNotice, props.product.name)
   } catch (uploadError) {
     if (!(await isExpiredSession(uploadError))) {
       errorMessage.value = ADMIN_COPY.productImageUploadFailed
@@ -94,11 +101,15 @@ const moveImage = async (image: ProductImage, imageIndex: number, direction: -1 
   errorMessage.value = ''
 
   try {
-    const updatedProduct = await reorderProductImages(
-      props.product.slug,
-      reorderedImageIDs(imageIndex, direction),
+    const updatedProduct = await withLoading(
+      () => reorderProductImages(
+        props.product.slug,
+        reorderedImageIDs(imageIndex, direction),
+      ),
+      ADMIN_COPY.productImageUpdatedNotice,
     )
     updateProduct(updatedProduct)
+    notifySuccess(ADMIN_COPY.productImageUpdatedNotice, props.product.name)
   } catch (reorderError) {
     if (!(await isExpiredSession(reorderError))) {
       errorMessage.value = ADMIN_COPY.productImageUpdateFailed
@@ -113,8 +124,12 @@ const removeImage = async (image: ProductImage): Promise<void> => {
   errorMessage.value = ''
 
   try {
-    const updatedProduct = await deleteProductImage(props.product.slug, image.id)
+    const updatedProduct = await withLoading(
+      () => deleteProductImage(props.product.slug, image.id),
+      ADMIN_COPY.productImageDeletedNotice,
+    )
     updateProduct(updatedProduct)
+    notifySuccess(ADMIN_COPY.productImageDeletedNotice, props.product.name)
   } catch (deleteError) {
     if (!(await isExpiredSession(deleteError))) {
       errorMessage.value = ADMIN_COPY.productImageDeleteFailed

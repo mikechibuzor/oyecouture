@@ -734,6 +734,10 @@
 
 // Orders table
 
+body.has-admin-drawer {
+  overflow: hidden;
+}
+
 .admin-orders-message {
   padding: var(--space-3xl) var(--space-md);
   border: 1px solid var(--color-border-warm);
@@ -954,6 +958,82 @@
   display: flex;
   align-items: center;
   gap: var(--space-xs);
+}
+
+.admin-drawer-backdrop {
+  position: fixed;
+  z-index: 80;
+  display: flex;
+  justify-content: flex-end;
+  background-color: rgb(26 26 26 / 28%);
+  inset: 0;
+}
+
+.admin-drawer {
+  width: min(42rem, 100vw);
+  height: 100dvh;
+  padding: var(--space-xl);
+  overflow-y: auto;
+  background-color: var(--color-canvas);
+  box-shadow: -1rem 0 3rem rgb(26 26 26 / 14%);
+}
+
+.admin-drawer-head {
+  position: sticky;
+  z-index: 1;
+  top: calc(var(--space-xl) * -1);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin: calc(var(--space-xl) * -1) calc(var(--space-xl) * -1) var(--space-lg);
+  padding: var(--space-xl);
+  border-bottom: 1px solid var(--color-border-warm);
+  background-color: rgb(250 249 246 / 96%);
+  gap: var(--space-md);
+
+  h2 {
+    margin: 0;
+    color: var(--color-ink);
+    font-size: var(--text-xl);
+    font-weight: var(--font-weight-medium);
+    letter-spacing: var(--tracking-tight);
+  }
+}
+
+.admin-drawer-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.admin-drawer-close {
+  display: inline-grid;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: 50%;
+  background-color: var(--color-white);
+  color: var(--color-ink);
+  cursor: pointer;
+  place-items: center;
+  transition:
+    border-color var(--duration-quick) var(--ease-standard),
+    color var(--duration-quick) var(--ease-standard);
+
+  &:hover {
+    border-color: var(--color-gold);
+    color: var(--color-gold);
+  }
+
+  &:active {
+    scale: var(--press-scale);
+  }
+}
+
+.admin-drawer .admin-product-form,
+.admin-drawer .admin-product-images-panel {
+  max-width: none;
 }
 
 .admin-product-form {

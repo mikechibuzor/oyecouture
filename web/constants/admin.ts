@@ -55,11 +55,16 @@ export const ADMIN_COPY = {
   productsSubheading: 'Manage catalogue availability',
   newProduct: 'New product',
   editProduct: 'Edit',
+  closeProductEditor: 'Close product editor',
   productNewHeading: 'New product',
   productEditHeading: 'Edit product',
   saveProduct: 'Save product',
   savingProduct: 'Saving…',
   productSaved: 'Product saved.',
+  productCreatedNotice: 'Product created',
+  productUpdatedNotice: 'Product saved',
+  productArchivedNotice: 'Product archived',
+  productRestoredNotice: 'Product restored',
   productSaveFailed: 'The product could not be saved.',
   productDuplicateSlug: 'That slug already exists.',
   productDetailLoading: 'Loading product…',
@@ -69,8 +74,11 @@ export const ADMIN_COPY = {
   uploadProductImage: 'Upload image',
   uploadingProductImage: 'Uploading…',
   productImageUploadFailed: 'The image could not be uploaded.',
+  productImageUploadedNotice: 'Image uploaded',
   productImageUpdateFailed: 'The image order could not be updated.',
+  productImageUpdatedNotice: 'Image order updated',
   productImageDeleteFailed: 'The image could not be removed.',
+  productImageDeletedNotice: 'Image removed',
   productImagesEmpty: 'No images yet.',
   productImageMoveUp: 'Move up',
   productImageMoveDown: 'Move down',
@@ -263,6 +271,30 @@ export const PRODUCT_FORM_SECTION_OPTIONS: readonly SelectOption<ProductSection>
     value: section,
     label: PRODUCT_SECTION_LABELS[section],
   }))
+
+export const PRODUCT_CATEGORY_OPTIONS_BY_SECTION: Readonly<
+  Record<ProductSection, readonly SelectOption<string>[]>
+> = {
+  [ProductSection.Suits]: [
+    { value: 'Three-Piece', label: 'Three-Piece' },
+    { value: 'Two-Piece', label: 'Two-Piece' },
+    { value: 'Blazers', label: 'Blazers' },
+  ],
+  [ProductSection.Trad]: [
+    { value: 'Agbada', label: 'Agbada' },
+    { value: 'Aso-Oke', label: 'Aso-Oke' },
+    { value: 'Kaftans', label: 'Kaftans' },
+  ],
+  [ProductSection.CasualsMen]: [
+    { value: 'Shirts', label: 'Shirts' },
+    { value: 'Trousers', label: 'Trousers' },
+    { value: 'Knitwear', label: 'Knitwear' },
+  ],
+  [ProductSection.CasualsWomen]: [
+    { value: 'Sets', label: 'Sets' },
+    { value: 'Tops', label: 'Tops' },
+  ],
+}
 
 export const PRODUCT_ACTIVE_LABELS: Readonly<Record<AdminProductActiveFilter, string>> = {
   '': 'All availability',

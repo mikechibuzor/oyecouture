@@ -8,7 +8,13 @@
 export const useApiBaseUrl = (): string => {
   const runtimeConfig = useRuntimeConfig()
 
-  return import.meta.server
-    ? runtimeConfig.apiInternalBase
-    : runtimeConfig.public.apiBase
+  if (import.meta.server) {
+    return runtimeConfig.apiInternalBase
+  }
+
+  if (runtimeConfig.public.apiBase) {
+    return runtimeConfig.public.apiBase
+  }
+
+  return `${window.location.protocol}//${window.location.hostname}:8080`
 }

@@ -11,6 +11,7 @@ const { clear, isEmpty, lines, subtotalKobo } = useCart()
 const { submitOrder } = useOrders()
 const { data: zoneData } = await useDeliveryZones()
 const router = useRouter()
+const { withLoading } = useAppLoading()
 
 const customerName = ref('')
 const email = ref('')
@@ -56,19 +57,22 @@ const handleSubmit = async (): Promise<void> => {
   errorMessage.value = ''
 
   try {
-    const { order } = await submitOrder({
-      customerName: customerName.value.trim(),
-      email: email.value.trim(),
-      phone: phone.value.trim(),
-      items: lines.value.map((line) => ({
-        slug: line.slug,
-        size: line.size ?? '',
-        quantity: line.quantity,
-      })),
-      measurements: null,
-      address: address.value.trim(),
-      deliveryZone: deliveryZoneName.value,
-    })
+    const { order } = await withLoading(
+      () => submitOrder({
+        customerName: customerName.value.trim(),
+        email: email.value.trim(),
+        phone: phone.value.trim(),
+        items: lines.value.map((line) => ({
+          slug: line.slug,
+          size: line.size ?? '',
+          quantity: line.quantity,
+        })),
+        measurements: null,
+        address: address.value.trim(),
+        deliveryZone: deliveryZoneName.value,
+      }),
+      CHECKOUT_COPY.submitting,
+    )
 
     clear()
     await router.push(`/pay/${order.payToken}`)

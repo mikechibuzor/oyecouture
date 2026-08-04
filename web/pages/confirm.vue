@@ -14,6 +14,7 @@ const { clear, isEmpty, lines, subtotalKobo } = useCart()
 const { submitOrder } = useOrders()
 const { data: zoneData } = await useDeliveryZones()
 const runtimeConfig = useRuntimeConfig()
+const { withLoading } = useAppLoading()
 
 const WHATSAPP_ICON: IconNode = MessageCircle
 
@@ -100,19 +101,22 @@ const handleSubmit = async (): Promise<void> => {
   const submittedSubtotal = subtotalKobo.value
 
   try {
-    const { order } = await submitOrder({
-      customerName: customerName.value.trim(),
-      email: email.value.trim(),
-      phone: phone.value.trim(),
-      items: submittedLines.map((line) => ({
-        slug: line.slug,
-        size: line.size ?? '',
-        quantity: line.quantity,
-      })),
-      measurements: buildMeasurements(),
-      address: address.value.trim(),
-      deliveryZone: deliveryZoneName.value,
-    })
+    const { order } = await withLoading(
+      () => submitOrder({
+        customerName: customerName.value.trim(),
+        email: email.value.trim(),
+        phone: phone.value.trim(),
+        items: submittedLines.map((line) => ({
+          slug: line.slug,
+          size: line.size ?? '',
+          quantity: line.quantity,
+        })),
+        measurements: buildMeasurements(),
+        address: address.value.trim(),
+        deliveryZone: deliveryZoneName.value,
+      }),
+      CONFIRM_COPY.submitting,
+    )
 
     placedOrder.value = order
     placedLines.value = submittedLines
