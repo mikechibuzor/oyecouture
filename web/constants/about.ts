@@ -44,10 +44,10 @@ export const ABOUT_SYMBOL = {
     "Our icon is more than a mark. Formed by connecting the letters of our name into one continuous shape, it reads as a pie chart of what we stand for. Look closer and you'll find a window built into the design — our window to exclusivity, a passage into the world of Oyecouture. Simple enough to be replicated anywhere, it remains the most visible signature of who we are.",
   ],
   pillars: [
-    { title: 'Confidence', description: 'Presence you wear' },
-    { title: 'Simplicity', description: 'Nothing wasted' },
-    { title: 'Class', description: 'Quietly assured' },
-    { title: 'You', description: 'The window in' },
+    { value: '35%', title: 'Confidence', description: 'Presence you wear' },
+    { value: '25%', title: 'Simplicity', description: 'Nothing wasted' },
+    { value: '15%', title: 'Class', description: 'Quietly assured' },
+    { value: '25%', title: 'You', description: 'The window in' },
   ],
 } as const
 

@@ -1,7 +1,274 @@
 <script setup lang="ts">
-import { CARE_PAGES } from '~/constants/care'
+import type { IconNode } from 'lucide'
+import {
+  ArrowRight,
+  AtSign,
+  Camera,
+  Check,
+  Mail,
+  MapPin,
+  MessageCircle,
+  Music2,
+  Phone,
+  Star,
+} from 'lucide'
+import { StorefrontRoute } from '~/types/storefront'
+
+interface ContactInfoItem {
+  readonly label: string
+  readonly value: string
+  readonly href?: string
+}
+
+interface ContactSocialLink {
+  readonly name: string
+  readonly handle: string
+  readonly href: string
+  readonly icon: IconNode
+}
+
+const runtimeConfig = useRuntimeConfig()
+const selectedTopic = ref('General')
+const selectedRating = ref(0)
+const senderName = ref('')
+const senderEmail = ref('')
+const feedbackMessage = ref('')
+const feedbackSent = ref(false)
+const feedbackError = ref('')
+
+const configuredWhatsAppNumber = computed(() =>
+  String(runtimeConfig.public.whatsappNumber ?? '').replace(/\D/g, ''),
+)
+const displayedPhoneNumber = computed(() =>
+  configuredWhatsAppNumber.value
+    ? `+${configuredWhatsAppNumber.value}`
+    : '+234 800 000 0000',
+)
+const whatsappHref = computed(() =>
+  configuredWhatsAppNumber.value
+    ? `https://wa.me/${configuredWhatsAppNumber.value}`
+    : undefined,
+)
+
+const CONTACT_INFO: readonly ContactInfoItem[] = [
+  { label: 'Email', value: 'hello@oyecouture.com', href: 'mailto:hello@oyecouture.com' },
+  { label: 'Phone & WhatsApp', value: displayedPhoneNumber.value, href: whatsappHref.value },
+  { label: 'The Atelier', value: '14 Legacy Avenue\nVictoria Island, Lagos' },
+  { label: 'Studio Hours', value: 'Mon — Sat\n10am — 7pm WAT' },
+]
+
+const CONTACT_TOPICS = ['Fitting', 'Order', 'Feedback', 'Press'] as const
+const CONTACT_SOCIALS: readonly ContactSocialLink[] = [
+  { name: 'Instagram', handle: '@oyecouture', href: 'https://instagram.com', icon: Camera },
+  { name: 'X', handle: '@oyecouture', href: 'https://x.com', icon: AtSign },
+  { name: 'TikTok', handle: '@oyecouture', href: 'https://tiktok.com', icon: Music2 },
+  {
+    name: 'WhatsApp',
+    handle: displayedPhoneNumber.value,
+    href: whatsappHref.value ?? '#',
+    icon: MessageCircle,
+  },
+  { name: 'Email', handle: 'hello@oyecouture.com', href: 'mailto:hello@oyecouture.com', icon: Mail },
+  { name: 'Atelier', handle: 'Victoria Island, Lagos', href: StorefrontRoute.BookFitting, icon: MapPin },
+]
+
+const stars = computed(() =>
+  Array.from({ length: 5 }, (_, starIndex) => ({
+    value: starIndex + 1,
+    label: `${starIndex + 1} star${starIndex === 0 ? '' : 's'}`,
+    active: selectedRating.value >= starIndex + 1,
+  })),
+)
+
+const submitFeedback = (): void => {
+  if (!senderName.value.trim() || !senderEmail.value.trim() || !feedbackMessage.value.trim()) {
+    feedbackError.value = 'Please add your name, email and message.'
+    return
+  }
+
+  feedbackError.value = ''
+  feedbackSent.value = true
+}
+
+const resetFeedback = (): void => {
+  senderName.value = ''
+  senderEmail.value = ''
+  feedbackMessage.value = ''
+  selectedTopic.value = 'General'
+  selectedRating.value = 0
+  feedbackSent.value = false
+  feedbackError.value = ''
+}
+
+useSeoMeta({
+  title: 'Contact — Oyecouture Bespoke',
+  description:
+    "Questions, feedback, a fitting to book, or simply a word about how we're doing — reach the atelier directly.",
+})
 </script>
 
 <template>
-  <StorefrontCarePage v-bind="CARE_PAGES.contact" />
+  <div class="contact-page">
+    <header class="contact-hero">
+      <div class="contact-hero-content">
+        <p class="eyebrow">Contact</p>
+        <h1>
+          We are listening,<br>
+          always
+        </h1>
+        <p>
+          Questions, feedback, a fitting to book, or simply a word about how we're doing —
+          reach the atelier directly, or find us in every space we keep.
+        </p>
+      </div>
+    </header>
+
+    <section id="feedback" class="contact-section">
+      <div class="contact-split">
+        <div class="contact-reach">
+          <p class="contact-section-label">01 — Reach Us</p>
+          <h2>Speak to the house directly</h2>
+          <p>
+            Every message is read by someone who cares about the cut. Expect a
+            considered reply within one business day.
+          </p>
+
+          <dl class="contact-info-grid">
+            <div v-for="infoItem in CONTACT_INFO" :key="infoItem.label">
+              <dt>{{ infoItem.label }}</dt>
+              <dd>
+                <a v-if="infoItem.href" :href="infoItem.href" target="_blank" rel="noopener">
+                  {{ infoItem.value }}
+                </a>
+                <span v-else>{{ infoItem.value }}</span>
+              </dd>
+            </div>
+          </dl>
+
+          <NuxtLink class="contact-primary-link" :to="StorefrontRoute.BookFitting">
+            <span>Book a fitting</span>
+            <StorefrontIcon :icon-node="ArrowRight" :size="14" :stroke-width="2" aria-hidden="true" />
+          </NuxtLink>
+        </div>
+
+        <form class="contact-feedback-form" @submit.prevent="submitFeedback">
+          <div v-if="feedbackSent" class="contact-feedback-success">
+            <span aria-hidden="true">
+              <StorefrontIcon :icon-node="Check" :size="34" :stroke-width="1.6" />
+            </span>
+            <h3>Thank you, {{ senderName }}</h3>
+            <p>
+              Your message has reached the atelier. We read every note personally
+              and will reply within one business day.
+            </p>
+            <button type="button" @click="resetFeedback">Send another</button>
+          </div>
+
+          <div v-else>
+            <p class="contact-section-label">02 — Share Feedback</p>
+            <h3>Tell us how we're doing</h3>
+
+            <div class="contact-form-row">
+              <label>
+                <span>Name</span>
+                <input v-model="senderName" type="text" placeholder="Your name">
+              </label>
+              <label>
+                <span>Email</span>
+                <input v-model="senderEmail" type="email" placeholder="you@email.com">
+              </label>
+            </div>
+
+            <fieldset class="contact-topic-group">
+              <legend>Reason for reaching out</legend>
+              <button
+                v-for="topic in CONTACT_TOPICS"
+                :key="topic"
+                type="button"
+                :class="{ 'is-active': selectedTopic === topic }"
+                @click="selectedTopic = topic"
+              >
+                {{ topic }}
+              </button>
+            </fieldset>
+
+            <fieldset class="contact-rating-group">
+              <legend>How was your experience?</legend>
+              <button
+                v-for="star in stars"
+                :key="star.value"
+                type="button"
+                :aria-label="star.label"
+                :class="{ 'is-active': star.active }"
+                @click="selectedRating = star.value"
+              >
+                <StorefrontIcon :icon-node="Star" :size="30" :stroke-width="1.3" aria-hidden="true" />
+              </button>
+            </fieldset>
+
+            <label class="contact-message-field">
+              <span>Your message</span>
+              <textarea
+                v-model="feedbackMessage"
+                placeholder="Share your thoughts, a compliment, or how we can do better..."
+              />
+            </label>
+
+            <p v-if="feedbackError" class="contact-form-error">{{ feedbackError }}</p>
+
+            <button class="contact-submit-button" type="submit">Send feedback</button>
+            <p class="contact-form-note">We'll never share your details. Read by a human, always.</p>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <section id="social" class="contact-social-section">
+      <div class="contact-social-content">
+        <p class="contact-section-label">03 — Every Space We Keep</p>
+        <h2>Follow the house</h2>
+        <p>
+          The cuts, the fittings, the world of Oyecouture — shared daily.
+          Find us wherever you are.
+        </p>
+
+        <div class="contact-social-grid">
+          <a
+            v-for="socialLink in CONTACT_SOCIALS"
+            :key="socialLink.name"
+            :href="socialLink.href"
+            :target="socialLink.href.startsWith('http') ? '_blank' : undefined"
+            :rel="socialLink.href.startsWith('http') ? 'noopener' : undefined"
+          >
+            <span class="contact-social-icon" aria-hidden="true">
+              <StorefrontIcon :icon-node="socialLink.icon" :size="22" :stroke-width="1.5" />
+            </span>
+            <span>
+              <strong>{{ socialLink.name }}</strong>
+              <small>{{ socialLink.handle }}</small>
+            </span>
+            <StorefrontIcon
+              class="contact-social-arrow"
+              :icon-node="ArrowRight"
+              :size="18"
+              :stroke-width="1.6"
+              aria-hidden="true"
+            />
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <section class="contact-atelier-section">
+      <div>
+        <p class="contact-section-label">Prefer to speak in person</p>
+        <h2>Visit the atelier</h2>
+        <p>
+          Book a private consultation, feel the cloth, and let us take your measure.
+          Be exclusive.
+        </p>
+        <NuxtLink :to="StorefrontRoute.BookFitting">Book an appointment</NuxtLink>
+      </div>
+    </section>
+  </div>
 </template>

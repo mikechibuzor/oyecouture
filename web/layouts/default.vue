@@ -5,6 +5,7 @@ import { StorefrontActionId, StorefrontRoute } from '~/types/storefront'
 const isSearchOverlayOpen = ref(false)
 const { open: openCart } = useCart()
 const route = useRoute()
+const router = useRouter()
 
 // The About page runs its own wording for the bespoke band; every other page
 // falls back to the component's shared copy.
@@ -12,7 +13,7 @@ const bespokeBandProps = computed(() =>
   route.path === StorefrontRoute.About ? ABOUT_BESPOKE_BAND : {},
 )
 
-// Routes implemented header actions while leaving future account and wishlist work inert.
+// Routes implemented header actions to their owning storefront surfaces.
 const handleStorefrontAction = (storefrontActionId: StorefrontActionId): void => {
   if (storefrontActionId === StorefrontActionId.Search) {
     isSearchOverlayOpen.value = true
@@ -21,6 +22,11 @@ const handleStorefrontAction = (storefrontActionId: StorefrontActionId): void =>
 
   if (storefrontActionId === StorefrontActionId.Cart) {
     openCart()
+    return
+  }
+
+  if (storefrontActionId === StorefrontActionId.Wishlist) {
+    void router.push(StorefrontRoute.Wishlist)
   }
 }
 

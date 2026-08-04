@@ -8,6 +8,7 @@ import {
   UserRound,
 } from 'lucide'
 import {
+  DESKTOP_HEADER_ACTIONS,
   MOBILE_HEADER_ACTIONS,
   MOBILE_MENU_ACTIONS,
   STOREFRONT_ACTION_BY_ID,
@@ -34,6 +35,7 @@ const {
   toggleMobileMenu,
 } = useStorefrontNavigation(navigationRoot)
 const { count: cartCount } = useCart()
+const { count: wishlistCount } = useWishlist()
 
 const STOREFRONT_ACTION_ICONS: Readonly<Record<StorefrontActionId, IconNode>> = {
   [StorefrontActionId.Search]: Search,
@@ -41,6 +43,29 @@ const STOREFRONT_ACTION_ICONS: Readonly<Record<StorefrontActionId, IconNode>> = 
   [StorefrontActionId.Wishlist]: Heart,
   [StorefrontActionId.Cart]: ShoppingBag,
 }
+
+const getStorefrontActionBadgeCount = (
+  storefrontActionId: StorefrontActionId,
+): number => {
+  if (storefrontActionId === StorefrontActionId.Cart) {
+    return cartCount.value
+  }
+
+  if (storefrontActionId === StorefrontActionId.Wishlist) {
+    return wishlistCount.value
+  }
+
+  return 0
+}
+
+const shouldShowStorefrontActionBadge = (
+  storefrontActionId: StorefrontActionId,
+): boolean => getStorefrontActionBadgeCount(storefrontActionId) > 0
+
+const getProductSearchTriggerValue = (
+  storefrontActionId: StorefrontActionId,
+): true | undefined =>
+  storefrontActionId === StorefrontActionId.Search ? true : undefined
 
 // Closes mobile navigation and forwards shell actions to their owning features.
 const handleStorefrontAction = (storefrontActionId: StorefrontActionId): void => {
@@ -152,27 +177,29 @@ const handleTriggerClick = (navigationItem: StorefrontNavigationItem): void => {
 
       <div class="desktop-header-actions">
         <button
-          v-for="storefrontAction in STOREFRONT_ACTION_BY_ID"
-          :key="storefrontAction.id"
+          v-for="storefrontActionId in DESKTOP_HEADER_ACTIONS"
+          :key="storefrontActionId"
           class="header-action-button"
           type="button"
-          :data-product-search-trigger="storefrontAction.id === StorefrontActionId.Search || undefined"
-          :aria-label="storefrontAction.label"
-          :title="storefrontAction.label"
-          @click="handleStorefrontAction(storefrontAction.id)"
+          :data-product-search-trigger="getProductSearchTriggerValue(storefrontActionId)"
+          :aria-label="STOREFRONT_ACTION_BY_ID[storefrontActionId].label"
+          :title="STOREFRONT_ACTION_BY_ID[storefrontActionId].label"
+          @click="handleStorefrontAction(storefrontActionId)"
         >
           <StorefrontIcon
-            :icon-node="STOREFRONT_ACTION_ICONS[storefrontAction.id]"
-            :size="20"
-            :stroke-width="1.5"
+            :icon-node="STOREFRONT_ACTION_ICONS[storefrontActionId]"
+            :size="19"
+            :stroke-width="1.4"
             aria-hidden="true"
           />
           <ClientOnly>
             <span
-              v-if="storefrontAction.id === StorefrontActionId.Cart && cartCount > 0"
+              v-if="shouldShowStorefrontActionBadge(storefrontActionId)"
               class="cart-count-badge"
               aria-hidden="true"
-            >{{ cartCount }}</span>
+            >
+              {{ getStorefrontActionBadgeCount(storefrontActionId) }}
+            </span>
           </ClientOnly>
         </button>
       </div>
@@ -189,16 +216,18 @@ const handleTriggerClick = (navigationItem: StorefrontNavigationItem): void => {
         >
           <StorefrontIcon
             :icon-node="STOREFRONT_ACTION_ICONS[storefrontActionId]"
-            :size="20"
-            :stroke-width="1.5"
+            :size="19"
+            :stroke-width="1.4"
             aria-hidden="true"
           />
           <ClientOnly>
             <span
-              v-if="storefrontActionId === StorefrontActionId.Cart && cartCount > 0"
+              v-if="shouldShowStorefrontActionBadge(storefrontActionId)"
               class="cart-count-badge"
               aria-hidden="true"
-            >{{ cartCount }}</span>
+            >
+              {{ getStorefrontActionBadgeCount(storefrontActionId) }}
+            </span>
           </ClientOnly>
         </button>
 
@@ -282,7 +311,7 @@ const handleTriggerClick = (navigationItem: StorefrontNavigationItem): void => {
               v-for="storefrontActionId in MOBILE_MENU_ACTIONS"
               :key="storefrontActionId"
               type="button"
-              :data-product-search-trigger="storefrontActionId === StorefrontActionId.Search || undefined"
+              :data-product-search-trigger="getProductSearchTriggerValue(storefrontActionId)"
               @click="handleStorefrontAction(storefrontActionId)"
             >
               <StorefrontIcon

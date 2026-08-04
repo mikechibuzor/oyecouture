@@ -17,9 +17,9 @@ interface ProductCardProps {
 
 const props = defineProps<ProductCardProps>()
 const activeMediaIndex = ref(0)
-const isWishlisted = ref(false)
 const { mediaItems } = useProductMedia(() => props.product, true)
 const { add, open: openCart } = useCart()
+const { has: hasWishlistedProduct, toggle: toggleWishlistedProduct } = useWishlist()
 const selectedSize = ref<ProductSize>(DEFAULT_PRODUCT_SIZE)
 
 const CARD_ICONS = {
@@ -39,6 +39,8 @@ const productRoute = computed(() => getProductRoute(props.product.slug))
 const formattedPrice = computed(() => formatProductPrice(props.product.priceKobo))
 // Reports whether the current product has more than one media frame.
 const hasMultipleMediaItems = computed(() => mediaItems.value.length > 1)
+// Reports whether this card's product is saved in the persisted guest wishlist.
+const isWishlisted = computed(() => hasWishlistedProduct(props.product.slug))
 // Maps wishlist state to the correct accessible action label.
 const wishlistActionLabel = computed(() =>
   isWishlisted.value
@@ -63,9 +65,9 @@ const showPreviousMediaItem = (): void => {
   ) % mediaItems.value.length
 }
 
-// Toggles the local wishlist presentation without persisting customer state.
+// Toggles this product in the persisted guest wishlist.
 const toggleWishlist = (): void => {
-  isWishlisted.value = !isWishlisted.value
+  toggleWishlistedProduct(props.product.slug)
 }
 
 // Adds the product to the bag. A sized product cannot be added from the grid

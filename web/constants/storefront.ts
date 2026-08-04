@@ -61,18 +61,14 @@ export const STOREFRONT_NAVIGATION: readonly StorefrontNavigationItem[] = [
       { label: 'Women', to: StorefrontRoute.CasualsWomen },
     ],
   },
-  {
-    id: StorefrontNavigationItemId.Collection,
-    label: 'Collection',
-    menuId: 'collection-navigation-menu',
-    children: [
-      { label: 'All Pieces', to: StorefrontRoute.Collection },
-      { label: 'Dear Groom', to: StorefrontRoute.DearGroom },
-      { label: 'Wei-Xin', to: StorefrontRoute.WeiXin },
-      { label: 'OYE — Man of Legacy', to: StorefrontRoute.ManOfLegacy },
-    ],
-  },
 ]
+
+export const DESKTOP_HEADER_ACTIONS = [
+  StorefrontActionId.Search,
+  StorefrontActionId.Account,
+  StorefrontActionId.Wishlist,
+  StorefrontActionId.Cart,
+] as const satisfies readonly StorefrontActionId[]
 
 export const STOREFRONT_ACTION_BY_ID = {
   [StorefrontActionId.Search]: {
@@ -152,6 +148,7 @@ export const INTERNAL_STOREFRONT_ROUTES = [
   StorefrontRoute.CasualsMen,
   StorefrontRoute.CasualsWomen,
   StorefrontRoute.Collection,
+  StorefrontRoute.Wishlist,
 ] as const
 
 const internalStorefrontRouteSet: ReadonlySet<StorefrontRoute> = new Set(
