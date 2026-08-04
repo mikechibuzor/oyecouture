@@ -38,6 +38,13 @@ const pieceCountLabel = computed(() => {
 const errorMessage = computed(() =>
   getProductErrorMessage(error.value, PRODUCT_COPY.catalogue.error),
 )
+
+const isCategoryActive = (category: string): boolean =>
+  activeCategory.value === category
+
+const selectCategory = (category: string): void => {
+  activeCategory.value = category
+}
 </script>
 
 <template>
@@ -65,9 +72,9 @@ const errorMessage = computed(() =>
             v-for="category in [CATEGORY_ALL_FILTER, ...config.categories]"
             :key="category"
             type="button"
-            :class="{ 'is-active': activeCategory === category }"
-            :aria-pressed="activeCategory === category"
-            @click="activeCategory = category"
+            :class="{ 'is-active': isCategoryActive(category) }"
+            :aria-pressed="isCategoryActive(category)"
+            @click="selectCategory(category)"
           >
             {{ category }}
           </button>

@@ -109,6 +109,16 @@ const addProductToBag = (): void => {
 const getMediaButtonLabel = (mediaIndex: number): string =>
   `${PRODUCT_COPY.actions.showImage} ${mediaIndex + 1}`
 
+const isMediaItemActive = (mediaIndex: number): boolean =>
+  mediaIndex === activeMediaIndex.value
+
+const isSizeSelected = (size: ProductSize): boolean =>
+  selectedSize.value === size
+
+const selectSize = (size: ProductSize): void => {
+  selectedSize.value = size
+}
+
 watch(adjacentMediaSources, preloadAdjacentMediaImages, {
   flush: 'post',
   immediate: true,
@@ -178,7 +188,7 @@ watch(adjacentMediaSources, preloadAdjacentMediaImages, {
             v-for="(mediaItem, mediaIndex) in mediaItems"
             :key="mediaItem.id"
             type="button"
-            :class="{ 'is-active': mediaIndex === activeMediaIndex }"
+            :class="{ 'is-active': isMediaItemActive(mediaIndex) }"
             :aria-label="getMediaButtonLabel(mediaIndex)"
             @click="selectMediaItem(mediaIndex)"
           />
@@ -203,9 +213,9 @@ watch(adjacentMediaSources, preloadAdjacentMediaImages, {
           v-for="size in PRODUCT_SIZE_OPTIONS"
           :key="size"
           type="button"
-          :class="{ 'is-active': selectedSize === size }"
-          :aria-pressed="selectedSize === size"
-          @click="selectedSize = size"
+          :class="{ 'is-active': isSizeSelected(size) }"
+          :aria-pressed="isSizeSelected(size)"
+          @click="selectSize(size)"
         >
           {{ size }}
         </button>

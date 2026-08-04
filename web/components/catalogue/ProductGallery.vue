@@ -42,6 +42,9 @@ const showPreviousMediaItem = (): void => {
 // Builds an accessible label for one gallery thumbnail.
 const getThumbnailLabel = (mediaIndex: number): string =>
   `${PRODUCT_COPY.actions.showImage} ${mediaIndex + 1}`
+
+const isMediaItemActive = (mediaIndex: number): boolean =>
+  mediaIndex === activeMediaIndex.value
 </script>
 
 <template>
@@ -85,9 +88,9 @@ const getThumbnailLabel = (mediaIndex: number): string =>
         v-for="(mediaItem, mediaIndex) in mediaItems"
         :key="mediaItem.id"
         type="button"
-        :class="{ 'is-active': mediaIndex === activeMediaIndex }"
+        :class="{ 'is-active': isMediaItemActive(mediaIndex) }"
         :aria-label="getThumbnailLabel(mediaIndex)"
-        :aria-pressed="mediaIndex === activeMediaIndex"
+        :aria-pressed="isMediaItemActive(mediaIndex)"
         @click="selectMediaItem(mediaIndex)"
       >
         <CatalogueProductMedia :media-item="mediaItem" />
