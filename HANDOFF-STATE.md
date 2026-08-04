@@ -11,9 +11,18 @@
 - **Repo:** `/Users/chibuzoriwuagwu/Downloads/share/oyecouture` · `main` · **now has a GitHub remote: private repo `mikechibuzor/oyecouture`. Push to `origin`.**
 - **Staging:** **https://82-29-184-79.sslip.io** — real Let's Encrypt cert, all five containers healthy.
 - **Latest deployed commit:** `a773f80` (`feat(web): polish admin product workflows`) — pushed to `origin/main` and deployed on 2026-08-04.
-- **Uncommitted local work:** Contact page now posts to public `POST /contact`, which validates feedback and sends it through SendByte to `OWNER_NOTIFY_EMAIL` (default `iwuagwuchibuzor@gmail.com`). Dev CORS now allows `127.0.0.1`/`localhost` origins while production stays strict. Verified locally; not yet committed or deployed.
+- **Contact form:** public `POST /contact` (`76e8848`) validates feedback and sends it via SendByte to `OWNER_NOTIFY_EMAIL`. **Now throttled — see below.** Dev CORS allows `127.0.0.1`/`localhost`; production stays strict (verified live: a foreign origin *and* localhost both get no CORS header on staging). **Committed but not yet deployed.**
 - **Server access:** `ssh oyecouture` (config on the user's Mac, key `~/.ssh/oyecouture`). Deploy with `cd ~/oyecouture && git pull && ./deploy/deploy.sh`.
 - **Admin:** https://82-29-184-79.sslip.io/admin — the user seeded their own account on 3 Aug; **neither agent knows the password, and that is correct.** Re-seed or reset with `docker compose -f compose.prod.yaml --env-file .env.production exec -it api /admin`.
+
+## 🔒 CONTACT FORM THROTTLE (Claude, 4 Aug, `86d89a3`)
+
+`POST /contact` shipped unauthenticated with **no rate limiting**, sending an email on every accepted submission. The risk is not just a flooded inbox or a burnt SendByte quota: sustained abuse damages the sending domain's reputation, which would take **order confirmation emails** — the money path — down with it. Caught before deploy; staging still returns 404 for the route.
+
+- **5 accepted messages per hour per IP.** Only messages that actually send are charged, so a mistyped form never eats a real person's allowance.
+- Throttling now lives in **`internal/ratelimit`**, shared with admin sign-in. Two copies of the client-address handling is how the fixed ephemeral-port bug returns — keying on `RemoteAddr` *with* its port once gave every request its own bucket, so nothing was ever limited. **Do not reintroduce a local copy.**
+- `Allow` and `Record` are deliberately separate: sign-in charges only **failures** so the owner cannot lock themselves out by working normally; the contact form charges **every send**, because the abuse there is volume rather than guessing.
+- Admin tests now exercise the endpoint returning 429; limiter mechanics are covered in the new package. Mutation-checked — disabling the limiter fails the contact tests.
 
 ## 🧭 CODEx worklog — 2026-08-04, 12 commits since handoff
 
