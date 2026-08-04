@@ -277,6 +277,154 @@ func (repository *PostgresRepository) UpdateActive(
 	return nil
 }
 
+// AddImage appends one product image at the next gallery position.
+func (repository *PostgresRepository) AddImage(
+	requestContext context.Context,
+	productSlug string,
+	imageKey string,
+) (AdminProduct, error) {
+	const query = `
+		INSERT INTO product_images (product_id, r2_key, position)
+		SELECT
+			product.id,
+			$2,
+			COALESCE(
+				(SELECT MAX(position) + 1 FROM product_images WHERE product_id = product.id),
+				1
+			)
+		FROM products AS product
+		WHERE product.slug = $1
+		RETURNING id
+	`
+
+	var imageID string
+	if err := repository.databasePool.QueryRow(
+		requestContext,
+		query,
+		productSlug,
+		imageKey,
+	).Scan(&imageID); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return AdminProduct{}, ErrProductNotFound
+		}
+		if isCheckConstraintViolation(err, "product_images_position_valid") {
+			return AdminProduct{}, ErrImageLimitReached
+		}
+
+		return AdminProduct{}, fmt.Errorf("add product image: %w", err)
+	}
+
+	return repository.GetAdminBySlug(requestContext, productSlug)
+}
+
+// DeleteImage removes one image from a product and compacts the remaining order.
+func (repository *PostgresRepository) DeleteImage(
+	requestContext context.Context,
+	productSlug string,
+	imageID string,
+) (AdminProduct, error) {
+	transaction, err := repository.databasePool.Begin(requestContext)
+	if err != nil {
+		return AdminProduct{}, fmt.Errorf("begin delete image: %w", err)
+	}
+	defer func() {
+		_ = transaction.Rollback(requestContext)
+	}()
+
+	productID, err := productIDBySlug(requestContext, transaction, productSlug)
+	if err != nil {
+		return AdminProduct{}, err
+	}
+
+	commandTag, err := transaction.Exec(
+		requestContext,
+		`DELETE FROM product_images WHERE id = $1 AND product_id = $2`,
+		imageID,
+		productID,
+	)
+	if err != nil {
+		return AdminProduct{}, fmt.Errorf("delete product image: %w", err)
+	}
+	if commandTag.RowsAffected() == 0 {
+		return AdminProduct{}, ErrImageNotFound
+	}
+
+	if err := compactImagePositions(requestContext, transaction, productID); err != nil {
+		return AdminProduct{}, err
+	}
+
+	if err := transaction.Commit(requestContext); err != nil {
+		return AdminProduct{}, fmt.Errorf("commit delete image: %w", err)
+	}
+
+	return repository.GetAdminBySlug(requestContext, productSlug)
+}
+
+// ReorderImages replaces product image positions with the requested complete order.
+func (repository *PostgresRepository) ReorderImages(
+	requestContext context.Context,
+	productSlug string,
+	imageIDs []string,
+) (AdminProduct, error) {
+	transaction, err := repository.databasePool.Begin(requestContext)
+	if err != nil {
+		return AdminProduct{}, fmt.Errorf("begin reorder images: %w", err)
+	}
+	defer func() {
+		_ = transaction.Rollback(requestContext)
+	}()
+
+	productID, err := productIDBySlug(requestContext, transaction, productSlug)
+	if err != nil {
+		return AdminProduct{}, err
+	}
+
+	imageKeysByID, err := productImageKeysByID(requestContext, transaction, productID)
+	if err != nil {
+		return AdminProduct{}, err
+	}
+	if len(imageKeysByID) != len(imageIDs) {
+		return AdminProduct{}, ErrInvalidImageReorder
+	}
+
+	orderedImageKeys := make([]string, 0, len(imageIDs))
+	for _, imageID := range imageIDs {
+		imageKey, exists := imageKeysByID[imageID]
+		if !exists {
+			return AdminProduct{}, ErrInvalidImageReorder
+		}
+		orderedImageKeys = append(orderedImageKeys, imageKey)
+	}
+
+	if _, err := transaction.Exec(
+		requestContext,
+		`DELETE FROM product_images WHERE product_id = $1`,
+		productID,
+	); err != nil {
+		return AdminProduct{}, fmt.Errorf("clear product images for reorder: %w", err)
+	}
+
+	for imageIndex, imageID := range imageIDs {
+		if _, err := transaction.Exec(
+			requestContext,
+			`INSERT INTO product_images (id, product_id, r2_key, position)
+			VALUES ($1, $2, $3, $4)`,
+			imageID,
+			productID,
+			orderedImageKeys[imageIndex],
+			imageIndex+1,
+		); err != nil {
+			return AdminProduct{}, fmt.Errorf("insert reordered product image: %w", err)
+		}
+	}
+
+	if err := transaction.Commit(requestContext); err != nil {
+		return AdminProduct{}, fmt.Errorf("commit reorder images: %w", err)
+	}
+
+	return repository.GetAdminBySlug(requestContext, productSlug)
+}
+
 // isUniqueConstraintViolation identifies a named PostgreSQL unique constraint failure.
 func isUniqueConstraintViolation(err error, constraintName string) bool {
 	var postgresError *pgconn.PgError
@@ -285,6 +433,104 @@ func isUniqueConstraintViolation(err error, constraintName string) bool {
 	}
 
 	return postgresError.Code == "23505" && postgresError.ConstraintName == constraintName
+}
+
+// isCheckConstraintViolation identifies a named PostgreSQL check constraint failure.
+func isCheckConstraintViolation(err error, constraintName string) bool {
+	var postgresError *pgconn.PgError
+	if !errors.As(err, &postgresError) {
+		return false
+	}
+
+	return postgresError.Code == "23514" && postgresError.ConstraintName == constraintName
+}
+
+type productTransaction interface {
+	Exec(context.Context, string, ...any) (pgconn.CommandTag, error)
+	Query(context.Context, string, ...any) (pgx.Rows, error)
+	QueryRow(context.Context, string, ...any) pgx.Row
+}
+
+// productIDBySlug resolves a product slug inside an image transaction.
+func productIDBySlug(
+	requestContext context.Context,
+	transaction productTransaction,
+	productSlug string,
+) (string, error) {
+	var productID string
+	if err := transaction.QueryRow(
+		requestContext,
+		`SELECT id::text FROM products WHERE slug = $1`,
+		productSlug,
+	).Scan(&productID); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return "", ErrProductNotFound
+		}
+
+		return "", fmt.Errorf("query product id: %w", err)
+	}
+
+	return productID, nil
+}
+
+// compactImagePositions keeps gallery positions contiguous after deletion.
+func compactImagePositions(
+	requestContext context.Context,
+	transaction productTransaction,
+	productID string,
+) error {
+	const query = `
+		WITH ordered_images AS (
+			SELECT
+				id,
+				ROW_NUMBER() OVER (ORDER BY position, id)::smallint AS position
+			FROM product_images
+			WHERE product_id = $1
+		)
+		UPDATE product_images
+		SET position = ordered_images.position
+		FROM ordered_images
+		WHERE product_images.id = ordered_images.id
+	`
+
+	if _, err := transaction.Exec(requestContext, query, productID); err != nil {
+		return fmt.Errorf("compact product image positions: %w", err)
+	}
+
+	return nil
+}
+
+// productImageKeysByID reads the current image set for exact-order validation.
+func productImageKeysByID(
+	requestContext context.Context,
+	transaction productTransaction,
+	productID string,
+) (map[string]string, error) {
+	rows, err := transaction.Query(
+		requestContext,
+		`SELECT id::text, r2_key FROM product_images WHERE product_id = $1`,
+		productID,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("query product image keys: %w", err)
+	}
+	defer rows.Close()
+
+	imageKeysByID := make(map[string]string)
+	for rows.Next() {
+		var imageID string
+		var imageKey string
+		if err := rows.Scan(&imageID, &imageKey); err != nil {
+			return nil, fmt.Errorf("scan product image key: %w", err)
+		}
+
+		imageKeysByID[imageID] = imageKey
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate product image keys: %w", err)
+	}
+
+	return imageKeysByID, nil
 }
 
 // buildListQuery creates parameterized SQL for the validated optional filters.

@@ -1,9 +1,11 @@
 package products
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -28,9 +30,21 @@ type adminProductManagerStub struct {
 	detailSlug         string
 	detailProduct      AdminProduct
 	detailError        error
+	addImageSlug       string
+	addImageUpload     AdminImageUpload
+	addImageProduct    AdminProduct
+	addImageError      error
 	createDraft        AdminProductDraft
 	createProduct      AdminProduct
 	createError        error
+	deleteImageSlug    string
+	deleteImageID      string
+	deleteImageProduct AdminProduct
+	deleteImageError   error
+	reorderSlug        string
+	reorderPayload     AdminImageReorder
+	reorderProduct     AdminProduct
+	reorderError       error
 	updateSlug         string
 	updateDraft        AdminProductDraft
 	updateProduct      AdminProduct
@@ -39,6 +53,9 @@ type adminProductManagerStub struct {
 	updateActive       bool
 	updateActiveError  error
 	updateActiveCalled bool
+	addImageCalled     bool
+	deleteImageCalled  bool
+	reorderCalled      bool
 }
 
 // List records collection input and returns the configured product result.
@@ -77,6 +94,18 @@ func (manager *adminProductManagerStub) GetBySlug(
 	return manager.detailProduct, manager.detailError
 }
 
+// AddImage records admin image upload input.
+func (manager *adminProductManagerStub) AddImage(
+	_ context.Context,
+	productSlug string,
+	upload AdminImageUpload,
+) (AdminProduct, error) {
+	manager.addImageCalled = true
+	manager.addImageSlug = productSlug
+	manager.addImageUpload = upload
+	return manager.addImageProduct, manager.addImageError
+}
+
 // Create records admin create input.
 func (manager *adminProductManagerStub) Create(
 	_ context.Context,
@@ -84,6 +113,30 @@ func (manager *adminProductManagerStub) Create(
 ) (AdminProduct, error) {
 	manager.createDraft = draft
 	return manager.createProduct, manager.createError
+}
+
+// DeleteImage records admin image deletion input.
+func (manager *adminProductManagerStub) DeleteImage(
+	_ context.Context,
+	productSlug string,
+	imageID string,
+) (AdminProduct, error) {
+	manager.deleteImageCalled = true
+	manager.deleteImageSlug = productSlug
+	manager.deleteImageID = imageID
+	return manager.deleteImageProduct, manager.deleteImageError
+}
+
+// ReorderImages records admin image order input.
+func (manager *adminProductManagerStub) ReorderImages(
+	_ context.Context,
+	productSlug string,
+	reorder AdminImageReorder,
+) (AdminProduct, error) {
+	manager.reorderCalled = true
+	manager.reorderSlug = productSlug
+	manager.reorderPayload = reorder
+	return manager.reorderProduct, manager.reorderError
 }
 
 // Update records admin update input.
@@ -351,6 +404,129 @@ func TestAdminHandlerGetBySlugReturnsProduct(t *testing.T) {
 	}
 	if response.Product.Slug != "gold-agbada" || !response.Product.Active {
 		t.Fatalf("unexpected admin detail response: %+v", response.Product)
+	}
+}
+
+// TestAdminHandlerImagesReturnsOrderedImages verifies image list responses.
+func TestAdminHandlerImagesReturnsOrderedImages(t *testing.T) {
+	t.Parallel()
+
+	manager := &adminProductManagerStub{
+		detailProduct: AdminProduct{
+			Slug: "gold-agbada",
+			Images: []Image{{
+				ID:       "image-1",
+				URL:      "https://media.example.com/one",
+				Position: 1,
+			}},
+		},
+	}
+	handler := NewAdminHandler(manager)
+	request := httptest.NewRequest(http.MethodGet, "/admin/products/gold-agbada/images", nil)
+	request.SetPathValue("slug", "gold-agbada")
+	responseRecorder := httptest.NewRecorder()
+
+	handler.Images(responseRecorder, request)
+
+	if responseRecorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d", http.StatusOK, responseRecorder.Code)
+	}
+	var response adminImagesResponse
+	if err := json.NewDecoder(responseRecorder.Body).Decode(&response); err != nil {
+		t.Fatalf("decode image response: %v", err)
+	}
+	if len(response.Images) != 1 || response.Images[0].ID != "image-1" {
+		t.Fatalf("unexpected images response: %+v", response.Images)
+	}
+}
+
+// TestAdminHandlerUploadImageReadsMultipartFile verifies upload request parsing.
+func TestAdminHandlerUploadImageReadsMultipartFile(t *testing.T) {
+	t.Parallel()
+
+	var requestBody bytes.Buffer
+	multipartWriter := multipart.NewWriter(&requestBody)
+	fileWriter, err := multipartWriter.CreateFormFile("image", "look.webp")
+	if err != nil {
+		t.Fatalf("create multipart file: %v", err)
+	}
+	if _, err := fileWriter.Write([]byte("webp-image")); err != nil {
+		t.Fatalf("write multipart file: %v", err)
+	}
+	if err := multipartWriter.Close(); err != nil {
+		t.Fatalf("close multipart writer: %v", err)
+	}
+
+	manager := &adminProductManagerStub{
+		addImageProduct: AdminProduct{Slug: "gold-agbada"},
+	}
+	handler := NewAdminHandler(manager)
+	request := httptest.NewRequest(http.MethodPost, "/admin/products/gold-agbada/images", &requestBody)
+	request.Header.Set("Content-Type", multipartWriter.FormDataContentType())
+	request.SetPathValue("slug", "gold-agbada")
+	responseRecorder := httptest.NewRecorder()
+
+	handler.UploadImage(responseRecorder, request)
+
+	if responseRecorder.Code != http.StatusCreated {
+		t.Fatalf("expected status %d, got %d", http.StatusCreated, responseRecorder.Code)
+	}
+	if !manager.addImageCalled ||
+		manager.addImageSlug != "gold-agbada" ||
+		manager.addImageUpload.FileName != "look.webp" ||
+		string(manager.addImageUpload.Content) != "webp-image" {
+		t.Fatalf("unexpected upload call: %+v", manager.addImageUpload)
+	}
+}
+
+// TestAdminHandlerReorderImagesDecodesIDs verifies reorder JSON translation.
+func TestAdminHandlerReorderImagesDecodesIDs(t *testing.T) {
+	t.Parallel()
+
+	manager := &adminProductManagerStub{
+		reorderProduct: AdminProduct{Slug: "gold-agbada"},
+	}
+	handler := NewAdminHandler(manager)
+	request := httptest.NewRequest(http.MethodPatch, "/admin/products/gold-agbada/images/reorder",
+		strings.NewReader(`{"imageIds":["image-2","image-1"]}`))
+	request.SetPathValue("slug", "gold-agbada")
+	responseRecorder := httptest.NewRecorder()
+
+	handler.ReorderImages(responseRecorder, request)
+
+	if responseRecorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d", http.StatusOK, responseRecorder.Code)
+	}
+	if !manager.reorderCalled ||
+		manager.reorderSlug != "gold-agbada" ||
+		len(manager.reorderPayload.ImageIDs) != 2 ||
+		manager.reorderPayload.ImageIDs[0] != "image-2" {
+		t.Fatalf("unexpected reorder call: %+v", manager.reorderPayload)
+	}
+}
+
+// TestAdminHandlerDeleteImagePassesPathValues verifies delete route translation.
+func TestAdminHandlerDeleteImagePassesPathValues(t *testing.T) {
+	t.Parallel()
+
+	manager := &adminProductManagerStub{
+		deleteImageProduct: AdminProduct{Slug: "gold-agbada"},
+	}
+	handler := NewAdminHandler(manager)
+	request := httptest.NewRequest(http.MethodDelete, "/admin/products/gold-agbada/images/image-1", nil)
+	request.SetPathValue("slug", "gold-agbada")
+	request.SetPathValue("imageID", "image-1")
+	responseRecorder := httptest.NewRecorder()
+
+	handler.DeleteImage(responseRecorder, request)
+
+	if responseRecorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d", http.StatusOK, responseRecorder.Code)
+	}
+	if !manager.deleteImageCalled ||
+		manager.deleteImageSlug != "gold-agbada" ||
+		manager.deleteImageID != "image-1" {
+		t.Fatalf("unexpected delete call: %+v", manager)
 	}
 }
 

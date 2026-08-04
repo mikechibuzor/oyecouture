@@ -105,6 +105,11 @@ const submit = async (): Promise<void> => {
   }
 }
 
+const handleProductImagesUpdated = (updatedProduct: AdminProduct): void => {
+  product.value = updatedProduct
+  draft.value = toDraft(updatedProduct)
+}
+
 onMounted(() => {
   void load()
 })
@@ -141,6 +146,12 @@ onMounted(() => {
         :error-message="errorMessage"
         :success-message="successMessage"
         @submit="submit"
+      />
+
+      <AdminProductImageManager
+        v-if="product"
+        :product="product"
+        @updated="handleProductImagesUpdated"
       />
     </template>
   </div>

@@ -1,5 +1,5 @@
 import type { MeasurementsRequest, OrderItem, OrderKind } from '~/types/order'
-import type { Product, ProductSection } from '~/types/product'
+import type { Product, ProductImage, ProductSection } from '~/types/product'
 
 // The order lifecycle, mirroring the database CHECK constraint.
 export enum OrderStatus {
@@ -156,6 +156,10 @@ export interface AdminProductPage {
 
 export interface AdminProductDetailResponse {
   readonly product: AdminProduct
+}
+
+export interface AdminProductImagesResponse {
+  readonly images: readonly ProductImage[]
 }
 
 export interface AdminProductDraft {

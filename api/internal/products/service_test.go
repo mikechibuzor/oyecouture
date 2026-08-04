@@ -27,9 +27,21 @@ type adminRepositoryStub struct {
 	getSlug               string
 	getProduct            AdminProduct
 	getError              error
+	addImageSlug          string
+	addImageKey           string
+	addImageProduct       AdminProduct
+	addImageError         error
 	createDraft           AdminProductDraft
 	createProduct         AdminProduct
 	createError           error
+	deleteImageSlug       string
+	deleteImageID         string
+	deleteImageProduct    AdminProduct
+	deleteImageError      error
+	reorderSlug           string
+	reorderImageIDs       []string
+	reorderProduct        AdminProduct
+	reorderError          error
 	updateSlug            string
 	updateDraft           AdminProductDraft
 	updateProduct         AdminProduct
@@ -39,9 +51,20 @@ type adminRepositoryStub struct {
 	updateActiveError     error
 	listCallCount         int
 	getCallCount          int
+	addImageCallCount     int
 	createCallCount       int
+	deleteImageCallCount  int
+	reorderCallCount      int
 	updateCallCount       int
 	updateActiveCallCount int
+}
+
+type imageUploaderStub struct {
+	productSlug string
+	upload      AdminImageUpload
+	imageKey    string
+	err         error
+	callCount   int
 }
 
 // List records the validated filter and returns the configured products.
@@ -84,6 +107,18 @@ func (repository *adminRepositoryStub) GetAdminBySlug(
 	return repository.getProduct, repository.getError
 }
 
+// AddImage records an appended image key.
+func (repository *adminRepositoryStub) AddImage(
+	_ context.Context,
+	productSlug string,
+	imageKey string,
+) (AdminProduct, error) {
+	repository.addImageCallCount++
+	repository.addImageSlug = productSlug
+	repository.addImageKey = imageKey
+	return repository.addImageProduct, repository.addImageError
+}
+
 // CreateAdmin records the normalized create draft.
 func (repository *adminRepositoryStub) CreateAdmin(
 	_ context.Context,
@@ -92,6 +127,30 @@ func (repository *adminRepositoryStub) CreateAdmin(
 	repository.createCallCount++
 	repository.createDraft = draft
 	return repository.createProduct, repository.createError
+}
+
+// DeleteImage records an image deletion.
+func (repository *adminRepositoryStub) DeleteImage(
+	_ context.Context,
+	productSlug string,
+	imageID string,
+) (AdminProduct, error) {
+	repository.deleteImageCallCount++
+	repository.deleteImageSlug = productSlug
+	repository.deleteImageID = imageID
+	return repository.deleteImageProduct, repository.deleteImageError
+}
+
+// ReorderImages records a full image order mutation.
+func (repository *adminRepositoryStub) ReorderImages(
+	_ context.Context,
+	productSlug string,
+	imageIDs []string,
+) (AdminProduct, error) {
+	repository.reorderCallCount++
+	repository.reorderSlug = productSlug
+	repository.reorderImageIDs = imageIDs
+	return repository.reorderProduct, repository.reorderError
 }
 
 // UpdateAdmin records the normalized update draft.
@@ -116,6 +175,18 @@ func (repository *adminRepositoryStub) UpdateActive(
 	repository.updateActiveSlug = productSlug
 	repository.updateActiveValue = active
 	return repository.updateActiveError
+}
+
+// Upload records one provider upload and returns the configured key.
+func (uploader *imageUploaderStub) Upload(
+	_ context.Context,
+	productSlug string,
+	upload AdminImageUpload,
+) (string, error) {
+	uploader.callCount++
+	uploader.productSlug = productSlug
+	uploader.upload = upload
+	return uploader.imageKey, uploader.err
 }
 
 // TestServiceListValidatesFiltersAndBuildsImageURLs verifies the full list walkthrough.
@@ -296,6 +367,138 @@ func TestAdminServiceUpdateActiveCallsRepository(t *testing.T) {
 	}
 	if repository.updateActiveValue {
 		t.Fatalf("expected active=false mutation")
+	}
+}
+
+// TestAdminServiceAddImageUploadsAndPersistsKey verifies upload-provider wiring.
+func TestAdminServiceAddImageUploadsAndPersistsKey(t *testing.T) {
+	t.Parallel()
+
+	repository := &adminRepositoryStub{
+		getProduct: AdminProduct{Slug: "gold-agbada"},
+		addImageProduct: AdminProduct{
+			Slug: "gold-agbada",
+			Images: []Image{{
+				R2Key: "oyecouture/gold-agbada-1",
+			}},
+		},
+	}
+	uploader := &imageUploaderStub{imageKey: "oyecouture/gold-agbada-1"}
+	service := NewAdminServiceWithUploader(repository, uploader, "https://res.cloudinary.com/demo/image/upload")
+
+	product, err := service.AddImage(context.Background(), " gold-agbada ", AdminImageUpload{
+		FileName:    "look.webp",
+		ContentType: "image/webp",
+		Content:     []byte("image"),
+	})
+	if err != nil {
+		t.Fatalf("expected image upload success, got %v", err)
+	}
+	if uploader.productSlug != "gold-agbada" || repository.addImageSlug != "gold-agbada" {
+		t.Fatalf("expected normalized slug, got uploader=%q repository=%q",
+			uploader.productSlug, repository.addImageSlug)
+	}
+	if repository.addImageKey != "oyecouture/gold-agbada-1" {
+		t.Fatalf("expected uploaded key to be persisted, got %q", repository.addImageKey)
+	}
+	if product.Images[0].URL != "https://res.cloudinary.com/demo/image/upload/oyecouture/gold-agbada-1" {
+		t.Fatalf("expected public image URL, got %q", product.Images[0].URL)
+	}
+}
+
+// TestAdminServiceAddImageRequiresUploader verifies config failures are explicit.
+func TestAdminServiceAddImageRequiresUploader(t *testing.T) {
+	t.Parallel()
+
+	repository := &adminRepositoryStub{}
+	service := NewAdminService(repository, "")
+
+	_, err := service.AddImage(context.Background(), "gold-agbada", AdminImageUpload{
+		FileName:    "look.jpg",
+		ContentType: "image/jpeg",
+		Content:     []byte("image"),
+	})
+	if !errors.Is(err, ErrImageUploadUnavailable) {
+		t.Fatalf("expected unavailable upload error, got %v", err)
+	}
+	if repository.getCallCount != 0 {
+		t.Fatalf("expected no repository read before uploader config, got %d", repository.getCallCount)
+	}
+}
+
+// TestAdminServiceAddImageRejectsFullGallery verifies the 12-image cap.
+func TestAdminServiceAddImageRejectsFullGallery(t *testing.T) {
+	t.Parallel()
+
+	repository := &adminRepositoryStub{
+		getProduct: AdminProduct{
+			Slug:   "gold-agbada",
+			Images: make([]Image, maximumProductImages),
+		},
+	}
+	uploader := &imageUploaderStub{imageKey: "oyecouture/gold-agbada-13"}
+	service := NewAdminServiceWithUploader(repository, uploader, "")
+
+	_, err := service.AddImage(context.Background(), "gold-agbada", AdminImageUpload{
+		FileName:    "look.png",
+		ContentType: "image/png",
+		Content:     []byte("image"),
+	})
+	if !errors.Is(err, ErrImageLimitReached) {
+		t.Fatalf("expected image limit error, got %v", err)
+	}
+	if uploader.callCount != 0 || repository.addImageCallCount != 0 {
+		t.Fatalf("expected no upload or insert, got uploader=%d insert=%d",
+			uploader.callCount, repository.addImageCallCount)
+	}
+}
+
+// TestAdminServiceReorderImagesNormalizesIDs verifies image order validation.
+func TestAdminServiceReorderImagesNormalizesIDs(t *testing.T) {
+	t.Parallel()
+
+	repository := &adminRepositoryStub{
+		reorderProduct: AdminProduct{
+			Slug: "gold-agbada",
+			Images: []Image{{
+				ID:    "image-2",
+				R2Key: "oyecouture/two",
+			}},
+		},
+	}
+	service := NewAdminService(repository, "https://media.example.com")
+
+	product, err := service.ReorderImages(context.Background(), " gold-agbada ", AdminImageReorder{
+		ImageIDs: []string{" image-2 ", "image-1"},
+	})
+	if err != nil {
+		t.Fatalf("expected reorder success, got %v", err)
+	}
+	if repository.reorderSlug != "gold-agbada" ||
+		repository.reorderImageIDs[0] != "image-2" ||
+		repository.reorderImageIDs[1] != "image-1" {
+		t.Fatalf("unexpected reorder call: %+v", repository.reorderImageIDs)
+	}
+	if product.Images[0].URL != "https://media.example.com/oyecouture/two" {
+		t.Fatalf("expected public image URL, got %q", product.Images[0].URL)
+	}
+}
+
+// TestAdminServiceReorderImagesRejectsDuplicates verifies exact-order inputs.
+func TestAdminServiceReorderImagesRejectsDuplicates(t *testing.T) {
+	t.Parallel()
+
+	repository := &adminRepositoryStub{}
+	service := NewAdminService(repository, "")
+
+	_, err := service.ReorderImages(context.Background(), "gold-agbada", AdminImageReorder{
+		ImageIDs: []string{"image-1", "image-1"},
+	})
+	if !errors.Is(err, ErrInvalidImageReorder) {
+		t.Fatalf("expected invalid reorder error, got %v", err)
+	}
+	if repository.reorderCallCount != 0 {
+		t.Fatalf("expected no repository call, got %d", repository.reorderCallCount)
 	}
 }
 

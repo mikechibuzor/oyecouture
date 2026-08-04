@@ -4,24 +4,31 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 )
 
 // ErrorCode identifies a stable machine-readable product API error.
 type ErrorCode string
 
 const (
-	ErrorCodeInvalidProductSection ErrorCode = "invalid_product_section"
-	ErrorCodeInvalidProductSlug    ErrorCode = "invalid_product_slug"
-	ErrorCodeInvalidActiveFilter   ErrorCode = "invalid_active_filter"
-	ErrorCodeInvalidProductDraft   ErrorCode = "invalid_product_draft"
-	ErrorCodeDuplicateProductSlug  ErrorCode = "duplicate_product_slug"
-	ErrorCodeProductNotFound       ErrorCode = "product_not_found"
-	ErrorCodeSearchQueryTooLong    ErrorCode = "search_query_too_long"
-	ErrorCodeInvalidBody           ErrorCode = "invalid_body"
-	ErrorCodeInternal              ErrorCode = "internal_error"
+	ErrorCodeInvalidProductSection  ErrorCode = "invalid_product_section"
+	ErrorCodeInvalidProductSlug     ErrorCode = "invalid_product_slug"
+	ErrorCodeInvalidActiveFilter    ErrorCode = "invalid_active_filter"
+	ErrorCodeInvalidProductDraft    ErrorCode = "invalid_product_draft"
+	ErrorCodeInvalidImageUpload     ErrorCode = "invalid_image_upload"
+	ErrorCodeInvalidImageReorder    ErrorCode = "invalid_image_reorder"
+	ErrorCodeImageLimitReached      ErrorCode = "image_limit_reached"
+	ErrorCodeImageNotFound          ErrorCode = "image_not_found"
+	ErrorCodeImageUploadUnavailable ErrorCode = "image_upload_unavailable"
+	ErrorCodeDuplicateProductSlug   ErrorCode = "duplicate_product_slug"
+	ErrorCodeProductNotFound        ErrorCode = "product_not_found"
+	ErrorCodeSearchQueryTooLong     ErrorCode = "search_query_too_long"
+	ErrorCodeInvalidBody            ErrorCode = "invalid_body"
+	ErrorCodeInternal               ErrorCode = "internal_error"
 )
 
 // ProductReader defines the product service operations exposed over HTTP.
@@ -39,7 +46,10 @@ type Handler struct {
 type AdminProductManager interface {
 	List(context.Context, AdminListInput) (AdminProductPage, error)
 	GetBySlug(context.Context, string) (AdminProduct, error)
+	AddImage(context.Context, string, AdminImageUpload) (AdminProduct, error)
 	Create(context.Context, AdminProductDraft) (AdminProduct, error)
+	DeleteImage(context.Context, string, string) (AdminProduct, error)
+	ReorderImages(context.Context, string, AdminImageReorder) (AdminProduct, error)
 	Update(context.Context, string, AdminProductDraft) (AdminProduct, error)
 	UpdateActive(context.Context, string, AdminActiveUpdate) error
 }
@@ -60,6 +70,10 @@ type detailResponse struct {
 
 type adminDetailResponse struct {
 	Product AdminProduct `json:"product"`
+}
+
+type adminImagesResponse struct {
+	Images []Image `json:"images"`
 }
 
 type errorDetail struct {
@@ -161,6 +175,26 @@ func (handler *AdminHandler) GetBySlug(
 	writeJSON(responseWriter, http.StatusOK, adminDetailResponse{Product: product})
 }
 
+// Images returns the current owner-facing image order for one product.
+func (handler *AdminHandler) Images(
+	responseWriter http.ResponseWriter,
+	request *http.Request,
+) {
+	product, err := handler.productManager.GetBySlug(
+		request.Context(),
+		request.PathValue("slug"),
+	)
+	if err != nil {
+		handler.writeServiceError(responseWriter, err)
+		return
+	}
+	if product.Images == nil {
+		product.Images = make([]Image, 0)
+	}
+
+	writeJSON(responseWriter, http.StatusOK, adminImagesResponse{Images: product.Images})
+}
+
 // Create inserts one owner-managed product.
 func (handler *AdminHandler) Create(responseWriter http.ResponseWriter, request *http.Request) {
 	draft, ok := decodeProductDraft(responseWriter, request)
@@ -225,6 +259,75 @@ func (handler *AdminHandler) UpdateActive(
 	responseWriter.WriteHeader(http.StatusNoContent)
 }
 
+// UploadImage appends one uploaded image to a product gallery.
+func (handler *AdminHandler) UploadImage(
+	responseWriter http.ResponseWriter,
+	request *http.Request,
+) {
+	upload, ok := decodeImageUpload(responseWriter, request)
+	if !ok {
+		return
+	}
+
+	product, err := handler.productManager.AddImage(
+		request.Context(),
+		request.PathValue("slug"),
+		upload,
+	)
+	if err != nil {
+		handler.writeServiceError(responseWriter, err)
+		return
+	}
+
+	writeJSON(responseWriter, http.StatusCreated, adminDetailResponse{Product: product})
+}
+
+// ReorderImages applies a complete owner-selected image order.
+func (handler *AdminHandler) ReorderImages(
+	responseWriter http.ResponseWriter,
+	request *http.Request,
+) {
+	var reorder AdminImageReorder
+
+	decoder := json.NewDecoder(http.MaxBytesReader(responseWriter, request.Body, 1<<20))
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(&reorder); err != nil {
+		writeError(responseWriter, http.StatusBadRequest, ErrorCodeInvalidBody,
+			"the image order could not be read")
+		return
+	}
+
+	product, err := handler.productManager.ReorderImages(
+		request.Context(),
+		request.PathValue("slug"),
+		reorder,
+	)
+	if err != nil {
+		handler.writeServiceError(responseWriter, err)
+		return
+	}
+
+	writeJSON(responseWriter, http.StatusOK, adminDetailResponse{Product: product})
+}
+
+// DeleteImage removes one image from a product gallery.
+func (handler *AdminHandler) DeleteImage(
+	responseWriter http.ResponseWriter,
+	request *http.Request,
+) {
+	product, err := handler.productManager.DeleteImage(
+		request.Context(),
+		request.PathValue("slug"),
+		request.PathValue("imageID"),
+	)
+	if err != nil {
+		handler.writeServiceError(responseWriter, err)
+		return
+	}
+
+	writeJSON(responseWriter, http.StatusOK, adminDetailResponse{Product: product})
+}
+
 // decodeProductDraft reads a strict owner-editable product payload.
 func decodeProductDraft(
 	responseWriter http.ResponseWriter,
@@ -241,6 +344,40 @@ func decodeProductDraft(
 	}
 
 	return draft, true
+}
+
+// decodeImageUpload reads one multipart product image from field "image".
+func decodeImageUpload(
+	responseWriter http.ResponseWriter,
+	request *http.Request,
+) (AdminImageUpload, bool) {
+	request.Body = http.MaxBytesReader(responseWriter, request.Body, 12<<20)
+
+	file, fileHeader, err := request.FormFile("image")
+	if err != nil {
+		writeError(responseWriter, http.StatusBadRequest, ErrorCodeInvalidImageUpload,
+			"upload one JPEG, PNG, or WebP image")
+		return AdminImageUpload{}, false
+	}
+	defer file.Close()
+
+	content, err := io.ReadAll(file)
+	if err != nil || len(content) == 0 {
+		writeError(responseWriter, http.StatusBadRequest, ErrorCodeInvalidImageUpload,
+			"upload one JPEG, PNG, or WebP image")
+		return AdminImageUpload{}, false
+	}
+
+	contentType := strings.TrimSpace(fileHeader.Header.Get("Content-Type"))
+	if contentType == "" {
+		contentType = http.DetectContentType(content)
+	}
+
+	return AdminImageUpload{
+		FileName:    fileHeader.Filename,
+		ContentType: contentType,
+		Content:     content,
+	}, true
 }
 
 // writeServiceError maps domain errors to stable public status codes and messages.
@@ -293,6 +430,41 @@ func writeServiceError(
 			http.StatusBadRequest,
 			ErrorCodeInvalidProductDraft,
 			"product fields are incomplete or invalid",
+		)
+	case errors.Is(serviceError, ErrInvalidImageUpload):
+		writeError(
+			responseWriter,
+			http.StatusBadRequest,
+			ErrorCodeInvalidImageUpload,
+			"upload one JPEG, PNG, or WebP image",
+		)
+	case errors.Is(serviceError, ErrInvalidImageReorder):
+		writeError(
+			responseWriter,
+			http.StatusBadRequest,
+			ErrorCodeInvalidImageReorder,
+			"image order must include each current image once",
+		)
+	case errors.Is(serviceError, ErrImageLimitReached):
+		writeError(
+			responseWriter,
+			http.StatusConflict,
+			ErrorCodeImageLimitReached,
+			"a product can have up to 12 images",
+		)
+	case errors.Is(serviceError, ErrImageNotFound):
+		writeError(
+			responseWriter,
+			http.StatusNotFound,
+			ErrorCodeImageNotFound,
+			"product image was not found",
+		)
+	case errors.Is(serviceError, ErrImageUploadUnavailable):
+		writeError(
+			responseWriter,
+			http.StatusServiceUnavailable,
+			ErrorCodeImageUploadUnavailable,
+			"image uploads are not configured",
 		)
 	case errors.Is(serviceError, ErrDuplicateProductSlug):
 		writeError(

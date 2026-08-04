@@ -13,6 +13,7 @@ const (
 	MaximumSearchLength              = 100
 	defaultAdminProductLimit         = 25
 	maximumAdminProductLimit         = 100
+	maximumProductImages             = 12
 )
 
 // Image represents an ordered public product image.
@@ -111,4 +112,16 @@ type AdminProductDraft struct {
 // AdminActiveUpdate is the availability mutation exposed to the owner.
 type AdminActiveUpdate struct {
 	Active bool `json:"active"`
+}
+
+// AdminImageUpload contains one validated image file ready for provider upload.
+type AdminImageUpload struct {
+	FileName    string
+	ContentType string
+	Content     []byte
+}
+
+// AdminImageReorder is the owner-selected ordered image ID list.
+type AdminImageReorder struct {
+	ImageIDs []string `json:"imageIds"`
 }

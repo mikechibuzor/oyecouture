@@ -30,6 +30,10 @@ export const ADMIN_API_ROUTES = {
   products: '/admin/products',
   productDetail: (slug: string) => `/admin/products/${encodeURIComponent(slug)}`,
   productActive: (slug: string) => `/admin/products/${encodeURIComponent(slug)}/active`,
+  productImages: (slug: string) => `/admin/products/${encodeURIComponent(slug)}/images`,
+  productImagesReorder: (slug: string) => `/admin/products/${encodeURIComponent(slug)}/images/reorder`,
+  productImage: (slug: string, imageID: string) =>
+    `/admin/products/${encodeURIComponent(slug)}/images/${encodeURIComponent(imageID)}`,
 } as const
 
 export const ADMIN_COPY = {
@@ -60,6 +64,17 @@ export const ADMIN_COPY = {
   productDuplicateSlug: 'That slug already exists.',
   productDetailLoading: 'Loading product…',
   productDetailFailed: 'The product could not be loaded.',
+  productImagesHeading: 'Images',
+  productImagesIntro: 'Upload, reorder, and remove product gallery images.',
+  uploadProductImage: 'Upload image',
+  uploadingProductImage: 'Uploading…',
+  productImageUploadFailed: 'The image could not be uploaded.',
+  productImageUpdateFailed: 'The image order could not be updated.',
+  productImageDeleteFailed: 'The image could not be removed.',
+  productImagesEmpty: 'No images yet.',
+  productImageMoveUp: 'Move up',
+  productImageMoveDown: 'Move down',
+  productImageRemove: 'Remove',
   backToProducts: 'Back to products',
   slugLabel: 'Slug',
   nameLabel: 'Name',

@@ -78,8 +78,18 @@ func New(applicationConfig config.Config, databasePool *pgxpool.Pool) *http.Serv
 	))
 
 	adminOrderHandler := orders.NewAdminHandler(orders.NewAdminService(orderRepository))
+	imageUploader := products.NewCloudinaryUploader(
+		applicationConfig.CloudinaryCloudName,
+		applicationConfig.CloudinaryAPIKey,
+		applicationConfig.CloudinaryAPISecret,
+		applicationConfig.CloudinaryFolder,
+	)
 	adminProductHandler := products.NewAdminHandler(
-		products.NewAdminService(productRepository, applicationConfig.R2PublicBase),
+		products.NewAdminServiceWithUploader(
+			productRepository,
+			imageUploader,
+			applicationConfig.R2PublicBase,
+		),
 	)
 	requestMux.Handle("GET /admin/orders", adminHandler.RequireSession(
 		http.HandlerFunc(adminOrderHandler.List),
@@ -107,6 +117,18 @@ func New(applicationConfig config.Config, databasePool *pgxpool.Pool) *http.Serv
 	))
 	requestMux.Handle("PATCH /admin/products/{slug}/active", adminHandler.RequireSession(
 		http.HandlerFunc(adminProductHandler.UpdateActive),
+	))
+	requestMux.Handle("GET /admin/products/{slug}/images", adminHandler.RequireSession(
+		http.HandlerFunc(adminProductHandler.Images),
+	))
+	requestMux.Handle("POST /admin/products/{slug}/images", adminHandler.RequireSession(
+		http.HandlerFunc(adminProductHandler.UploadImage),
+	))
+	requestMux.Handle("PATCH /admin/products/{slug}/images/reorder", adminHandler.RequireSession(
+		http.HandlerFunc(adminProductHandler.ReorderImages),
+	))
+	requestMux.Handle("DELETE /admin/products/{slug}/images/{imageID}", adminHandler.RequireSession(
+		http.HandlerFunc(adminProductHandler.DeleteImage),
 	))
 
 	return &http.Server{
@@ -168,7 +190,7 @@ func allowOrigin(allowedOrigin string, next http.Handler) http.Handler {
 		}
 
 		if request.Method == http.MethodOptions {
-			responseWriter.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, OPTIONS")
+			responseWriter.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS")
 			responseWriter.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 			responseWriter.WriteHeader(http.StatusNoContent)
 			return

@@ -3,6 +3,7 @@ import type {
   AdminProduct,
   AdminProductDetailResponse,
   AdminProductDraft,
+  AdminProductImagesResponse,
   AdminProductPage,
   AdminProductQuery,
 } from '~/types/admin'
@@ -57,5 +58,51 @@ export const useAdminProducts = () => {
       body: { active },
     })
 
-  return { fetchProducts, fetchProduct, createProduct, updateProduct, updateProductActive }
+  const fetchProductImages = (slug: string): Promise<AdminProductImagesResponse> =>
+    $fetch<AdminProductImagesResponse>(ADMIN_API_ROUTES.productImages(slug), {
+      baseURL: apiBaseUrl,
+      credentials: 'include',
+    })
+
+  const uploadProductImage = (slug: string, imageFile: File): Promise<AdminProduct> => {
+    const formData = new FormData()
+    formData.append('image', imageFile)
+
+    return $fetch<AdminProductDetailResponse>(ADMIN_API_ROUTES.productImages(slug), {
+      baseURL: apiBaseUrl,
+      body: formData,
+      credentials: 'include',
+      method: 'POST',
+    }).then((response) => response.product)
+  }
+
+  const reorderProductImages = (
+    slug: string,
+    imageIds: readonly string[],
+  ): Promise<AdminProduct> =>
+    $fetch<AdminProductDetailResponse>(ADMIN_API_ROUTES.productImagesReorder(slug), {
+      baseURL: apiBaseUrl,
+      body: { imageIds },
+      credentials: 'include',
+      method: 'PATCH',
+    }).then((response) => response.product)
+
+  const deleteProductImage = (slug: string, imageId: string): Promise<AdminProduct> =>
+    $fetch<AdminProductDetailResponse>(ADMIN_API_ROUTES.productImage(slug, imageId), {
+      baseURL: apiBaseUrl,
+      credentials: 'include',
+      method: 'DELETE',
+    }).then((response) => response.product)
+
+  return {
+    fetchProducts,
+    fetchProduct,
+    fetchProductImages,
+    createProduct,
+    updateProduct,
+    updateProductActive,
+    uploadProductImage,
+    reorderProductImages,
+    deleteProductImage,
+  }
 }
