@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { IconNode } from 'lucide'
-import { ArrowRight, Heart, ShoppingBag } from 'lucide'
+import { ArrowRight, Heart, ShoppingBag, X } from 'lucide'
 import {
   DEFAULT_PRODUCT_SIZE,
   PRODUCT_COPY,
@@ -14,6 +14,7 @@ const WISHLIST_ICONS = {
   heart: Heart,
   shop: ArrowRight,
   bag: ShoppingBag,
+  remove: X,
 } as const satisfies Readonly<Record<string, IconNode>>
 
 const { data, error, status } = await useProductList()
@@ -24,6 +25,7 @@ const {
   items: wishlistItems,
   isEmpty: isWishlistEmpty,
   isLoaded: isWishlistLoaded,
+  remove: removeFromWishlist,
   updateProduct: updateWishlistProduct,
 } = useWishlist()
 
@@ -97,6 +99,10 @@ const addAllToBag = (): void => {
   if (addedAnyProduct) {
     openCart()
   }
+}
+
+const removeWishlistedProduct = (productSlug: string): void => {
+  removeFromWishlist(productSlug)
 }
 
 watch(
@@ -181,11 +187,28 @@ useSeoMeta({
       </div>
 
       <div v-else-if="showWishlistGrid" class="product-grid wishlist-grid">
-        <CatalogueProductCard
+        <div
           v-for="product in wishlistedProducts"
           :key="product.id"
-          :product="product"
-        />
+          class="wishlist-grid-item"
+        >
+          <CatalogueProductCard :product="product" />
+          <button
+            type="button"
+            class="wishlist-remove-button"
+            :aria-label="`Remove ${product.name} from wishlist`"
+            :title="`Remove ${product.name} from wishlist`"
+            @click="removeWishlistedProduct(product.slug)"
+          >
+            <StorefrontIcon
+              :icon-node="WISHLIST_ICONS.remove"
+              :size="14"
+              :stroke-width="1.7"
+              aria-hidden="true"
+            />
+            <span>Remove</span>
+          </button>
+        </div>
       </div>
 
       <div v-else-if="showUnavailableState" class="wishlist-empty">

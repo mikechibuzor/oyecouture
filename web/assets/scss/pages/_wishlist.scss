@@ -193,6 +193,32 @@ $wishlist-content-width: 92.5rem;
   gap: var(--space-2xl) 1.375rem;
 }
 
+.wishlist-grid-item {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.wishlist-remove-button {
+  display: inline-flex;
+  width: fit-content;
+  min-height: 2.25rem;
+  padding: 0;
+  align-items: center;
+  gap: 0.4375rem;
+  border: 0;
+  color: var(--color-taupe);
+  background: transparent;
+  font-size: 0.71875rem;
+  font-weight: var(--font-weight-medium);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+
+  &:hover,
+  &:focus-visible {
+    color: var(--color-ink);
+  }
+}
+
 @include breakpoint-min('tablet') {
   .wishlist-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));

@@ -69,24 +69,49 @@ const readStoredWishlistItems = (): WishlistItem[] => {
 export const useWishlist = () => {
   const items = useState<WishlistItem[]>('wishlist-items', () => [])
   const hasLoaded = useState<boolean>('wishlist-loaded', () => false)
+  const hasBoundClientSync = useState<boolean>('wishlist-client-sync-bound', () => false)
 
-  if (import.meta.client) {
-    onMounted(() => {
-      if (hasLoaded.value) {
-        return
+  const loadStoredItems = (): void => {
+    if (!import.meta.client || hasLoaded.value) {
+      return
+    }
+
+    const storedItems = readStoredWishlistItems()
+
+    if (items.value.length === 0 || storedItems.length > 0) {
+      items.value = storedItems
+    }
+
+    hasLoaded.value = true
+  }
+
+  const syncStoredItems = (): void => {
+    if (!import.meta.client) {
+      return
+    }
+
+    items.value = readStoredWishlistItems()
+    hasLoaded.value = true
+  }
+
+  if (import.meta.client && !hasBoundClientSync.value) {
+    hasBoundClientSync.value = true
+
+    watch(items, (nextItems) => {
+      window.localStorage.setItem(WISHLIST_STORAGE_KEY, JSON.stringify(nextItems))
+    }, { deep: true })
+
+    window.addEventListener('storage', (event) => {
+      if (event.key === WISHLIST_STORAGE_KEY) {
+        syncStoredItems()
       }
-
-      items.value = readStoredWishlistItems()
-      hasLoaded.value = true
     })
 
-    watch(
-      items,
-      (nextItems) => {
-        window.localStorage.setItem(WISHLIST_STORAGE_KEY, JSON.stringify(nextItems))
-      },
-      { deep: true },
-    )
+    window.addEventListener('focus', syncStoredItems)
+  }
+
+  if (import.meta.client) {
+    onMounted(loadStoredItems)
   }
 
   const slugs = computed(() => items.value.map((item) => item.slug))
