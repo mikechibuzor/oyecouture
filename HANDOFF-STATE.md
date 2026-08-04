@@ -7,7 +7,7 @@
 ## Current status
 - **Phase:** 1 (MVP). First 40% milestone **paid**; build authorized.
 - **Milestone:** Storefront complete · ghost admin phase 1 complete · **staging is deployed and live** · the client's real catalogue is in.
-- **Last worked by:** Claude · 2026-08-03.
+- **Last worked by:** Codex · 2026-08-04.
 - **Repo:** `/Users/chibuzoriwuagwu/Downloads/share/oyecouture` · `main` · **now has a GitHub remote: private repo `mikechibuzor/oyecouture`. Push to `origin`.**
 - **Staging:** **https://82-29-184-79.sslip.io** — real Let's Encrypt cert, all five containers healthy.
 - **Server access:** `ssh oyecouture` (config on the user's Mac, key `~/.ssh/oyecouture`). Deploy with `cd ~/oyecouture && git pull && ./deploy/deploy.sh`.
@@ -112,7 +112,7 @@ Verified live end to end: 401 without a cookie · identical error for unknown em
 
 **✅ 1.3 ORDER DETAIL + ACTIONS — DONE (`d701dfd`).** Added authenticated `GET /admin/orders/{orderNo}` and `PATCH /admin/orders/{orderNo}/status`, plus `/admin/orders/[orderNo]`. Detail shows line items, contact/address, delivery, measurements, totals, payment link copy, WhatsApp reply, and safe status actions. Admin actions deliberately cannot set `paid`; `paid` remains reserved for server-side payment verification/webhook. Allowed manual flow is confirmation/awaiting-payment cancellation plus fulfilment transitions after payment (`paid → in_progress → shipped → delivered`, with cancellation/refund from paid where useful).
 
-**▶ 2.1 PRODUCTS + IMAGES — next up.** Build product create/edit/read admin APIs and UI, including active state, section/filter fields, price in kobo, has-sizes behavior, and image management. Important: `product_images` is currently DB-backed but the storefront still has local fallback maps; the ghost-admin story needs images to flow DB/R2 → API → frontend without deploys. Avoid real R2 uploads until credentials are supplied; design the interface and persistence boundary so it can accept uploaded image metadata later.
+**▶ 2.1 PRODUCTS + IMAGES — in progress.** Codex started this on 4 Aug with the first safe slice: authenticated admin product list + section/search/availability filters + archive/restore (`active`) mutation. Public storefront reads remain active-only. Still left in this phase: create/edit product fields, sort-order editing, `has_sizes` editing, image upload/reorder/delete, and home/content settings. Important: `product_images` is DB-backed and now reaches the frontend through Cloudinary URLs; the next image-management slice should persist uploaded image metadata rather than hardcoded frontend fallbacks.
 
 **Then 2.2 editable home/content settings:** hero headline both lines, sub-copy, CTA label, sliding gallery upload/reorder, announcement bar, category tiles, delivery fees, WhatsApp number.
 

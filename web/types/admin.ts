@@ -1,4 +1,5 @@
 import type { MeasurementsRequest, OrderItem, OrderKind } from '~/types/order'
+import type { Product, ProductSection } from '~/types/product'
 
 // The order lifecycle, mirroring the database CHECK constraint.
 export enum OrderStatus {
@@ -134,6 +135,27 @@ export interface AdminOrderQuery {
   readonly q?: string
   readonly from?: string
   readonly to?: string
+  readonly limit?: number
+  readonly offset?: number
+}
+
+export interface AdminProduct extends Product {
+  readonly active: boolean
+}
+
+export interface AdminProductPage {
+  readonly products: readonly AdminProduct[]
+  readonly total: number
+  readonly limit: number
+  readonly offset: number
+}
+
+export type AdminProductActiveFilter = '' | 'true' | 'false'
+
+export interface AdminProductQuery {
+  readonly section?: ProductSection | ''
+  readonly active?: AdminProductActiveFilter
+  readonly q?: string
   readonly limit?: number
   readonly offset?: number
 }

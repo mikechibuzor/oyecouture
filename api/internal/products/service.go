@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"regexp"
+	"strconv"
 	"strings"
 	"unicode/utf8"
 )
@@ -11,6 +12,7 @@ import (
 var (
 	ErrInvalidProductSection = errors.New("invalid product section")
 	ErrInvalidProductSlug    = errors.New("invalid product slug")
+	ErrInvalidActiveFilter   = errors.New("invalid product active filter")
 	ErrProductNotFound       = errors.New("product not found")
 	ErrSearchQueryTooLong    = errors.New("search query is too long")
 )
@@ -30,9 +32,29 @@ type Service struct {
 	r2PublicBase      string
 }
 
+// AdminRepository is the persistence contract for owner-facing product management.
+type AdminRepository interface {
+	ListAdmin(context.Context, AdminListFilter) (AdminProductPage, error)
+	UpdateActive(context.Context, string, bool) error
+}
+
+// AdminService validates owner-facing catalogue management inputs.
+type AdminService struct {
+	productRepository AdminRepository
+	r2PublicBase      string
+}
+
 // NewService creates a product service with a normalized public image base URL.
 func NewService(productRepository Repository, r2PublicBase string) *Service {
 	return &Service{
+		productRepository: productRepository,
+		r2PublicBase:      strings.TrimRight(strings.TrimSpace(r2PublicBase), "/"),
+	}
+}
+
+// NewAdminService creates the owner-facing catalogue service.
+func NewAdminService(productRepository AdminRepository, r2PublicBase string) *AdminService {
+	return &AdminService{
 		productRepository: productRepository,
 		r2PublicBase:      strings.TrimRight(strings.TrimSpace(r2PublicBase), "/"),
 	}
@@ -87,6 +109,55 @@ func (service *Service) GetBySlug(
 	return products[0], nil
 }
 
+// List validates admin catalogue filters and returns products including archived rows.
+func (service *AdminService) List(
+	requestContext context.Context,
+	input AdminListInput,
+) (AdminProductPage, error) {
+	productSection, err := parseProductSection(input.Section)
+	if err != nil {
+		return AdminProductPage{}, err
+	}
+
+	activeFilter, err := parseActiveFilter(input.Active)
+	if err != nil {
+		return AdminProductPage{}, err
+	}
+
+	searchQuery := strings.TrimSpace(input.Query)
+	if utf8.RuneCountInString(searchQuery) > MaximumSearchLength {
+		return AdminProductPage{}, ErrSearchQueryTooLong
+	}
+
+	page, err := service.productRepository.ListAdmin(requestContext, AdminListFilter{
+		Section: productSection,
+		Query:   searchQuery,
+		Active:  activeFilter,
+		Limit:   clampAdminProductLimit(input.Limit),
+		Offset:  max(input.Offset, 0),
+	})
+	if err != nil {
+		return AdminProductPage{}, err
+	}
+
+	service.attachAdminPublicImageURLs(page.Products)
+	return page, nil
+}
+
+// UpdateActive changes one product's public availability.
+func (service *AdminService) UpdateActive(
+	requestContext context.Context,
+	productSlug string,
+	update AdminActiveUpdate,
+) error {
+	normalizedSlug := strings.TrimSpace(productSlug)
+	if !productSlugPattern.MatchString(normalizedSlug) {
+		return ErrInvalidProductSlug
+	}
+
+	return service.productRepository.UpdateActive(requestContext, normalizedSlug, update.Active)
+}
+
 // parseProductSection converts an optional section value into a validated enum.
 func parseProductSection(sectionValue string) (Section, error) {
 	normalizedSection := Section(strings.TrimSpace(sectionValue))
@@ -100,8 +171,47 @@ func parseProductSection(sectionValue string) (Section, error) {
 	return normalizedSection, nil
 }
 
+// parseActiveFilter reads optional active=true|false admin filters.
+func parseActiveFilter(activeValue string) (*bool, error) {
+	normalizedActive := strings.TrimSpace(activeValue)
+	if normalizedActive == "" {
+		return nil, nil
+	}
+
+	active, err := strconv.ParseBool(normalizedActive)
+	if err != nil {
+		return nil, ErrInvalidActiveFilter
+	}
+
+	return &active, nil
+}
+
+// clampAdminProductLimit bounds owner catalogue reads.
+func clampAdminProductLimit(limit int) int {
+	if limit <= 0 {
+		return defaultAdminProductLimit
+	}
+	if limit > maximumAdminProductLimit {
+		return maximumAdminProductLimit
+	}
+
+	return limit
+}
+
 // attachPublicImageURLs enriches every product image without exposing its storage key.
 func (service *Service) attachPublicImageURLs(products []Product) {
+	for productIndex := range products {
+		for imageIndex := range products[productIndex].Images {
+			products[productIndex].Images[imageIndex].URL = buildPublicImageURL(
+				service.r2PublicBase,
+				products[productIndex].Images[imageIndex].R2Key,
+			)
+		}
+	}
+}
+
+// attachAdminPublicImageURLs enriches admin products without exposing storage keys.
+func (service *AdminService) attachAdminPublicImageURLs(products []AdminProduct) {
 	for productIndex := range products {
 		for imageIndex := range products[productIndex].Images {
 			products[productIndex].Images[imageIndex].URL = buildPublicImageURL(

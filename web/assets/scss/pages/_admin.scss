@@ -893,6 +893,53 @@
   color: var(--color-taupe);
 }
 
+.admin-product {
+  display: flex;
+  align-items: center;
+  min-width: 17rem;
+  color: inherit;
+  gap: var(--space-xs);
+
+  img,
+  .admin-product-placeholder {
+    width: 3rem;
+    height: 3.75rem;
+    flex-shrink: 0;
+    border: 1px solid var(--color-border-warm);
+    border-radius: 0.375rem;
+    background-color: var(--color-cream-2);
+  }
+
+  img {
+    object-fit: cover;
+  }
+}
+
+.admin-product-placeholder {
+  display: grid;
+  color: var(--color-taupe);
+  font-size: var(--text-sm);
+  place-items: center;
+}
+
+.admin-product-detail {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+
+  strong {
+    overflow: hidden;
+    color: var(--color-ink);
+    font-weight: var(--font-weight-medium);
+    text-overflow: ellipsis;
+  }
+
+  small {
+    color: var(--color-taupe);
+    font-size: var(--text-xs);
+  }
+}
+
 // Order detail
 
 .admin-back-link {

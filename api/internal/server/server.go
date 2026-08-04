@@ -78,6 +78,9 @@ func New(applicationConfig config.Config, databasePool *pgxpool.Pool) *http.Serv
 	))
 
 	adminOrderHandler := orders.NewAdminHandler(orders.NewAdminService(orderRepository))
+	adminProductHandler := products.NewAdminHandler(
+		products.NewAdminService(productRepository, applicationConfig.R2PublicBase),
+	)
 	requestMux.Handle("GET /admin/orders", adminHandler.RequireSession(
 		http.HandlerFunc(adminOrderHandler.List),
 	))
@@ -89,6 +92,12 @@ func New(applicationConfig config.Config, databasePool *pgxpool.Pool) *http.Serv
 	))
 	requestMux.Handle("PATCH /admin/orders/{orderNo}/status", adminHandler.RequireSession(
 		http.HandlerFunc(adminOrderHandler.UpdateStatus),
+	))
+	requestMux.Handle("GET /admin/products", adminHandler.RequireSession(
+		http.HandlerFunc(adminProductHandler.List),
+	))
+	requestMux.Handle("PATCH /admin/products/{slug}/active", adminHandler.RequireSession(
+		http.HandlerFunc(adminProductHandler.UpdateActive),
 	))
 
 	return &http.Server{

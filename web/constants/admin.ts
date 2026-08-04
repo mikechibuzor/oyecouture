@@ -1,16 +1,20 @@
 import { OrderKind } from '~/types/order'
 import type {
+  AdminProductActiveFilter,
   AdminFilterOption,
   AdminMetricCard,
   AdminNavGroup,
   AdminStatusAction,
 } from '~/types/admin'
 import { AdminFilterType, MetricsPeriod, OrderStatus } from '~/types/admin'
+import { ProductSection } from '~/types/product'
+import type { SelectOption } from '~/types/ui'
 
 export const ADMIN_ROUTES = {
   login: '/admin/login',
   orders: '/admin',
   orderDetail: (orderNo: string) => `/admin/orders/${encodeURIComponent(orderNo)}`,
+  products: '/admin/products',
 } as const
 
 export const ADMIN_API_ROUTES = {
@@ -21,6 +25,8 @@ export const ADMIN_API_ROUTES = {
   orderMetrics: '/admin/orders/metrics',
   orderDetail: (orderNo: string) => `/admin/orders/${encodeURIComponent(orderNo)}`,
   orderStatus: (orderNo: string) => `/admin/orders/${encodeURIComponent(orderNo)}/status`,
+  products: '/admin/products',
+  productActive: (slug: string) => `/admin/products/${encodeURIComponent(slug)}/active`,
 } as const
 
 export const ADMIN_COPY = {
@@ -38,18 +44,33 @@ export const ADMIN_COPY = {
   loginUnreachable: 'Could not reach the server. Check your connection.',
   ordersHeading: 'Orders',
   ordersSubheading: 'Manage orders',
+  productsHeading: 'Products',
+  productsSubheading: 'Manage catalogue availability',
   searchLabel: 'Search orders',
   searchPlaceholder: 'Order number, name, email or phone',
+  productSearchLabel: 'Search products',
+  productSearchPlaceholder: 'Name, slug, category or description',
+  productSectionLabel: 'Section',
+  productActiveLabel: 'Availability',
   statusLabel: 'Status',
   kindLabel: 'Type',
   anyStatus: 'All statuses',
   anyKind: 'All types',
   loading: 'Loading orders…',
   loadFailed: 'The orders could not be loaded.',
+  productLoading: 'Loading products…',
+  productLoadFailed: 'The products could not be loaded.',
   retry: 'Try again',
   empty: 'No orders yet.',
   emptyFiltered: 'No orders match these filters.',
+  productEmpty: 'No products yet.',
+  productEmptyFiltered: 'No products match these filters.',
+  productUpdateFailed: 'The product could not be updated.',
   clearFilters: 'Clear filters',
+  archiveProduct: 'Archive',
+  restoreProduct: 'Restore',
+  archivingProduct: 'Archiving…',
+  restoringProduct: 'Restoring…',
   previous: 'Previous',
   next: 'Next',
   pendingBadge: 'Soon',
@@ -105,6 +126,9 @@ export const METRICS_PERIOD_OPTIONS: readonly MetricsPeriod[] = [
 // Ten rows a page, matching the house admin pattern.
 export const ADMIN_ORDERS_PAGE_SIZE = 10
 
+// Product rows are denser than orders, so the catalogue desk can show more at once.
+export const ADMIN_PRODUCTS_PAGE_SIZE = 25
+
 // Typing in the search box should not fire a request per keystroke.
 export const ADMIN_SEARCH_DEBOUNCE_MS = 250
 
@@ -126,15 +150,15 @@ export const ADMIN_METRIC_CARDS: readonly AdminMetricCard[] = [
   { id: 'revenueKobo', label: 'Revenue', statusFilter: null, isMoney: true },
 ]
 
-// The shape of the finished admin. Only Orders is built; the rest are marked
-// pending rather than linking nowhere.
+// The shape of the finished admin. Unbuilt sections are marked pending rather
+// than linking nowhere.
 export const ADMIN_NAVIGATION: readonly AdminNavGroup[] = [
   {
     id: 'main',
     label: 'Main',
     items: [
       { id: 'orders', label: 'Orders', route: ADMIN_ROUTES.orders },
-      { id: 'products', label: 'Products', isPending: true },
+      { id: 'products', label: 'Products', route: ADMIN_ROUTES.products },
       { id: 'home-content', label: 'Home content', isPending: true },
       { id: 'delivery', label: 'Delivery', isPending: true },
     ],
@@ -178,6 +202,33 @@ export const ORDER_STATUS_OPTIONS: readonly OrderStatus[] = [
 export const ORDER_KIND_OPTIONS: readonly OrderKind[] = [
   OrderKind.Bespoke,
   OrderKind.ReadyToWear,
+]
+
+export const PRODUCT_SECTION_LABELS: Readonly<Record<ProductSection, string>> = {
+  [ProductSection.Suits]: 'Suits',
+  [ProductSection.Trad]: 'Trad attires',
+  [ProductSection.CasualsMen]: 'Casuals · Men',
+  [ProductSection.CasualsWomen]: 'Casuals · Women',
+}
+
+export const PRODUCT_SECTION_OPTIONS: readonly SelectOption<ProductSection | ''>[] = [
+  { value: '', label: 'All sections' },
+  ...Object.values(ProductSection).map((section) => ({
+    value: section,
+    label: PRODUCT_SECTION_LABELS[section],
+  })),
+]
+
+export const PRODUCT_ACTIVE_LABELS: Readonly<Record<AdminProductActiveFilter, string>> = {
+  '': 'All availability',
+  'true': 'Visible',
+  'false': 'Archived',
+}
+
+export const PRODUCT_ACTIVE_OPTIONS: readonly SelectOption<AdminProductActiveFilter>[] = [
+  { value: '', label: PRODUCT_ACTIVE_LABELS[''] },
+  { value: 'true', label: PRODUCT_ACTIVE_LABELS['true'] },
+  { value: 'false', label: PRODUCT_ACTIVE_LABELS['false'] },
 ]
 
 export const ADMIN_ORDER_FILTER_OPTIONS: readonly AdminFilterOption[] = [

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"strconv"
 )
 
 // ErrorCode identifies a stable machine-readable product API error.
@@ -14,8 +15,10 @@ type ErrorCode string
 const (
 	ErrorCodeInvalidProductSection ErrorCode = "invalid_product_section"
 	ErrorCodeInvalidProductSlug    ErrorCode = "invalid_product_slug"
+	ErrorCodeInvalidActiveFilter   ErrorCode = "invalid_active_filter"
 	ErrorCodeProductNotFound       ErrorCode = "product_not_found"
 	ErrorCodeSearchQueryTooLong    ErrorCode = "search_query_too_long"
+	ErrorCodeInvalidBody           ErrorCode = "invalid_body"
 	ErrorCodeInternal              ErrorCode = "internal_error"
 )
 
@@ -28,6 +31,17 @@ type ProductReader interface {
 // Handler translates HTTP requests into product service calls.
 type Handler struct {
 	productReader ProductReader
+}
+
+// AdminProductManager defines the owner-facing product operations exposed over HTTP.
+type AdminProductManager interface {
+	List(context.Context, AdminListInput) (AdminProductPage, error)
+	UpdateActive(context.Context, string, AdminActiveUpdate) error
+}
+
+// AdminHandler translates authenticated admin product requests.
+type AdminHandler struct {
+	productManager AdminProductManager
 }
 
 type listResponse struct {
@@ -51,6 +65,11 @@ type errorResponse struct {
 // NewHandler creates a product HTTP handler around the service contract.
 func NewHandler(productReader ProductReader) *Handler {
 	return &Handler{productReader: productReader}
+}
+
+// NewAdminHandler creates an admin product HTTP handler.
+func NewAdminHandler(productManager AdminProductManager) *AdminHandler {
+	return &AdminHandler{productManager: productManager}
 }
 
 // List handles product collection requests with optional section and search filters.
@@ -94,8 +113,74 @@ func (handler *Handler) GetBySlug(
 	writeJSON(responseWriter, http.StatusOK, detailResponse{Product: product})
 }
 
+// List returns owner-facing products, including inactive products.
+func (handler *AdminHandler) List(responseWriter http.ResponseWriter, request *http.Request) {
+	queryParameters := request.URL.Query()
+
+	page, err := handler.productManager.List(request.Context(), AdminListInput{
+		Section: queryParameters.Get("section"),
+		Query:   queryParameters.Get("q"),
+		Active:  queryParameters.Get("active"),
+		Limit:   positiveInt(queryParameters.Get("limit")),
+		Offset:  positiveInt(queryParameters.Get("offset")),
+	})
+	if err != nil {
+		handler.writeServiceError(responseWriter, err)
+		return
+	}
+	if page.Products == nil {
+		page.Products = make([]AdminProduct, 0)
+	}
+
+	writeJSON(responseWriter, http.StatusOK, page)
+}
+
+// UpdateActive archives or restores one product from the public catalogue.
+func (handler *AdminHandler) UpdateActive(
+	responseWriter http.ResponseWriter,
+	request *http.Request,
+) {
+	var update AdminActiveUpdate
+
+	decoder := json.NewDecoder(http.MaxBytesReader(responseWriter, request.Body, 1<<20))
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(&update); err != nil {
+		writeError(responseWriter, http.StatusBadRequest, ErrorCodeInvalidBody,
+			"the product update could not be read")
+		return
+	}
+
+	err := handler.productManager.UpdateActive(
+		request.Context(),
+		request.PathValue("slug"),
+		update,
+	)
+	if err != nil {
+		handler.writeServiceError(responseWriter, err)
+		return
+	}
+
+	responseWriter.WriteHeader(http.StatusNoContent)
+}
+
 // writeServiceError maps domain errors to stable public status codes and messages.
 func (handler *Handler) writeServiceError(
+	responseWriter http.ResponseWriter,
+	serviceError error,
+) {
+	writeServiceError(responseWriter, serviceError)
+}
+
+// writeServiceError maps domain errors to stable admin status codes and messages.
+func (handler *AdminHandler) writeServiceError(
+	responseWriter http.ResponseWriter,
+	serviceError error,
+) {
+	writeServiceError(responseWriter, serviceError)
+}
+
+// writeServiceError maps domain errors to stable HTTP status codes and messages.
+func writeServiceError(
 	responseWriter http.ResponseWriter,
 	serviceError error,
 ) {
@@ -114,6 +199,13 @@ func (handler *Handler) writeServiceError(
 			http.StatusBadRequest,
 			ErrorCodeInvalidProductSlug,
 			"product slug is invalid",
+		)
+	case errors.Is(serviceError, ErrInvalidActiveFilter):
+		writeError(
+			responseWriter,
+			http.StatusBadRequest,
+			ErrorCodeInvalidActiveFilter,
+			"active must be true or false",
 		)
 	case errors.Is(serviceError, ErrSearchQueryTooLong):
 		writeError(
@@ -163,4 +255,14 @@ func writeJSON(responseWriter http.ResponseWriter, statusCode int, payload any) 
 	if err := json.NewEncoder(responseWriter).Encode(payload); err != nil {
 		log.Printf("encode product response: %v", err)
 	}
+}
+
+// positiveInt reads a paging parameter and leaves invalid values for service defaults.
+func positiveInt(value string) int {
+	parsed, err := strconv.Atoi(value)
+	if err != nil || parsed < 0 {
+		return 0
+	}
+
+	return parsed
 }
