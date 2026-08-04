@@ -11,6 +11,7 @@
 - **Repo:** `/Users/chibuzoriwuagwu/Downloads/share/oyecouture` · `main` · **now has a GitHub remote: private repo `mikechibuzor/oyecouture`. Push to `origin`.**
 - **Staging:** **https://82-29-184-79.sslip.io** — real Let's Encrypt cert, all five containers healthy.
 - **Latest deployed commit:** `a773f80` (`feat(web): polish admin product workflows`) — pushed to `origin/main` and deployed on 2026-08-04.
+- **Uncommitted local work:** Contact page now posts to public `POST /contact`, which validates feedback and sends it through SendByte to `OWNER_NOTIFY_EMAIL` (default `iwuagwuchibuzor@gmail.com`). Dev CORS now allows `127.0.0.1`/`localhost` origins while production stays strict. Verified locally; not yet committed or deployed.
 - **Server access:** `ssh oyecouture` (config on the user's Mac, key `~/.ssh/oyecouture`). Deploy with `cd ~/oyecouture && git pull && ./deploy/deploy.sh`.
 - **Admin:** https://82-29-184-79.sslip.io/admin — the user seeded their own account on 3 Aug; **neither agent knows the password, and that is correct.** Re-seed or reset with `docker compose -f compose.prod.yaml --env-file .env.production exec -it api /admin`.
 

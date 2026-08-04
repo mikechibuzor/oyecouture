@@ -50,7 +50,7 @@ const VISION_ICON: IconNode = Eye
         </div>
 
         <div class="about-image-panel" aria-hidden="true">
-          <span>Founder / atelier portrait</span>
+          <span>Founder / Oyecouture portrait</span>
         </div>
       </div>
     </section>

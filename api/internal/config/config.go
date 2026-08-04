@@ -8,6 +8,7 @@ import (
 const (
 	defaultAPIAddress  = ":8080"
 	defaultDatabaseURL = "postgres://oye:oye@localhost:5432/oyecouture?sslmode=disable"
+	defaultOwnerEmail  = "iwuagwuchibuzor@gmail.com"
 	defaultWebBaseURL  = "http://localhost:3000"
 	// Origin-relative so product image URLs work in any environment without
 	// knowing the host. Point R2_PUBLIC_BASE at the bucket URL to serve from R2.
@@ -24,6 +25,7 @@ type Config struct {
 	DatabaseURL         string
 	EmailFrom           string
 	EmailProvider       string
+	OwnerNotifyEmail    string
 	PaymentProvider     string
 	PaystackSecretKey   string
 	R2PublicBase        string
@@ -43,6 +45,7 @@ func Load() Config {
 		DatabaseURL:         valueOrDefault(os.Getenv("DATABASE_URL"), defaultDatabaseURL),
 		EmailFrom:           os.Getenv("EMAIL_FROM"),
 		EmailProvider:       valueOrDefault(os.Getenv("EMAIL_PROVIDER"), "sendbyte"),
+		OwnerNotifyEmail:    valueOrDefault(os.Getenv("OWNER_NOTIFY_EMAIL"), defaultOwnerEmail),
 		PaymentProvider:     valueOrDefault(os.Getenv("PAYMENT_PROVIDER"), "paystack"),
 		PaystackSecretKey:   os.Getenv("PAYSTACK_SECRET_KEY"),
 		R2PublicBase:        valueOrDefault(os.Getenv("R2_PUBLIC_BASE"), defaultR2PublicBase),

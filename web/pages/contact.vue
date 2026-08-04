@@ -35,6 +35,8 @@ const senderEmail = ref('')
 const feedbackMessage = ref('')
 const feedbackSent = ref(false)
 const feedbackError = ref('')
+const isFeedbackSubmitting = ref(false)
+const { submitContactFeedback } = useContactFeedback()
 
 const configuredWhatsAppNumber = computed(() =>
   String(runtimeConfig.public.whatsappNumber ?? '').replace(/\D/g, ''),
@@ -53,7 +55,7 @@ const whatsappHref = computed(() =>
 const CONTACT_INFO: readonly ContactInfoItem[] = [
   { label: 'Email', value: 'hello@oyecouture.com', href: 'mailto:hello@oyecouture.com' },
   { label: 'Phone & WhatsApp', value: displayedPhoneNumber.value, href: whatsappHref.value },
-  { label: 'The Atelier', value: '14 Legacy Avenue\nVictoria Island, Lagos' },
+  { label: 'Oyecouture', value: '14 Legacy Avenue\nVictoria Island, Lagos' },
   { label: 'Studio Hours', value: 'Mon — Sat\n10am — 7pm WAT' },
 ]
 
@@ -69,7 +71,7 @@ const CONTACT_SOCIALS: readonly ContactSocialLink[] = [
     icon: MessageCircle,
   },
   { name: 'Email', handle: 'hello@oyecouture.com', href: 'mailto:hello@oyecouture.com', icon: Mail },
-  { name: 'Atelier', handle: 'Victoria Island, Lagos', href: StorefrontRoute.BookFitting, icon: MapPin },
+  { name: 'Oyecouture', handle: 'Victoria Island, Lagos', href: StorefrontRoute.BookFitting, icon: MapPin },
 ]
 
 const stars = computed(() =>
@@ -80,14 +82,31 @@ const stars = computed(() =>
   })),
 )
 
-const submitFeedback = (): void => {
+const submitFeedback = async (): Promise<void> => {
   if (!senderName.value.trim() || !senderEmail.value.trim() || !feedbackMessage.value.trim()) {
     feedbackError.value = 'Please add your name, email and message.'
     return
   }
 
   feedbackError.value = ''
-  feedbackSent.value = true
+  isFeedbackSubmitting.value = true
+
+  try {
+    await submitContactFeedback({
+      name: senderName.value,
+      email: senderEmail.value,
+      topic: selectedTopic.value,
+      rating: selectedRating.value,
+      message: feedbackMessage.value,
+    })
+    feedbackSent.value = true
+  }
+  catch {
+    feedbackError.value = 'We could not send this yet. Please try again.'
+  }
+  finally {
+    isFeedbackSubmitting.value = false
+  }
 }
 
 const resetFeedback = (): void => {
@@ -103,7 +122,7 @@ const resetFeedback = (): void => {
 useSeoMeta({
   title: 'Contact — Oyecouture Bespoke',
   description:
-    "Questions, feedback, a fitting to book, or simply a word about how we're doing — reach the atelier directly.",
+    "Questions, feedback, a fitting to book, or simply a word about how we're doing — reach Oyecouture directly.",
 })
 </script>
 
@@ -118,7 +137,7 @@ useSeoMeta({
         </h1>
         <p>
           Questions, feedback, a fitting to book, or simply a word about how we're doing —
-          reach the atelier directly, or find us in every space we keep.
+          reach Oyecouture directly, or find us in every space we keep.
         </p>
       </div>
     </header>
@@ -158,7 +177,7 @@ useSeoMeta({
             </span>
             <h3>Thank you, {{ senderName }}</h3>
             <p>
-              Your message has reached the atelier. We read every note personally
+              Your message has reached Oyecouture. We read every note personally
               and will reply within one business day.
             </p>
             <button type="button" @click="resetFeedback">Send another</button>
@@ -216,7 +235,9 @@ useSeoMeta({
 
             <p v-if="feedbackError" class="contact-form-error">{{ feedbackError }}</p>
 
-            <button class="contact-submit-button" type="submit">Send feedback</button>
+            <button class="contact-submit-button" type="submit" :disabled="isFeedbackSubmitting">
+              {{ isFeedbackSubmitting ? 'Sending...' : 'Send feedback' }}
+            </button>
             <p class="contact-form-note">We'll never share your details. Read by a human, always.</p>
           </div>
         </form>
@@ -262,7 +283,7 @@ useSeoMeta({
     <section class="contact-atelier-section">
       <div>
         <p class="contact-section-label">Prefer to speak in person</p>
-        <h2>Visit the atelier</h2>
+        <h2>Visit Oyecouture</h2>
         <p>
           Book a private consultation, feel the cloth, and let us take your measure.
           Be exclusive.

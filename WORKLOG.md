@@ -5,6 +5,13 @@ One short entry per work session or meaningful chunk. Format:
 
 ---
 
+## 2026-08-04T21:35:00+01:00 · Codex · Contact form wired to real email endpoint
+- **Did:** Added public `POST /contact` in the Go API, with server-side validation for name/email/topic/rating/message and SendByte-backed delivery to `OWNER_NOTIFY_EMAIL` (defaulting to `iwuagwuchibuzor@gmail.com` for now). Wired the Contact page through a lean Nuxt composable instead of keeping submit logic in the template. Follow-up fixed dev CORS so `http://127.0.0.1:3010` can call `:8080` while production remains locked to the configured site origin.
+- **State:** Local API restarted on `:8080`; storefront dev server remains on `http://127.0.0.1:3010`. Smoke-tested `/contact` route with an invalid payload and got the expected `invalid_submission` response without sending email. Browser-origin preflight now returns `Access-Control-Allow-Origin: http://127.0.0.1:3010`; a valid contact POST returned `201`, though one prior SendByte sandbox call timed out before succeeding on retry.
+- **Verification:** `GOCACHE=/private/tmp/oyecouture-go-cache go test ./...`, `PATH="$HOME/.nvm/versions/node/v22.12.0/bin:$PATH" npm run typecheck`, and `PATH="$HOME/.nvm/versions/node/v22.12.0/bin:$PATH" NUXT_IGNORE_LOCK=1 npm run build` pass. The shell's default Node `20.12.1` is too old for Nuxt 3.21's parser stack; use Node 22 for frontend checks.
+- **Next:** Commit/push/deploy this contact endpoint when the user approves; optionally send one real contact-form test email to confirm SendByte delivery into the owner's inbox.
+- **Blockers:** Local/prod email sending still depends on valid `EMAIL_PROVIDER`, `SENDBYTE_API_KEY`, and `EMAIL_FROM`; production already has live email config per the current baton.
+
 ## 2026-08-03T02:10:00+01:00 · Claude · Handing the baton to Codex
 - **Did:** SendByte **production** key installed on the server (`sk_live_`); the local `.env` deliberately keeps the sandbox key so local runs cannot send real mail. Verified the live key is nowhere in git. User seeded their own admin account on staging and confirmed they can sign in.
 - **State:** Staging is fully working at **https://82-29-184-79.sslip.io** — 30 active products (22 real + 8 placeholder suits), 91 images all verified loading from Cloudinary, ghost admin reachable at `/admin`. **Sandbox for money (`sk_test_` Paystack), LIVE for email (`sk_live_` SendByte).** 5 test orders in the staging DB to purge before go-live.

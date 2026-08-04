@@ -4,12 +4,14 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/uzor-co/oyecouture/api/internal/admin"
 	"github.com/uzor-co/oyecouture/api/internal/config"
+	"github.com/uzor-co/oyecouture/api/internal/contact"
 	"github.com/uzor-co/oyecouture/api/internal/delivery"
 	emailpkg "github.com/uzor-co/oyecouture/api/internal/email"
 	"github.com/uzor-co/oyecouture/api/internal/email/sendbyte"
@@ -49,6 +51,11 @@ func New(applicationConfig config.Config, databasePool *pgxpool.Pool) *http.Serv
 	requestMux.Handle("GET /healthz", health.NewHandler(databasePool))
 	requestMux.HandleFunc("GET /products", productHandler.List)
 	requestMux.HandleFunc("GET /products/{slug}", productHandler.GetBySlug)
+	requestMux.HandleFunc("POST /contact", contact.NewHandler(contact.NewService(
+		emailProvider(applicationConfig),
+		applicationConfig.EmailFrom,
+		applicationConfig.OwnerNotifyEmail,
+	)).Submit)
 	requestMux.HandleFunc("POST /orders", orderHandler.Create)
 	requestMux.HandleFunc("GET /delivery-zones", delivery.NewHandler(deliveryRepository).List)
 	requestMux.HandleFunc("GET /payments/{payToken}", paymentHandler.Summary)
@@ -133,7 +140,7 @@ func New(applicationConfig config.Config, databasePool *pgxpool.Pool) *http.Serv
 
 	return &http.Server{
 		Addr:              applicationConfig.APIAddress,
-		Handler:           allowOrigin(applicationConfig.WebBaseURL, requestMux),
+		Handler:           allowOrigin(applicationConfig.WebBaseURL, applicationConfig.AppEnv, requestMux),
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 }
@@ -177,11 +184,12 @@ func emailProvider(applicationConfig config.Config) emailpkg.Provider {
 }
 
 // allowOrigin permits the configured storefront origin and handles CORS preflight requests.
-func allowOrigin(allowedOrigin string, next http.Handler) http.Handler {
+func allowOrigin(allowedOrigin string, appEnv string, next http.Handler) http.Handler {
 	// Apply CORS headers consistently before delegating actual requests.
 	return http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
-		if request.Header.Get("Origin") == allowedOrigin {
-			responseWriter.Header().Set("Access-Control-Allow-Origin", allowedOrigin)
+		requestOrigin := request.Header.Get("Origin")
+		if isAllowedOrigin(requestOrigin, allowedOrigin, appEnv) {
+			responseWriter.Header().Set("Access-Control-Allow-Origin", requestOrigin)
 			responseWriter.Header().Set("Vary", "Origin")
 			// The admin session cookie only travels on credentialed requests.
 			// Development runs the storefront and API on different ports; in
@@ -198,4 +206,24 @@ func allowOrigin(allowedOrigin string, next http.Handler) http.Handler {
 
 		next.ServeHTTP(responseWriter, request)
 	})
+}
+
+func isAllowedOrigin(requestOrigin string, allowedOrigin string, appEnv string) bool {
+	if requestOrigin == "" {
+		return false
+	}
+	if requestOrigin == allowedOrigin {
+		return true
+	}
+	if appEnv == "production" {
+		return false
+	}
+
+	parsedOrigin, err := url.Parse(requestOrigin)
+	if err != nil {
+		return false
+	}
+
+	return parsedOrigin.Scheme == "http" &&
+		(parsedOrigin.Hostname() == "localhost" || parsedOrigin.Hostname() == "127.0.0.1")
 }
