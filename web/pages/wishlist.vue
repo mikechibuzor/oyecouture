@@ -21,9 +21,10 @@ const { add: addToCart, open: openCart } = useCart()
 const {
   clear: clearWishlist,
   count: wishlistCount,
+  items: wishlistItems,
   isEmpty: isWishlistEmpty,
   isLoaded: isWishlistLoaded,
-  slugs: wishlistSlugs,
+  updateProduct: updateWishlistProduct,
 } = useWishlist()
 
 const productsBySlug = computed(() =>
@@ -31,10 +32,13 @@ const productsBySlug = computed(() =>
 )
 
 const wishlistedProducts = computed<Product[]>(() =>
-  wishlistSlugs.value
-    .map((productSlug) => productsBySlug.value.get(productSlug))
+  wishlistItems.value
+    .map((wishlistItem) =>
+      productsBySlug.value.get(wishlistItem.slug) ?? wishlistItem.product,
+    )
     .filter((product): product is Product => Boolean(product)),
 )
+const hasWishlistedProducts = computed(() => wishlistedProducts.value.length > 0)
 
 const headerSubcopy = computed(() => {
   if (wishlistCount.value === 0) {
@@ -52,6 +56,7 @@ const needsSavedProductData = computed(() =>
 )
 const isLoading = computed(() =>
   needsSavedProductData.value
+  && !hasWishlistedProducts.value
   && (
     status.value === AsyncDataStatus.Idle
     || status.value === AsyncDataStatus.Pending
@@ -61,7 +66,9 @@ const isWishlistBusy = computed(() =>
   isWaitingForStoredWishlist.value || isLoading.value,
 )
 const hasError = computed(() =>
-  needsSavedProductData.value && status.value === AsyncDataStatus.Error,
+  needsSavedProductData.value
+  && !hasWishlistedProducts.value
+  && status.value === AsyncDataStatus.Error,
 )
 const errorMessage = computed(() =>
   getProductErrorMessage(error.value, PRODUCT_COPY.catalogue.error),
@@ -70,13 +77,13 @@ const showEmptyState = computed(() =>
   !isWaitingForStoredWishlist.value && isWishlistEmpty.value,
 )
 const showWishlistGrid = computed(() =>
-  !isLoading.value && !hasError.value && wishlistedProducts.value.length > 0,
+  !isLoading.value && hasWishlistedProducts.value,
 )
 const showUnavailableState = computed(() =>
   needsSavedProductData.value
   && !isLoading.value
   && !hasError.value
-  && wishlistedProducts.value.length === 0,
+  && !hasWishlistedProducts.value,
 )
 
 const addAllToBag = (): void => {
@@ -91,6 +98,16 @@ const addAllToBag = (): void => {
     openCart()
   }
 }
+
+watch(
+  () => data.value?.products,
+  (products) => {
+    for (const product of products ?? []) {
+      updateWishlistProduct(product)
+    }
+  },
+  { immediate: true },
+)
 
 useSeoMeta({
   title: 'Wishlist — Oyecouture Bespoke',

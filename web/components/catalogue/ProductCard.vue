@@ -20,6 +20,7 @@ const activeMediaIndex = ref(0)
 const { mediaItems } = useProductMedia(() => props.product, true)
 const { add, open: openCart } = useCart()
 const { has: hasWishlistedProduct, toggle: toggleWishlistedProduct } = useWishlist()
+const { preloadImages } = useImagePreloader()
 const selectedSize = ref<ProductSize>(DEFAULT_PRODUCT_SIZE)
 
 const CARD_ICONS = {
@@ -39,6 +40,22 @@ const productRoute = computed(() => getProductRoute(props.product.slug))
 const formattedPrice = computed(() => formatProductPrice(props.product.priceKobo))
 // Reports whether the current product has more than one media frame.
 const hasMultipleMediaItems = computed(() => mediaItems.value.length > 1)
+const mediaSources = computed(() =>
+  mediaItems.value.map((mediaItem) => mediaItem.source),
+)
+const adjacentMediaSources = computed(() => {
+  if (!hasMultipleMediaItems.value) {
+    return []
+  }
+
+  const previousMediaIndex = (
+    activeMediaIndex.value - 1 + mediaItems.value.length
+  ) % mediaItems.value.length
+  const nextMediaIndex = (activeMediaIndex.value + 1) % mediaItems.value.length
+
+  return [...new Set([previousMediaIndex, nextMediaIndex])]
+    .map((mediaIndex) => mediaItems.value[mediaIndex]?.source)
+})
 // Reports whether this card's product is saved in the persisted guest wishlist.
 const isWishlisted = computed(() => hasWishlistedProduct(props.product.slug))
 // Maps wishlist state to the correct accessible action label.
@@ -67,7 +84,15 @@ const showPreviousMediaItem = (): void => {
 
 // Toggles this product in the persisted guest wishlist.
 const toggleWishlist = (): void => {
-  toggleWishlistedProduct(props.product.slug)
+  toggleWishlistedProduct(props.product)
+}
+
+const preloadAdjacentMediaImages = (): void => {
+  preloadImages(adjacentMediaSources.value)
+}
+
+const preloadAllMediaImages = (): void => {
+  preloadImages(mediaSources.value)
 }
 
 // Adds the product to the bag. A sized product cannot be added from the grid
@@ -83,10 +108,20 @@ const addProductToBag = (): void => {
 // Builds an accessible label for one carousel position.
 const getMediaButtonLabel = (mediaIndex: number): string =>
   `${PRODUCT_COPY.actions.showImage} ${mediaIndex + 1}`
+
+watch(adjacentMediaSources, preloadAdjacentMediaImages, {
+  flush: 'post',
+  immediate: true,
+})
 </script>
 
 <template>
-  <article class="product-card" :data-product-slug="product.slug">
+  <article
+    class="product-card"
+    :data-product-slug="product.slug"
+    @focusin="preloadAllMediaImages"
+    @mouseenter="preloadAllMediaImages"
+  >
     <div class="product-card-media">
       <CatalogueProductMedia :media-item="activeMediaItem" />
 

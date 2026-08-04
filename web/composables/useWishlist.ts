@@ -1,6 +1,53 @@
+import type { Product } from '~/types/product'
+
 const WISHLIST_STORAGE_KEY = 'oyecouture-wishlist'
 
-const readStoredWishlistSlugs = (): string[] => {
+interface WishlistItem {
+  readonly slug: string
+  readonly product?: Product
+}
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null
+
+const isProductSnapshot = (value: unknown): value is Product =>
+  isRecord(value)
+  && typeof value.id === 'string'
+  && typeof value.slug === 'string'
+  && typeof value.name === 'string'
+  && typeof value.category === 'string'
+  && typeof value.priceKobo === 'number'
+  && typeof value.description === 'string'
+  && typeof value.tag === 'string'
+  && typeof value.hasSizes === 'boolean'
+  && typeof value.sortOrder === 'number'
+  && typeof value.createdAt === 'string'
+  && Array.isArray(value.images)
+
+const toWishlistItem = (storedItem: unknown): WishlistItem | null => {
+  if (typeof storedItem === 'string') {
+    return { slug: storedItem }
+  }
+
+  if (!isRecord(storedItem)) {
+    return null
+  }
+
+  if (isProductSnapshot(storedItem)) {
+    return { slug: storedItem.slug, product: storedItem }
+  }
+
+  if (typeof storedItem.slug !== 'string') {
+    return null
+  }
+
+  return {
+    slug: storedItem.slug,
+    product: isProductSnapshot(storedItem.product) ? storedItem.product : undefined,
+  }
+}
+
+const readStoredWishlistItems = (): WishlistItem[] => {
   if (!import.meta.client) {
     return []
   }
@@ -10,7 +57,9 @@ const readStoredWishlistSlugs = (): string[] => {
     const parsedValue: unknown = storedValue ? JSON.parse(storedValue) : []
 
     return Array.isArray(parsedValue)
-      ? parsedValue.filter((value): value is string => typeof value === 'string')
+      ? parsedValue
+          .map(toWishlistItem)
+          .filter((item): item is WishlistItem => Boolean(item))
       : []
   } catch {
     return []
@@ -18,7 +67,7 @@ const readStoredWishlistSlugs = (): string[] => {
 }
 
 export const useWishlist = () => {
-  const slugs = useState<string[]>('wishlist-slugs', () => [])
+  const items = useState<WishlistItem[]>('wishlist-items', () => [])
   const hasLoaded = useState<boolean>('wishlist-loaded', () => false)
 
   if (import.meta.client) {
@@ -27,60 +76,99 @@ export const useWishlist = () => {
         return
       }
 
-      slugs.value = readStoredWishlistSlugs()
+      items.value = readStoredWishlistItems()
       hasLoaded.value = true
     })
 
     watch(
-      slugs,
-      (nextSlugs) => {
-        window.localStorage.setItem(WISHLIST_STORAGE_KEY, JSON.stringify(nextSlugs))
+      items,
+      (nextItems) => {
+        window.localStorage.setItem(WISHLIST_STORAGE_KEY, JSON.stringify(nextItems))
       },
       { deep: true },
     )
   }
 
-  const count = computed(() => slugs.value.length)
-  const isEmpty = computed(() => slugs.value.length === 0)
+  const slugs = computed(() => items.value.map((item) => item.slug))
+  const count = computed(() => items.value.length)
+  const isEmpty = computed(() => items.value.length === 0)
   const isLoaded = computed(() => hasLoaded.value)
   const slugSet = computed(() => new Set(slugs.value))
+  const savedProductsBySlug = computed(() =>
+    new Map(
+      items.value
+        .filter((item): item is WishlistItem & { product: Product } =>
+          Boolean(item.product),
+        )
+        .map((item) => [item.slug, item.product]),
+    ),
+  )
 
   const has = (productSlug: string): boolean => slugSet.value.has(productSlug)
 
-  const add = (productSlug: string): void => {
+  const add = (product: Product | string): void => {
+    const productSlug = typeof product === 'string' ? product : product.slug
+
     if (has(productSlug)) {
+      if (typeof product !== 'string') {
+        updateProduct(product)
+      }
+
       return
     }
 
-    slugs.value = [...slugs.value, productSlug]
+    items.value = [
+      ...items.value,
+      typeof product === 'string'
+        ? { slug: productSlug }
+        : { slug: productSlug, product },
+    ]
   }
 
   const remove = (productSlug: string): void => {
-    slugs.value = slugs.value.filter((slug) => slug !== productSlug)
+    items.value = items.value.filter((item) => item.slug !== productSlug)
   }
 
-  const toggle = (productSlug: string): void => {
+  const toggle = (product: Product | string): void => {
+    const productSlug = typeof product === 'string' ? product : product.slug
+
     if (has(productSlug)) {
       remove(productSlug)
       return
     }
 
-    add(productSlug)
+    add(product)
   }
 
   const clear = (): void => {
-    slugs.value = []
+    items.value = []
+  }
+
+  const getSavedProduct = (productSlug: string): Product | undefined =>
+    savedProductsBySlug.value.get(productSlug)
+
+  function updateProduct(product: Product): void {
+    if (!has(product.slug)) {
+      return
+    }
+
+    items.value = items.value.map((item) =>
+      item.slug === product.slug ? { slug: product.slug, product } : item,
+    )
   }
 
   return {
     add,
     clear,
     count,
+    getSavedProduct,
     has,
     isEmpty,
     isLoaded,
+    items,
     remove,
     slugs,
     toggle,
+    updateProduct,
   }
 }
