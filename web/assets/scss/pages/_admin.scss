@@ -648,10 +648,19 @@
     color: var(--color-ink);
     font-family: inherit;
     font-size: var(--text-sm);
-    transition: border-color var(--duration-quick) var(--ease-standard);
+    box-shadow: 0 0.5rem 1.5rem rgb(26 26 26 / 2%);
+    transition:
+      border-color var(--duration-quick) var(--ease-standard),
+      box-shadow var(--duration-quick) var(--ease-standard);
+
+    &:hover {
+      border-color: var(--color-border-warm);
+      box-shadow: 0 0.75rem 1.75rem rgb(26 26 26 / 4%);
+    }
 
     &:focus-visible {
       border-color: var(--color-gold);
+      box-shadow: 0 0 0 3px rgb(224 207 156 / 18%);
     }
   }
 }
@@ -975,12 +984,22 @@
     cursor: pointer;
     font-size: var(--text-sm);
     gap: var(--space-xs);
+    transition: color var(--duration-quick) var(--ease-standard);
+
+    &:hover {
+      color: var(--color-gold);
+    }
   }
 
   input {
     width: 1rem;
     height: 1rem;
     accent-color: var(--color-gold);
+
+    &:focus-visible {
+      outline: 2px solid rgb(181 145 68 / 32%);
+      outline-offset: 2px;
+    }
   }
 }
 

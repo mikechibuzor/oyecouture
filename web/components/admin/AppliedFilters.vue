@@ -3,20 +3,20 @@ import { X } from 'lucide'
 import { ADMIN_COPY } from '~/constants/admin'
 import {
   AdminFilterType,
+  type AdminFilterKey,
   type AdminFilterOption,
-  type AdminOrderFilterKey,
-  type AdminOrderFilterValues,
+  type AdminFilterValues,
 } from '~/types/admin'
 
 interface AdminAppliedFiltersProps {
   options: readonly AdminFilterOption[]
-  values: AdminOrderFilterValues
+  values: AdminFilterValues
 }
 
 const props = defineProps<AdminAppliedFiltersProps>()
 
 const emit = defineEmits<{
-  remove: [key: AdminOrderFilterKey]
+  remove: [key: AdminFilterKey]
   clear: []
 }>()
 

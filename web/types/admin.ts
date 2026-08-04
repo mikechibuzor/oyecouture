@@ -114,6 +114,8 @@ export enum AdminFilterType {
 }
 
 export type AdminOrderFilterKey = 'status' | 'kind' | 'from' | 'to'
+export type AdminProductFilterKey = 'section' | 'active'
+export type AdminFilterKey = AdminOrderFilterKey | AdminProductFilterKey
 
 export interface AdminFilterItem {
   readonly value: string
@@ -121,13 +123,15 @@ export interface AdminFilterItem {
 }
 
 export interface AdminFilterOption {
-  readonly key: AdminOrderFilterKey
+  readonly key: AdminFilterKey
   readonly label: string
   readonly type: AdminFilterType
   readonly items?: readonly AdminFilterItem[]
 }
 
 export type AdminOrderFilterValues = Readonly<Record<AdminOrderFilterKey, string>>
+export type AdminProductFilterValues = Readonly<Record<AdminProductFilterKey, string>>
+export type AdminFilterValues = Readonly<Record<string, string>>
 
 export interface AdminOrderQuery {
   readonly status?: OrderStatus | ''

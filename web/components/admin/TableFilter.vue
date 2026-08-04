@@ -3,20 +3,20 @@ import { ChevronRight, SlidersHorizontal } from 'lucide'
 import { ADMIN_COPY } from '~/constants/admin'
 import {
   AdminFilterType,
+  type AdminFilterKey,
   type AdminFilterOption,
-  type AdminOrderFilterKey,
-  type AdminOrderFilterValues,
+  type AdminFilterValues,
 } from '~/types/admin'
 
 interface AdminTableFilterProps {
   options: readonly AdminFilterOption[]
-  values: AdminOrderFilterValues
+  values: AdminFilterValues
 }
 
 const props = defineProps<AdminTableFilterProps>()
 
 const emit = defineEmits<{
-  update: [key: AdminOrderFilterKey, value: string]
+  update: [key: AdminFilterKey, value: string]
 }>()
 
 const DESKTOP_VIEWPORT_MARGIN_PX = 16
@@ -27,7 +27,7 @@ const MAX_POPOVER_WIDTH_PX = 544
 const root = ref<HTMLElement | null>(null)
 const trigger = ref<HTMLElement | null>(null)
 const isOpen = ref(false)
-const activeKey = ref<AdminOrderFilterKey>(props.options[0]?.key ?? 'status')
+const activeKey = ref<AdminFilterKey>(props.options[0]?.key ?? 'status')
 const popoverStyle = ref<Record<string, string>>({})
 
 // The right-hand pane mirrors whichever filter category is active.
@@ -88,12 +88,12 @@ const toggle = (): void => {
 }
 
 // Pushes one selected value back to the page-level query state.
-const updateFilter = (key: AdminOrderFilterKey, value: string): void => {
+const updateFilter = (key: AdminFilterKey, value: string): void => {
   emit('update', key, value)
 }
 
 // Reads the native date input without widening the event contract in template.
-const handleDateInput = (key: AdminOrderFilterKey, inputEvent: Event): void => {
+const handleDateInput = (key: AdminFilterKey, inputEvent: Event): void => {
   updateFilter(key, (inputEvent.target as HTMLInputElement).value)
 }
 

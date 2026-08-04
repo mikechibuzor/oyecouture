@@ -11,6 +11,7 @@ import {
   ORDER_STATUS_LABELS,
 } from '~/constants/admin'
 import type {
+  AdminFilterKey,
   AdminOrderMetrics,
   AdminOrderSummary,
   MetricsPeriod,
@@ -219,8 +220,15 @@ const clearFilters = (): void => {
   toFilter.value = ''
 }
 
+const isOrderFilterKey = (key: AdminFilterKey): key is AdminOrderFilterKey =>
+  key === 'status' || key === 'kind' || key === 'from' || key === 'to'
+
 // Updates one filter category from the table filter popover.
-const updateFilter = (key: AdminOrderFilterKey, value: string): void => {
+const updateFilter = (key: AdminFilterKey, value: string): void => {
+  if (!isOrderFilterKey(key)) {
+    return
+  }
+
   if (key === 'status') {
     statusFilter.value = value as OrderStatus | ''
   } else if (key === 'kind') {
@@ -233,7 +241,7 @@ const updateFilter = (key: AdminOrderFilterKey, value: string): void => {
 }
 
 // Removes one applied filter chip without disturbing the other active filters.
-const removeFilter = (key: AdminOrderFilterKey): void => {
+const removeFilter = (key: AdminFilterKey): void => {
   updateFilter(key, '')
 }
 

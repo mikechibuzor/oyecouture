@@ -261,6 +261,27 @@ export const PRODUCT_ACTIVE_OPTIONS: readonly SelectOption<AdminProductActiveFil
   { value: 'false', label: PRODUCT_ACTIVE_LABELS['false'] },
 ]
 
+export const ADMIN_PRODUCT_FILTER_OPTIONS: readonly AdminFilterOption[] = [
+  {
+    key: 'section',
+    label: ADMIN_COPY.productSectionLabel,
+    type: AdminFilterType.Select,
+    items: Object.values(ProductSection).map((section) => ({
+      value: section,
+      label: PRODUCT_SECTION_LABELS[section],
+    })),
+  },
+  {
+    key: 'active',
+    label: ADMIN_COPY.productActiveLabel,
+    type: AdminFilterType.Select,
+    items: [
+      { value: 'true', label: PRODUCT_ACTIVE_LABELS['true'] },
+      { value: 'false', label: PRODUCT_ACTIVE_LABELS['false'] },
+    ],
+  },
+]
+
 export const ADMIN_ORDER_FILTER_OPTIONS: readonly AdminFilterOption[] = [
   {
     key: 'status',

@@ -2,14 +2,19 @@
 import { Search } from 'lucide'
 import {
   ADMIN_COPY,
+  ADMIN_PRODUCT_FILTER_OPTIONS,
   ADMIN_PRODUCTS_PAGE_SIZE,
   ADMIN_ROUTES,
   ADMIN_SEARCH_DEBOUNCE_MS,
-  PRODUCT_ACTIVE_OPTIONS,
   PRODUCT_SECTION_LABELS,
-  PRODUCT_SECTION_OPTIONS,
 } from '~/constants/admin'
-import type { AdminProduct, AdminProductActiveFilter } from '~/types/admin'
+import type {
+  AdminFilterKey,
+  AdminProduct,
+  AdminProductActiveFilter,
+  AdminProductFilterKey,
+  AdminProductFilterValues,
+} from '~/types/admin'
 import type { ProductSection } from '~/types/product'
 import { formatOrderDate } from '~/utils/admin'
 import { formatProductPrice } from '~/utils/product'
@@ -39,6 +44,11 @@ const hasFilters = computed(
   () => searchTerm.value !== '' || sectionFilter.value !== '' || activeFilter.value !== '',
 )
 
+const filterValues = computed<AdminProductFilterValues>(() => ({
+  section: sectionFilter.value,
+  active: activeFilter.value,
+}))
+
 // The visible row range reads as "1-25 of 92" in the table footer.
 const rangeStart = computed(() => (total.value === 0 ? 0 : offset.value + 1))
 
@@ -56,6 +66,29 @@ const currentPage = computed(() => Math.floor(offset.value / ADMIN_PRODUCTS_PAGE
 const totalPages = computed(() =>
   Math.max(1, Math.ceil(total.value / ADMIN_PRODUCTS_PAGE_SIZE)),
 )
+
+// Products now use the same numbered pagination model as orders.
+const paginationItems = computed<(number | 'ellipsis')[]>(() => {
+  const pages = new Set<number>([1, totalPages.value])
+
+  for (let page = currentPage.value - 1; page <= currentPage.value + 1; page += 1) {
+    if (page >= 1 && page <= totalPages.value) {
+      pages.add(page)
+    }
+  }
+
+  const sortedPages = [...pages].sort((firstPage, secondPage) => firstPage - secondPage)
+  return sortedPages.reduce<(number | 'ellipsis')[]>((items, page, index) => {
+    const previousPage = sortedPages[index - 1]
+
+    if (previousPage !== undefined && page - previousPage > 1) {
+      items.push('ellipsis')
+    }
+
+    items.push(page)
+    return items
+  }, [])
+})
 
 // A request counter prevents stale responses from replacing fresh filter results.
 let latestRequestId = 0
@@ -129,6 +162,15 @@ const goToPreviousPage = (): void => {
   void load()
 }
 
+const goToPage = (page: number): void => {
+  if (page === currentPage.value) {
+    return
+  }
+
+  offset.value = (page - 1) * ADMIN_PRODUCTS_PAGE_SIZE
+  void load()
+}
+
 const goToNextPage = (): void => {
   offset.value += ADMIN_PRODUCTS_PAGE_SIZE
   void load()
@@ -138,6 +180,26 @@ const clearFilters = (): void => {
   searchTerm.value = ''
   sectionFilter.value = ''
   activeFilter.value = ''
+}
+
+const isProductFilterKey = (key: AdminFilterKey): key is AdminProductFilterKey =>
+  key === 'section' || key === 'active'
+
+const updateFilter = (key: AdminFilterKey, value: string): void => {
+  if (!isProductFilterKey(key)) {
+    return
+  }
+
+  if (key === 'section') {
+    sectionFilter.value = value as ProductSection | ''
+    return
+  }
+
+  activeFilter.value = value as AdminProductActiveFilter
+}
+
+const removeFilter = (key: AdminFilterKey): void => {
+  updateFilter(key, '')
 }
 
 const productImageUrl = (product: AdminProduct): string | null =>
@@ -177,6 +239,33 @@ const toggleProductActive = async (product: AdminProduct): Promise<void> => {
   }
 }
 
+// Nested controls keep their native behavior; the rest of the row opens edit.
+const isInteractiveRowTarget = (eventTarget: EventTarget | null): boolean =>
+  eventTarget instanceof Element &&
+  Boolean(eventTarget.closest('a, button, input, select, textarea, summary'))
+
+const openProductEdit = (productSlug: string): void => {
+  void router.push(ADMIN_ROUTES.productEdit(productSlug))
+}
+
+const handleProductRowClick = (mouseEvent: MouseEvent, productSlug: string): void => {
+  if (!isInteractiveRowTarget(mouseEvent.target)) {
+    openProductEdit(productSlug)
+  }
+}
+
+const handleProductRowKeydown = (keyboardEvent: KeyboardEvent, productSlug: string): void => {
+  if (
+    isInteractiveRowTarget(keyboardEvent.target) ||
+    !['Enter', ' '].includes(keyboardEvent.key)
+  ) {
+    return
+  }
+
+  keyboardEvent.preventDefault()
+  openProductEdit(productSlug)
+}
+
 onMounted(() => {
   void load()
 })
@@ -197,27 +286,17 @@ onMounted(() => {
 
     <div class="admin-toolbar">
       <div class="admin-toolbar-filters">
-        <UiSelect
-          v-model="sectionFilter"
-          :options="PRODUCT_SECTION_OPTIONS"
-          :label="ADMIN_COPY.productSectionLabel"
-          variant="bare"
+        <AdminTableFilter
+          :options="ADMIN_PRODUCT_FILTER_OPTIONS"
+          :values="filterValues"
+          @update="updateFilter"
         />
-        <UiSelect
-          v-model="activeFilter"
-          :options="PRODUCT_ACTIVE_OPTIONS"
-          :label="ADMIN_COPY.productActiveLabel"
-          variant="bare"
+        <AdminAppliedFilters
+          :options="ADMIN_PRODUCT_FILTER_OPTIONS"
+          :values="filterValues"
+          @remove="removeFilter"
+          @clear="clearFilters"
         />
-
-        <button
-          v-if="hasFilters"
-          type="button"
-          class="admin-inline-action"
-          @click="clearFilters"
-        >
-          {{ ADMIN_COPY.clearFilters }}
-        </button>
       </div>
 
       <label class="admin-search">
@@ -276,7 +355,16 @@ onMounted(() => {
             </tr>
           </thead>
           <tbody>
-            <tr v-for="product in products" :key="product.id">
+            <tr
+              v-for="product in products"
+              :key="product.id"
+              class="admin-table-row"
+              tabindex="0"
+              role="link"
+              :aria-label="`Edit ${product.name}`"
+              @click="handleProductRowClick($event, product.slug)"
+              @keydown="handleProductRowKeydown($event, product.slug)"
+            >
               <td>
                 <div class="admin-product">
                   <img
@@ -342,9 +430,21 @@ onMounted(() => {
           >
             {{ ADMIN_COPY.previous }}
           </button>
-          <span class="admin-pagination-count">
-            Page {{ currentPage }} of {{ totalPages }}
-          </span>
+
+          <template v-for="(item, index) in paginationItems" :key="`${item}-${index}`">
+            <span v-if="item === 'ellipsis'" class="admin-pagination-ellipsis">…</span>
+            <button
+              v-else
+              type="button"
+              class="admin-pagination-button is-number"
+              :class="{ 'is-current': item === currentPage }"
+              :aria-current="item === currentPage ? 'page' : undefined"
+              @click="goToPage(item)"
+            >
+              {{ item }}
+            </button>
+          </template>
+
           <button
             type="button"
             class="admin-pagination-button"
