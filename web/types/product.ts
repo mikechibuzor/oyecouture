@@ -138,3 +138,22 @@ export interface ProductMediaItem {
   readonly source: string | null
   readonly alt: string
 }
+
+// One line inside a product disclosure panel. A `label` renders as an inline
+// lead-in and carries its own punctuation — the shipping lines read
+// "Production time: …" while the returns lines read "Manufacturing faults — …",
+// so the separator cannot be hardcoded at the template.
+export interface ProductPolicyLine {
+  readonly label?: string
+  readonly text: string
+}
+
+export interface ProductPolicy {
+  readonly id: string
+  readonly title: string
+  readonly intro: string
+  readonly lines: readonly ProductPolicyLine[]
+  // Rendered as a sub-heading above the lines, when the section needs one.
+  readonly linesHeading?: string
+  readonly footnote?: string
+}

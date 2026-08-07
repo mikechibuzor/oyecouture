@@ -3,6 +3,7 @@ import type {
   CategoryPageConfig,
   CategoryTileConfig,
   HomeHeroImageConfig,
+  ProductPolicy,
   ProductSectionNavigation,
   ProductSortOption,
 } from '~/types/product'
@@ -305,3 +306,52 @@ export const PRODUCT_FALLBACK_IMAGES: Readonly<
 // Builds the canonical client-side route for one product detail page.
 export const getProductRoute = (productSlug: string): string =>
   `${PRODUCT_ROUTE_PREFIX}/${encodeURIComponent(productSlug)}`
+
+// Delivery and returns policy shown on every product page. The copy is the
+// approved design's, verbatim — it sets expectations a made-to-order buyer
+// needs before paying, so it is deliberately not per-product.
+export const PRODUCT_POLICIES: readonly ProductPolicy[] = [
+  {
+    id: 'shipping',
+    title: 'Shipping & Delivery',
+    intro:
+      'Every Oyecouture piece is made to order, so delivery works differently than off-the-shelf fashion.',
+    lines: [
+      { label: 'Production time:', text: '3 week or less from confirmed measurements and payment.' },
+      { label: 'Within Nigeria:', text: '1–3 working days after work is completed' },
+      {
+        label: 'International:',
+        text: 'We deliver worldwide. It could take 5-7 days to get delivered to doorstep',
+      },
+      {
+        label: 'Tracking:',
+        text: 'You’ll receive a tracking link by email/SMS once your order ships.',
+      },
+      {
+        label: 'Packaging:',
+        text: 'Every order arrives in Oyecouture signature packaging — garment bag, dust protection, and care card included.',
+      },
+    ],
+    footnote:
+      'Need it sooner? We can expedite production for an additional 20% of the piece’s price. If you’re working to a date — a wedding, an event — let us know when you order and we’ll prioritise your piece.',
+  },
+  {
+    id: 'returns',
+    title: 'Returns & Exchanges',
+    intro:
+      'Because Oyecouture pieces are made to your measurements, we don’t offer standard returns — a bespoke jacket cut for you isn’t something we can resell to someone else.',
+    linesHeading: 'What we do offer',
+    lines: [
+      {
+        label: 'Manufacturing faults',
+        text: '— if something’s wrong with the construction or material, we can reach a consensus to repair, remake, or refund. Reach out within 3 days of receiving your order.',
+      },
+      {
+        label: 'Ready-to-wear items',
+        text: '(non-bespoke), if any are sold: exchange or store credit within 3 days, unworn and with tags attached.',
+      },
+    ],
+    footnote:
+      'To start an alteration or flag an issue, contact us with your order number — see Contact Us below.',
+  },
+]

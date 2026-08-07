@@ -1,0 +1,85 @@
+// Collapsible policy panels on the product page. Built on native <details>, so
+// the rules below only restyle it — the open/close behaviour and its
+// accessibility come from the element itself.
+
+.ui-disclosure {
+  border-bottom: 1px solid var(--color-border-warm);
+}
+
+.ui-disclosure-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-lg) 0;
+  cursor: pointer;
+  gap: var(--space-md);
+  color: var(--color-ink);
+  font-size: 0.875rem;
+  font-weight: var(--font-weight-medium);
+  letter-spacing: var(--tracking-normal);
+  list-style: none;
+  transition: color var(--duration-quick) var(--ease-standard);
+
+  // Safari draws its own triangle unless both of these are removed.
+  &::-webkit-details-marker {
+    display: none;
+  }
+
+  &::marker {
+    content: '';
+  }
+
+  &:hover {
+    color: var(--color-gold);
+  }
+}
+
+.ui-disclosure-chevron {
+  flex-shrink: 0;
+  color: var(--color-taupe);
+  // transform, not the independent `rotate` property: on an <svg> element
+  // `rotate` is ignored outright — it computes to 0deg even when set inline —
+  // while transform applies normally. The icon carries no other transform, so
+  // there is nothing here for it to clobber.
+  transition: transform var(--duration-quick) var(--ease-standard);
+}
+
+.ui-disclosure[open] .ui-disclosure-chevron {
+  transform: rotate(180deg);
+}
+
+.ui-disclosure-panel {
+  padding: 0 0 var(--space-xl);
+
+  p {
+    margin: 0 0 var(--space-md);
+    color: var(--color-body-copy);
+    font-size: var(--text-xs);
+    font-weight: var(--font-weight-light);
+    line-height: 1.75;
+  }
+
+  p:last-child {
+    margin-bottom: 0;
+  }
+
+  // The lead-in on a labelled line ("Production time: …") sits inline with its
+  // text rather than on its own row.
+  strong {
+    color: var(--color-ink-soft);
+    font-weight: var(--font-weight-medium);
+  }
+
+  // Specific enough to beat the paragraph rule above without !important.
+  p.product-policy-subheading {
+    margin-top: var(--space-md);
+    color: var(--color-ink);
+    font-weight: var(--font-weight-medium);
+  }
+}
+
+// The policy stack closes the product column; the top rule matches the design.
+.product-detail-policies {
+  margin-top: var(--space-2xl);
+  border-top: 1px solid var(--color-border-warm);
+}

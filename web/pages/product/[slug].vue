@@ -2,6 +2,7 @@
 import {
   DEFAULT_PRODUCT_SIZE,
   PRODUCT_COPY,
+  PRODUCT_POLICIES,
   PRODUCT_SECTION_NAVIGATION,
 } from '~/constants/products'
 import type { Product } from '~/types/product'
@@ -94,6 +95,27 @@ const formattedPrice = computed(() =>
           </button>
 
           <CatalogueBespokeNote v-if="!product.hasSizes" />
+
+          <div class="product-detail-policies">
+            <UiDisclosure
+              v-for="policy in PRODUCT_POLICIES"
+              :key="policy.id"
+              :title="policy.title"
+            >
+              <p>{{ policy.intro }}</p>
+
+              <p v-if="policy.linesHeading" class="product-policy-subheading">
+                {{ policy.linesHeading }}
+              </p>
+
+              <p v-for="line in policy.lines" :key="line.text">
+                <strong v-if="line.label">{{ line.label }}</strong>
+                {{ line.text }}
+              </p>
+
+              <p v-if="policy.footnote">{{ policy.footnote }}</p>
+            </UiDisclosure>
+          </div>
         </section>
       </div>
     </template>

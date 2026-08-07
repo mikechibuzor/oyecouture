@@ -55,11 +55,15 @@
 .ui-select-chevron {
   flex-shrink: 0;
   color: var(--color-taupe);
-  transition: rotate var(--duration-quick) var(--ease-standard);
+  // transform, not the independent `rotate` property: on an <svg> element
+  // `rotate` is ignored outright — it computes to 0deg even when set inline —
+  // while transform applies normally. The icon carries no other transform, so
+  // there is nothing here for it to clobber.
+  transition: transform var(--duration-quick) var(--ease-standard);
 }
 
 .ui-select.is-open .ui-select-chevron {
-  rotate: 180deg;
+  transform: rotate(180deg);
 }
 
 // The bare variant drops the box, for toolbars where the control sits inline
