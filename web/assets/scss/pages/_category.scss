@@ -160,6 +160,15 @@ $category-content-width: 92.5rem;
   }
 }
 
+// The closing line of a policy page — real copy, so it reads as prose rather
+// than as the dashed "awaiting wording" box below it.
+.care-footnote {
+  margin: 0 0 var(--space-lg);
+  color: var(--color-body-copy);
+  font-size: var(--text-sm);
+  line-height: 1.75;
+}
+
 .care-notice {
   margin: 0;
   padding: var(--space-md) var(--space-lg);

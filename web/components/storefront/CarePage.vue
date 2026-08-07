@@ -13,9 +13,17 @@ interface CarePageProps {
   heading: string
   intro: string
   sections: readonly CareSection[]
+  // Closing line beneath the sections, where the copy has one.
+  footnote?: string
+  // Only pages still waiting on the client's wording show the placeholder
+  // notice. Shipping and returns carry real policy and must not.
+  awaitingCopy?: boolean
 }
 
-const props = defineProps<CarePageProps>()
+const props = withDefaults(defineProps<CarePageProps>(), {
+  footnote: '',
+  awaitingCopy: false,
+})
 
 useSeoMeta({ title: `${props.heading} — Oyecouture Bespoke`, description: props.intro })
 </script>
@@ -38,7 +46,9 @@ useSeoMeta({ title: `${props.heading} — Oyecouture Bespoke`, description: prop
         <p>{{ section.body }}</p>
       </article>
 
-      <p class="care-notice">{{ CARE_PLACEHOLDER_NOTICE }}</p>
+      <p v-if="footnote" class="care-footnote">{{ footnote }}</p>
+
+      <p v-if="awaitingCopy" class="care-notice">{{ CARE_PLACEHOLDER_NOTICE }}</p>
     </section>
   </div>
 </template>

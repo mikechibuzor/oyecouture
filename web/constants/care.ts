@@ -1,13 +1,41 @@
+import { PRODUCT_POLICIES } from '~/constants/products'
+import type { ProductPolicy } from '~/types/product'
+
 // Customer-care pages. The design links to these but never designed them —
 // every link is href="#" there — and the PRD assigns the copy to the client.
-// These render the real page furniture with clearly-marked placeholder body
-// copy, so the structure is demo-ready and swapping in real text is a
-// content change rather than a build.
+// Pages still awaiting the client's wording keep `awaitingCopy: true`, which is
+// what shows the placeholder notice; pages with real copy must not carry it.
 export const CARE_PLACEHOLDER_NOTICE
   = 'This page is ready for your wording — send it over and we will drop it in.'
 
+// Shipping and returns share their wording with the product page disclosures.
+// Two copies of a delivery promise drift, and a customer who reads one figure
+// on the product and another on the policy page has been misled.
+const carePageFromPolicy = (policy: ProductPolicy) => ({
+  breadcrumb: policy.title,
+  heading: policy.title,
+  intro: policy.intro,
+  sections: policy.lines.map((line) => ({
+    // Labels carry their own punctuation for inline use; a heading needs it off.
+    title: (line.label ?? policy.linesHeading ?? '').replace(/:$/, ''),
+    body: line.text.replace(/^—\s*/, ''),
+  })),
+  footnote: policy.footnote,
+})
+
+const policyBySlug = (slug: string): ProductPolicy => {
+  const policy = PRODUCT_POLICIES.find((candidate) => candidate.id === slug)
+  if (!policy) {
+    throw new Error(`missing product policy: ${slug}`)
+  }
+
+  return policy
+}
+
 export const CARE_PAGES = {
+
   sizeGuide: {
+    awaitingCopy: true,
     breadcrumb: 'Size Guide',
     heading: 'Size Guide',
     intro:
@@ -18,40 +46,10 @@ export const CARE_PAGES = {
       { title: 'Between sizes?', body: 'Guidance on choosing when you sit between two ready-to-wear sizes.' },
     ],
   },
-  shipping: {
-    breadcrumb: 'Shipping & Delivery',
-    heading: 'Shipping & Delivery',
-    intro:
-      'We deliver across Nigeria and worldwide. Made-to-measure timelines depend on the piece and are confirmed with you directly.',
-    sections: [
-      { title: 'Within Lagos', body: 'Delivery window and fee for Lagos addresses.' },
-      { title: 'Rest of Nigeria', body: 'Delivery window and fee for addresses outside Lagos.' },
-      { title: 'International', body: 'Worldwide delivery is quoted per order and arranged with us directly.' },
-    ],
-  },
-  returns: {
-    breadcrumb: 'Returns & Exchanges',
-    heading: 'Returns & Exchanges',
-    intro:
-      'Ready-to-wear pieces can be returned or exchanged. Made-to-measure pieces are cut to one person and are handled case by case.',
-    sections: [
-      { title: 'Ready-to-wear', body: 'Return window, condition requirements and how to start a return.' },
-      { title: 'Made-to-measure', body: 'How alterations and fit adjustments are handled after delivery.' },
-      { title: 'Faults', body: 'What to do if a piece arrives damaged or incorrect.' },
-    ],
-  },
-  contact: {
-    breadcrumb: 'Contact Us',
-    heading: 'Contact Us',
-    intro:
-      'The fastest way to reach us is on WhatsApp — that is where fittings, fabric and delivery are arranged.',
-    sections: [
-      { title: 'WhatsApp', body: 'Message us for orders, measurements and delivery.' },
-      { title: 'Email', body: 'For press, wholesale and partnership enquiries.' },
-      { title: 'Studio', body: 'Studio address and opening hours for fittings.' },
-    ],
-  },
+  shipping: carePageFromPolicy(policyBySlug('shipping')),
+  returns: carePageFromPolicy(policyBySlug('returns')),
   legal: {
+    awaitingCopy: true,
     breadcrumb: 'Legal & Privacy',
     heading: 'Legal & Privacy',
     intro: 'How we handle your information when you order from us.',
@@ -62,6 +60,7 @@ export const CARE_PAGES = {
     ],
   },
   terms: {
+    awaitingCopy: true,
     breadcrumb: 'Terms',
     heading: 'Terms & Conditions',
     intro: 'The terms that apply when you place an order with Oyecouture Bespoke.',
