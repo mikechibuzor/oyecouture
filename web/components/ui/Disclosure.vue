@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ChevronDown } from 'lucide'
+import { Plus } from 'lucide'
 
 // A collapsible panel built on native <details>. The element is keyboard
 // operable and announced correctly without any script, so the disclosure still
@@ -16,11 +16,12 @@ defineProps<UiDisclosureProps>()
   <details class="ui-disclosure">
     <summary class="ui-disclosure-summary">
       <span>{{ title }}</span>
+      <!-- A plus that turns 45° into a cross when open, per the design. -->
       <StorefrontIcon
-        class="ui-disclosure-chevron"
-        :icon-node="ChevronDown"
+        class="ui-disclosure-marker"
+        :icon-node="Plus"
         :size="16"
-        :stroke-width="1.75"
+        :stroke-width="1.6"
       />
     </summary>
 

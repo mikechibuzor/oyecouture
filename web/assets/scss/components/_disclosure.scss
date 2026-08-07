@@ -34,18 +34,20 @@
   }
 }
 
-.ui-disclosure-chevron {
+.ui-disclosure-marker {
   flex-shrink: 0;
-  color: var(--color-taupe);
+  color: var(--color-gold);
   // transform, not the independent `rotate` property: on an <svg> element
   // `rotate` is ignored outright — it computes to 0deg even when set inline —
   // while transform applies normally. The icon carries no other transform, so
   // there is nothing here for it to clobber.
-  transition: transform var(--duration-quick) var(--ease-standard);
+  transition: transform var(--duration-base) var(--ease-standard);
 }
 
-.ui-disclosure[open] .ui-disclosure-chevron {
-  transform: rotate(180deg);
+// 45° turns the plus into a cross — the design's close affordance, rather than
+// a chevron flip.
+.ui-disclosure[open] .ui-disclosure-marker {
+  transform: rotate(45deg);
 }
 
 .ui-disclosure-panel {
