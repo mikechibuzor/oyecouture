@@ -7,8 +7,8 @@ One short entry per work session or meaningful chunk. Format:
 
 ## 2026-08-11T16:45:45+01:00 · Codex · Delivery areas drawer flow
 - **Did:** Added authenticated admin delivery-area creation with `POST /admin/delivery-zones`, duplicate-name handling, and a product-style `/admin/delivery` drawer flow. Delivery areas now render as table rows; clicking a row opens the drawer with fee editing, checkout visibility, and hide/show CTAs. Creating or saving closes the drawer and fires the shared top-right success notification; failures keep the drawer open.
-- **State:** Committed in this slice. Verified locally with `GOCACHE=/private/tmp/oyecouture-go-cache go test ./...`, Node 22 `npm run typecheck`, Node 22 `NUXT_IGNORE_LOCK=1 npm run build`, and `git diff --check`. User tested add/hide/show locally and approved. Not deployed yet.
-- **Next:** Push this slice, then continue into editable home/content controls.
+- **State:** Committed/pushed as `c325b92`. Verified locally with `GOCACHE=/private/tmp/oyecouture-go-cache go test ./...`, Node 22 `npm run typecheck`, Node 22 `NUXT_IGNORE_LOCK=1 npm run build`, and `git diff --check`. User tested add/hide/show locally and approved. Not deployed yet.
+- **Next:** Continue into editable home/content controls.
 - **Blockers:** None for this slice.
 
 ## 2026-08-11T15:50:14+01:00 · Codex · Admin settings deployed
