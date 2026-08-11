@@ -10,11 +10,13 @@ import (
 	"strings"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 var (
 	ErrInvalidZoneUpdate = errors.New("invalid delivery zone update")
+	ErrZoneAlreadyExists = errors.New("delivery zone already exists")
 	ErrZoneNotFound      = errors.New("delivery zone not found")
 )
 
@@ -34,6 +36,12 @@ type AdminZone struct {
 type AdminZoneUpdate struct {
 	FeeKobo int64 `json:"feeKobo"`
 	Active  *bool `json:"active"`
+}
+
+type AdminZoneCreate struct {
+	Name    string `json:"name"`
+	FeeKobo int64  `json:"feeKobo"`
+	Active  *bool  `json:"active"`
 }
 
 type Repository struct {
@@ -139,6 +147,40 @@ func (repository *Repository) UpdateAdminZone(
 	return repository.AdminZoneByName(requestContext, cleanZoneName)
 }
 
+func (repository *Repository) CreateAdminZone(
+	requestContext context.Context,
+	create AdminZoneCreate,
+) (AdminZone, error) {
+	cleanZoneName := strings.TrimSpace(create.Name)
+	if cleanZoneName == "" || create.FeeKobo < 0 || create.Active == nil {
+		return AdminZone{}, ErrInvalidZoneUpdate
+	}
+
+	const query = `
+		INSERT INTO delivery_zones (name, fee_kobo, active)
+		VALUES ($1, $2, $3)
+		RETURNING name, fee_kobo, active`
+
+	var zone AdminZone
+	err := repository.pool.QueryRow(
+		requestContext,
+		query,
+		cleanZoneName,
+		create.FeeKobo,
+		*create.Active,
+	).Scan(&zone.Name, &zone.FeeKobo, &zone.Active)
+	if err != nil {
+		var pgError *pgconn.PgError
+		if errors.As(err, &pgError) && pgError.Code == "23505" {
+			return AdminZone{}, ErrZoneAlreadyExists
+		}
+
+		return AdminZone{}, fmt.Errorf("create admin delivery zone: %w", err)
+	}
+
+	return zone, nil
+}
+
 func (repository *Repository) AdminZoneByName(
 	requestContext context.Context,
 	zoneName string,
@@ -227,6 +269,25 @@ func (handler *AdminHandler) List(responseWriter http.ResponseWriter, request *h
 	writeJSON(responseWriter, http.StatusOK, adminListResponse{Zones: zones})
 }
 
+func (handler *AdminHandler) Create(responseWriter http.ResponseWriter, request *http.Request) {
+	var create AdminZoneCreate
+
+	decoder := json.NewDecoder(http.MaxBytesReader(responseWriter, request.Body, 8<<10))
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(&create); err != nil {
+		writeError(responseWriter, http.StatusBadRequest, "invalid_body", "the delivery zone could not be read")
+		return
+	}
+
+	zone, err := handler.repository.CreateAdminZone(request.Context(), create)
+	if err != nil {
+		handler.writeServiceError(responseWriter, err)
+		return
+	}
+
+	writeJSON(responseWriter, http.StatusCreated, adminDetailResponse{Zone: zone})
+}
+
 func (handler *AdminHandler) Update(responseWriter http.ResponseWriter, request *http.Request) {
 	var update AdminZoneUpdate
 
@@ -253,12 +314,14 @@ func (handler *AdminHandler) Update(responseWriter http.ResponseWriter, request 
 func (handler *AdminHandler) writeServiceError(responseWriter http.ResponseWriter, serviceError error) {
 	switch {
 	case errors.Is(serviceError, ErrInvalidZoneUpdate):
-		writeError(responseWriter, http.StatusBadRequest, "invalid_delivery_zone", "please check the delivery fee")
+		writeError(responseWriter, http.StatusBadRequest, "invalid_delivery_zone", "please check the delivery area and fee")
+	case errors.Is(serviceError, ErrZoneAlreadyExists):
+		writeError(responseWriter, http.StatusConflict, "delivery_zone_exists", "that delivery area already exists")
 	case errors.Is(serviceError, ErrZoneNotFound):
 		writeError(responseWriter, http.StatusNotFound, "delivery_zone_not_found", "delivery zone was not found")
 	default:
-		log.Printf("update admin delivery zone: %v", serviceError)
-		writeError(responseWriter, http.StatusInternalServerError, "internal_error", "delivery zone could not be updated")
+		log.Printf("write admin delivery zone: %v", serviceError)
+		writeError(responseWriter, http.StatusInternalServerError, "internal_error", "delivery zone could not be saved")
 	}
 }
 

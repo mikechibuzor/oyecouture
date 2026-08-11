@@ -142,6 +142,9 @@ func New(applicationConfig config.Config, databasePool *pgxpool.Pool) *http.Serv
 	requestMux.Handle("GET /admin/delivery-zones", adminHandler.RequireSession(
 		http.HandlerFunc(adminDeliveryHandler.List),
 	))
+	requestMux.Handle("POST /admin/delivery-zones", adminHandler.RequireSession(
+		http.HandlerFunc(adminDeliveryHandler.Create),
+	))
 	requestMux.Handle("PATCH /admin/delivery-zones/{name}", adminHandler.RequireSession(
 		http.HandlerFunc(adminDeliveryHandler.Update),
 	))

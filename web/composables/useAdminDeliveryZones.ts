@@ -1,6 +1,7 @@
 import { ADMIN_API_ROUTES } from '~/constants/admin'
 import type {
   AdminDeliveryZone,
+  AdminDeliveryZoneCreate,
   AdminDeliveryZoneResponse,
   AdminDeliveryZonesResponse,
   AdminDeliveryZoneUpdate,
@@ -15,6 +16,14 @@ export const useAdminDeliveryZones = () => {
       credentials: 'include',
     })
 
+  const createDeliveryZone = (create: AdminDeliveryZoneCreate): Promise<AdminDeliveryZone> =>
+    $fetch<AdminDeliveryZoneResponse>(ADMIN_API_ROUTES.deliveryZones, {
+      baseURL: apiBaseUrl,
+      body: create,
+      credentials: 'include',
+      method: 'POST',
+    }).then((response) => response.zone)
+
   const updateDeliveryZone = (
     name: string,
     update: AdminDeliveryZoneUpdate,
@@ -26,5 +35,5 @@ export const useAdminDeliveryZones = () => {
       method: 'PATCH',
     }).then((response) => response.zone)
 
-  return { fetchDeliveryZones, updateDeliveryZone }
+  return { createDeliveryZone, fetchDeliveryZones, updateDeliveryZone }
 }

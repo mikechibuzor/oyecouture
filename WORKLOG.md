@@ -5,6 +5,12 @@ One short entry per work session or meaningful chunk. Format:
 
 ---
 
+## 2026-08-11T16:45:45+01:00 · Codex · Delivery areas drawer flow
+- **Did:** Added authenticated admin delivery-area creation with `POST /admin/delivery-zones`, duplicate-name handling, and a product-style `/admin/delivery` drawer flow. Delivery areas now render as table rows; clicking a row opens the drawer with fee editing, checkout visibility, and hide/show CTAs. Creating or saving closes the drawer and fires the shared top-right success notification; failures keep the drawer open.
+- **State:** Committed in this slice. Verified locally with `GOCACHE=/private/tmp/oyecouture-go-cache go test ./...`, Node 22 `npm run typecheck`, Node 22 `NUXT_IGNORE_LOCK=1 npm run build`, and `git diff --check`. User tested add/hide/show locally and approved. Not deployed yet.
+- **Next:** Push this slice, then continue into editable home/content controls.
+- **Blockers:** None for this slice.
+
 ## 2026-08-11T15:50:14+01:00 · Codex · Admin settings deployed
 - **Did:** Added DB-backed storefront settings using the existing `settings` table. Public `GET /site-settings` now powers the announcement bar and storefront WhatsApp number; authenticated `GET/PATCH /admin/settings` powers the new `/admin/settings` page. Admin Settings currently manages announcement text and WhatsApp number; contact owner email remains env-backed.
 - **State:** Committed/pushed/deployed as `d400339`. Verified locally with `go test ./...`, Node 22 `npm run typecheck`, Node 22 `NUXT_IGNORE_LOCK=1 npm run build`, `git diff --check`, local endpoint smoke tests, and live staging checks: `/api/healthz` 200, `/api/site-settings` 200, `/api/admin/settings` 401 without a session.

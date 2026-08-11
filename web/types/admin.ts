@@ -168,6 +168,12 @@ export interface AdminDeliveryZoneResponse {
   readonly zone: AdminDeliveryZone
 }
 
+export interface AdminDeliveryZoneCreate {
+  readonly name: string
+  readonly feeKobo: number
+  readonly active: boolean
+}
+
 export interface AdminDeliveryZoneUpdate {
   readonly feeKobo: number
   readonly active: boolean
