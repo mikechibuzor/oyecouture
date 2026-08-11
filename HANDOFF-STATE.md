@@ -7,11 +7,12 @@
 ## Current status
 - **Phase:** 1 (MVP). First 40% milestone **paid**; build authorized.
 - **Milestone:** Storefront complete · ghost admin phase 1 complete · **staging is deployed and live** · the client's real catalogue is in.
-- **Last worked by:** Codex · 2026-08-04.
+- **Last worked by:** Codex · 2026-08-11.
 - **Repo:** `/Users/chibuzoriwuagwu/Downloads/share/oyecouture` · `main` · **now has a GitHub remote: private repo `mikechibuzor/oyecouture`. Push to `origin`.**
 - **Staging:** **https://82-29-184-79.sslip.io** — real Let's Encrypt cert, all five containers healthy.
-- **Latest deployed commit:** `a773f80` (`feat(web): polish admin product workflows`) — pushed to `origin/main` and deployed on 2026-08-04.
-- **Contact form:** public `POST /contact` (`76e8848`) validates feedback and sends it via SendByte to `OWNER_NOTIFY_EMAIL`. **Now throttled — see below.** Dev CORS allows `127.0.0.1`/`localhost`; production stays strict (verified live: a foreign origin *and* localhost both get no CORS header on staging). **Committed but not yet deployed.**
+- **Latest deployed commit:** `a592859` (`feat(care): populate shipping and returns from the real policy copy`) — pushed to `origin/main` and deployed on 2026-08-11. Verified live: `/api/healthz` returned 200 and `/api/contact` preflight returned 204 with the staging origin allowed.
+- **Contact form:** public `POST /contact` (`76e8848`) validates feedback and sends it via SendByte to `OWNER_NOTIFY_EMAIL`. **Now throttled — see below.** Dev CORS allows `127.0.0.1`/`localhost`; production stays strict (verified live: a foreign origin *and* localhost both get no CORS header on staging). **Deployed on staging with throttle.**
+- **Admin delivery settings:** built locally on 2026-08-11 but **not yet deployed**. Adds authenticated `/admin/delivery`, `GET /admin/delivery-zones`, and `PATCH /admin/delivery-zones/{name}` so fees/availability can be managed without a deploy. Verified with API tests, Nuxt typecheck, and Nuxt production build.
 - **Server access:** `ssh oyecouture` (config on the user's Mac, key `~/.ssh/oyecouture`). Deploy with `cd ~/oyecouture && git pull && ./deploy/deploy.sh`.
 - **Admin:** https://82-29-184-79.sslip.io/admin — the user seeded their own account on 3 Aug; **neither agent knows the password, and that is correct.** Re-seed or reset with `docker compose -f compose.prod.yaml --env-file .env.production exec -it api /admin`.
 
@@ -37,7 +38,7 @@ This is the missing worklog entry for everything after `cf4c95f` (`docs: refresh
 
 **Verification for the deployed head (`a773f80`):** local `npm run typecheck` and `npm run build` passed before commit; production deploy script completed successfully; live `https://82-29-184-79.sslip.io/api/healthz`, `/admin/login`, and `/admin/products` all returned HTTP 200 after deploy.
 
-## ▶ NEXT ACTION — run one order end to end (nobody has done this yet)
+## ▶ NEXT ACTION — run one order end to end (user owns this test)
 
 Every component is now in place for the first time: a public HTTPS webhook URL, a verified sending domain, a live email key, and real products. **The full chain has never been exercised once:**
 
@@ -45,9 +46,9 @@ Every component is now in place for the first time: a public HTTPS webhook URL, 
 place order → Paystack sandbox card → webhook fires → order flips to paid → confirmation + receipt email arrives
 ```
 
-Each part is tested in isolation; the joins between them are not. This is the highest-risk untested path in the project and the thing a client demo depends on. **Do this before starting phase 2.** Use the user's own email address — see the credentials note below, emails are real now.
+Each part is tested in isolation; the joins between them are not. This is the highest-risk untested path in the project and the thing a client demo depends on. The user said on 2026-08-11 that they will run this themselves. Use the user's own email address — see the credentials note below, emails are real now.
 
-After that, in order: **(1)** client review of the 22 placeholder prices and the product groupings (casuals 7/8/9 and 23–26 are the least certain), **(2)** ghost admin **phase 2 remaining work** — editable home/content settings, delivery settings, WhatsApp/settings controls, and any richer product-detail controls still worth adding after client review, **(3)** chase the client for **suit photography** (suits are ₦275k–₦850k and still show a mockup mannequin).
+Parallel admin work can continue while the user tests payments. In order: **(1)** commit/push/deploy the local admin delivery-settings slice and visually verify `/admin/delivery`, **(2)** ghost admin **phase 2 remaining work** — editable home/content settings, WhatsApp/settings controls, and any richer product-detail controls still worth adding after client review, **(3)** client review of the 22 placeholder prices and the product groupings (casuals 7/8/9 and 23–26 are the least certain), **(4)** chase the client for **suit photography** (suits are ₦275k–₦850k and still show a mockup mannequin).
 
 ⏰ **Two clocks:** netcup withdrawal (€68.64, closes ~13 Aug — the user said they would send it) and the **Hostinger renewal at $19.49/mo (~₦26,900), which exceeds the whole ₦25k maintenance retainer** — move to the 12-month term (~₦9,646/mo) or cancel, ~28 days from 2 Aug.
 
@@ -136,9 +137,11 @@ Verified live end to end: 401 without a cookie · identical error for unknown em
 
 **✅ 1.3 ORDER DETAIL + ACTIONS — DONE (`d701dfd`).** Added authenticated `GET /admin/orders/{orderNo}` and `PATCH /admin/orders/{orderNo}/status`, plus `/admin/orders/[orderNo]`. Detail shows line items, contact/address, delivery, measurements, totals, payment link copy, WhatsApp reply, and safe status actions. Admin actions deliberately cannot set `paid`; `paid` remains reserved for server-side payment verification/webhook. Allowed manual flow is confirmation/awaiting-payment cancellation plus fulfilment transitions after payment (`paid → in_progress → shipped → delivered`, with cancellation/refund from paid where useful).
 
-**▶ 2.1 PRODUCTS + IMAGES — in progress.** Codex started this on 4 Aug. Done so far: authenticated admin product list + section/search/availability filters + archive/restore (`active`) mutation; product create/edit APIs; `/admin/products/new`; `/admin/products/{slug}` edit form for slug, name, section, category, price in kobo, description, tag, `has_sizes`, active state, and sort order. Product list filters now reuse the same single Filter popover/applied-chip pattern as orders, product pagination now uses the same numbered `1 … current±1 … last` model as the order desk, product rows now get the same hover/focus/open-edit affordance as order rows, and admin form fields/toggles now share the dashboard hover/focus microinteractions. Product edit now has image management: API-side signed Cloudinary upload, `product_images` persistence, reorder, delete, and a UI manager with upload/move/remove controls. Public storefront reads remain active-only. Still left in this phase: optional richer product detail controls and home/content settings. Important: `product_images.r2_key` is now Cloudinary `public_id`; `R2_PUBLIC_BASE` remains the Cloudinary delivery base.
+**▶ 2.1 PRODUCTS + IMAGES — in progress.** Codex started this on 4 Aug. Done so far: authenticated admin product list + section/search/availability filters + archive/restore (`active`) mutation; product create/edit APIs; `/admin/products/new`; `/admin/products/{slug}` edit form for slug, name, section, category, price in kobo, description, tag, `has_sizes`, active state, and sort order. Product list filters now reuse the same single Filter popover/applied-chip pattern as orders, product pagination now uses the same numbered `1 … current±1 … last` model as the order desk, product rows now get the same hover/focus/open-edit affordance as order rows, and admin form fields/toggles now share the dashboard hover/focus microinteractions. Product edit now has image management: API-side signed Cloudinary upload, `product_images` persistence, reorder, delete, and a UI manager with upload/move/remove controls. Public storefront reads remain active-only. Important: `product_images.r2_key` is now Cloudinary `public_id`; `R2_PUBLIC_BASE` remains the Cloudinary delivery base.
 
-**Then 2.2 editable home/content settings:** hero headline both lines, sub-copy, CTA label, sliding gallery upload/reorder, announcement bar, category tiles, delivery fees, WhatsApp number.
+**▶ 2.2 DELIVERY SETTINGS — built locally, pending commit/deploy.** Authenticated admin can list/update delivery-zone fees and checkout availability. The public checkout endpoint still returns active zones only.
+
+**Then 2.3 editable home/content settings:** hero headline both lines, sub-copy, CTA label, sliding gallery upload/reorder, announcement bar, category tiles, WhatsApp number.
 
 ## Earlier next-action — demo sprint, split between agents (30 Jul)
 📅 **NO FIXED DEMO DATE (updated 2 Aug).** The client has told the user to demo **when the build is ready** — 31 Jul and 3 Aug are both dead as deadlines. Do not optimise for speed or ship thin work to hit a date; build it properly and demo when it is genuinely worth showing. The 40% / ₦180,000 milestone still triggers on demo delivery, so don't drift either. **The only hard date left is the netcup withdrawal window, ~13 Aug** (see PARKED item). Roadmap **step 7 (deploy staging to a live link) was skipped** — we jumped from A.6 to step 8. Two parallel tracks, claimed to avoid collision:

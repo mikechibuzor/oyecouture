@@ -154,6 +154,25 @@ export interface AdminProductPage {
   readonly offset: number
 }
 
+export interface AdminDeliveryZone {
+  readonly name: string
+  readonly feeKobo: number
+  readonly active: boolean
+}
+
+export interface AdminDeliveryZonesResponse {
+  readonly zones: readonly AdminDeliveryZone[]
+}
+
+export interface AdminDeliveryZoneResponse {
+  readonly zone: AdminDeliveryZone
+}
+
+export interface AdminDeliveryZoneUpdate {
+  readonly feeKobo: number
+  readonly active: boolean
+}
+
 export interface AdminProductDetailResponse {
   readonly product: AdminProduct
 }

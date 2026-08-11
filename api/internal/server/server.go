@@ -125,6 +125,13 @@ func New(applicationConfig config.Config, databasePool *pgxpool.Pool) *http.Serv
 	requestMux.Handle("PATCH /admin/products/{slug}/active", adminHandler.RequireSession(
 		http.HandlerFunc(adminProductHandler.UpdateActive),
 	))
+	adminDeliveryHandler := delivery.NewAdminHandler(deliveryRepository)
+	requestMux.Handle("GET /admin/delivery-zones", adminHandler.RequireSession(
+		http.HandlerFunc(adminDeliveryHandler.List),
+	))
+	requestMux.Handle("PATCH /admin/delivery-zones/{name}", adminHandler.RequireSession(
+		http.HandlerFunc(adminDeliveryHandler.Update),
+	))
 	requestMux.Handle("GET /admin/products/{slug}/images", adminHandler.RequireSession(
 		http.HandlerFunc(adminProductHandler.Images),
 	))

@@ -5,6 +5,19 @@ One short entry per work session or meaningful chunk. Format:
 
 ---
 
+## 2026-08-11T10:16:25+01:00 · Codex · Admin delivery management built locally
+- **Did:** Added authenticated admin delivery-zone management: `GET /admin/delivery-zones`, `PATCH /admin/delivery-zones/{name}`, a Nuxt `/admin/delivery` page, `useAdminDeliveryZones`, sidebar navigation, fee/active controls, save loading, expired-session handling, and top-right success notifications. Public checkout still only sees active zones. Also tightened `FeeForZone` so real DB errors no longer look like an invalid delivery choice.
+- **State:** Verified locally with `GOCACHE=/private/tmp/oyecouture-go-cache go test ./...`, Node 22 `npm run typecheck`, and Node 22 `NUXT_IGNORE_LOCK=1 npm run build`.
+- **Next:** Commit/push this admin delivery slice, then deploy it when ready. After that, visually test `/admin/delivery` with an admin session and continue phase 2 into settings/home-content controls.
+- **Blockers:** Same launch blockers: user-owned end-to-end Paystack/order/email test, netcup withdrawal, Hostinger renewal decision, credential rotation, real suit photography.
+
+## 2026-08-11T09:00:00+01:00 · Codex · Latest main deployed to staging
+- **Did:** Deployed latest `origin/main` to Hostinger staging with `ssh oyecouture 'cd ~/oyecouture && git pull --ff-only && ./deploy/deploy.sh'`. This put contact form + throttle, product shipping/returns disclosures, disclosure marker fix, and real shipping/returns policy pages live.
+- **State:** Staging now runs `a592859` (`feat(care): populate shipping and returns from the real policy copy`). Deploy rebuilt/restarted API and web containers successfully and reclaimed disk, leaving 41G free of 48G.
+- **Verification:** Live `https://82-29-184-79.sslip.io/api/healthz` returned 200 with API/database ok. Live `OPTIONS /api/contact` from the staging origin returned 204 and the expected CORS headers.
+- **Next:** User will run the end-to-end Paystack/order/email test. Codex continues admin phase 2, starting with visual admin product verification and then delivery/settings/content controls.
+- **Blockers:** Netcup withdrawal still time-sensitive (~13 Aug) unless already sent; Hostinger renewal economics; credential rotation; no suit photography.
+
 ## 2026-08-04T23:30:00+01:00 · Claude · Review of Codex's work + contact form throttle
 - **Reviewed** the 12 commits since handoff plus the contact endpoint. **Codex's work is good.** All tests pass, `gofmt`/`vet` clean, staging healthy at `a773f80`. Verified: all 9 admin product routes behind `RequireSession`; the Cloudinary secret is server-side only and never reaches the browser; image upload caps at 12MB, **sniffs content type rather than trusting the header**, and allowlists jpeg/png/webp; the dev CORS relaxation is correctly gated behind `appEnv == "production"` — confirmed live that staging gives no CORS header to a foreign origin *or* to localhost. Codex also improved on my webhook fix, adding `APIError`/`ErrVerifyRejected` so Paystack 4xx/404 are terminal while 5xx/timeouts retry. My earlier WhatsApp finding was fixed correctly (`NUXT_PUBLIC_WHATSAPP_NUMBER` now reaches the web container; live in the SSR payload).
 - **One real finding, fixed (`86d89a3`):** `POST /contact` was public, unauthenticated and unthrottled while sending an email per submission. Now 5 per hour per IP, charging only messages that actually send. Extracted `internal/ratelimit` and migrated admin sign-in onto it so the client-address handling exists once.
