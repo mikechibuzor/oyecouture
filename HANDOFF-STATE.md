@@ -10,10 +10,10 @@
 - **Last worked by:** Codex · 2026-08-11.
 - **Repo:** `/Users/chibuzoriwuagwu/Downloads/share/oyecouture` · `main` · **now has a GitHub remote: private repo `mikechibuzor/oyecouture`. Push to `origin`.**
 - **Staging:** **https://82-29-184-79.sslip.io** — real Let's Encrypt cert, all five containers healthy.
-- **Latest deployed commit:** `6bb208a` (`feat(admin): manage delivery zones`) — pushed to `origin/main` and deployed on 2026-08-11. Verified live: `/api/healthz` returned 200 and the new `/api/admin/delivery-zones` route returned 401 without an admin session.
+- **Latest deployed commit:** `d400339` (`feat(admin): manage storefront settings`) — pushed to `origin/main` and deployed on 2026-08-11. Verified live: `/api/healthz` returned 200, `/api/site-settings` returned the announcement/WhatsApp payload, and `/api/admin/settings` returned 401 without an admin session.
 - **Contact form:** public `POST /contact` (`76e8848`) validates feedback and sends it via SendByte to `OWNER_NOTIFY_EMAIL`. **Now throttled — see below.** Dev CORS allows `127.0.0.1`/`localhost`; production stays strict (verified live: a foreign origin *and* localhost both get no CORS header on staging). **Deployed on staging with throttle.**
 - **Admin delivery settings:** deployed on 2026-08-11. Adds authenticated `/admin/delivery`, `GET /admin/delivery-zones`, and `PATCH /admin/delivery-zones/{name}` so fees/availability can be managed without a deploy. Verified with API tests, Nuxt typecheck, Nuxt production build, live health, and unauthenticated 401 on the protected endpoint.
-- **Local pending admin polish:** admin product/delivery money inputs now show naira while submitting kobo to the API. Local-only as of 2026-08-11; user is testing before push/deploy.
+- **Admin settings:** deployed on 2026-08-11. `/admin/settings` edits storefront announcement text and WhatsApp number via DB-backed settings. Storefront announcement, contact WhatsApp, and confirm WhatsApp CTA read from `GET /site-settings` with runtime-config fallback.
 - **Server access:** `ssh oyecouture` (config on the user's Mac, key `~/.ssh/oyecouture`). Deploy with `cd ~/oyecouture && git pull && ./deploy/deploy.sh`.
 - **Admin:** https://82-29-184-79.sslip.io/admin — the user seeded their own account on 3 Aug; **neither agent knows the password, and that is correct.** Re-seed or reset with `docker compose -f compose.prod.yaml --env-file .env.production exec -it api /admin`.
 
@@ -49,7 +49,7 @@ place order → Paystack sandbox card → webhook fires → order flips to paid 
 
 Each part is tested in isolation; the joins between them are not. This is the highest-risk untested path in the project and the thing a client demo depends on. The user said on 2026-08-11 that they will run this themselves. Use the user's own email address — see the credentials note below, emails are real now.
 
-Parallel admin work can continue while the user tests payments. In order: **(1)** visually verify `/admin/delivery` with the user's admin session, **(2)** ghost admin **phase 2 remaining work** — editable home/content settings, WhatsApp/settings controls, and any richer product-detail controls still worth adding after client review, **(3)** client review of the 22 placeholder prices and the product groupings (casuals 7/8/9 and 23–26 are the least certain), **(4)** chase the client for **suit photography** (suits are ₦275k–₦850k and still show a mockup mannequin).
+Parallel admin work can continue while the user tests payments. In order: **(1)** visually verify `/admin/delivery` and `/admin/settings` with the user's admin session, **(2)** ghost admin **phase 2 remaining work** — editable home/content controls and any richer product-detail controls still worth adding after client review, **(3)** client review of the 22 placeholder prices and the product groupings (casuals 7/8/9 and 23–26 are the least certain), **(4)** chase the client for **suit photography** (suits are ₦275k–₦850k and still show a mockup mannequin).
 
 ⏰ **Two clocks:** netcup withdrawal (€68.64, closes ~13 Aug — the user said they would send it) and the **Hostinger renewal at $19.49/mo (~₦26,900), which exceeds the whole ₦25k maintenance retainer** — move to the 12-month term (~₦9,646/mo) or cancel, ~28 days from 2 Aug.
 
@@ -142,7 +142,9 @@ Verified live end to end: 401 without a cookie · identical error for unknown em
 
 **✅ 2.2 DELIVERY SETTINGS — DONE (`6bb208a`).** Authenticated admin can list/update delivery-zone fees and checkout availability. The public checkout endpoint still returns active zones only.
 
-**Then 2.3 editable home/content settings:** hero headline both lines, sub-copy, CTA label, sliding gallery upload/reorder, announcement bar, category tiles, WhatsApp number.
+**✅ 2.3 GLOBAL SETTINGS — DONE (`d400339`).** Authenticated admin can edit announcement text and WhatsApp number. `GET /site-settings` powers the announcement bar, Contact WhatsApp, and confirm-page WhatsApp CTA. Contact owner email remains env-backed for now.
+
+**Then 2.4 editable home/content settings:** hero headline both lines, sub-copy, CTA label, sliding gallery upload/reorder, and category tiles.
 
 ## Earlier next-action — demo sprint, split between agents (30 Jul)
 📅 **NO FIXED DEMO DATE (updated 2 Aug).** The client has told the user to demo **when the build is ready** — 31 Jul and 3 Aug are both dead as deadlines. Do not optimise for speed or ship thin work to hit a date; build it properly and demo when it is genuinely worth showing. The 40% / ₦180,000 milestone still triggers on demo delivery, so don't drift either. **The only hard date left is the netcup withdrawal window, ~13 Aug** (see PARKED item). Roadmap **step 7 (deploy staging to a live link) was skipped** — we jumped from A.6 to step 8. Two parallel tracks, claimed to avoid collision:

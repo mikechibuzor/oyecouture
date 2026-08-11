@@ -5,10 +5,16 @@ One short entry per work session or meaningful chunk. Format:
 
 ---
 
+## 2026-08-11T15:50:14+01:00 · Codex · Admin settings deployed
+- **Did:** Added DB-backed storefront settings using the existing `settings` table. Public `GET /site-settings` now powers the announcement bar and storefront WhatsApp number; authenticated `GET/PATCH /admin/settings` powers the new `/admin/settings` page. Admin Settings currently manages announcement text and WhatsApp number; contact owner email remains env-backed.
+- **State:** Committed/pushed/deployed as `d400339`. Verified locally with `go test ./...`, Node 22 `npm run typecheck`, Node 22 `NUXT_IGNORE_LOCK=1 npm run build`, `git diff --check`, local endpoint smoke tests, and live staging checks: `/api/healthz` 200, `/api/site-settings` 200, `/api/admin/settings` 401 without a session.
+- **Next:** User visually tests `/admin/settings`; then continue admin phase 2 with home-content controls.
+- **Blockers:** None for this slice.
+
 ## 2026-08-11T14:38:16+01:00 · Codex · Admin money inputs switched to naira locally
 - **Did:** Changed admin product and delivery money inputs to display/edit naira while keeping API/database contracts in kobo. Product drafts now use `priceNaira` and convert to `priceKobo` only in `useAdminProducts`; delivery drafts use `feeNaira` and convert to `feeKobo` only in the save handler.
-- **State:** Local-only, pending user test. Verified with Node 22 `npm run typecheck`, Node 22 `NUXT_IGNORE_LOCK=1 npm run build`, and `git diff --check`.
-- **Next:** User tests product and delivery saves locally, then commit/push/deploy if the UX feels right.
+- **State:** User tested locally and approved. Committed/pushed/deployed as `b4f2ab4`; live health verified 200 after deploy.
+- **Next:** Continue admin phase 2 settings/home-content controls.
 - **Blockers:** None for this slice.
 
 ## 2026-08-11T10:16:25+01:00 · Codex · Admin delivery management deployed
