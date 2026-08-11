@@ -19,7 +19,7 @@ const draft = ref<AdminProductDraft>({
   name: '',
   section: ProductSection.CasualsMen,
   category: '',
-  priceKobo: 0,
+  priceNaira: 0,
   description: '',
   tag: '',
   hasSizes: true,

@@ -5,12 +5,27 @@ import type {
   AdminProductDraft,
   AdminProductImagesResponse,
   AdminProductPage,
+  AdminProductPayload,
   AdminProductQuery,
 } from '~/types/admin'
+import { nairaToKobo } from '~/utils/product'
 
 // Reads and mutates owner-facing catalogue data through authenticated admin routes.
 export const useAdminProducts = () => {
   const apiBaseUrl = useApiBaseUrl()
+
+  const toProductPayload = (draft: AdminProductDraft): AdminProductPayload => ({
+    slug: draft.slug,
+    name: draft.name,
+    section: draft.section,
+    category: draft.category,
+    priceKobo: nairaToKobo(draft.priceNaira),
+    description: draft.description,
+    tag: draft.tag,
+    hasSizes: draft.hasSizes,
+    active: draft.active,
+    sortOrder: draft.sortOrder,
+  })
 
   const fetchProducts = (query: AdminProductQuery): Promise<AdminProductPage> =>
     $fetch<AdminProductPage>(ADMIN_API_ROUTES.products, {
@@ -36,7 +51,7 @@ export const useAdminProducts = () => {
       baseURL: apiBaseUrl,
       credentials: 'include',
       method: 'POST',
-      body: draft,
+      body: toProductPayload(draft),
     }).then((response) => response.product)
 
   const updateProduct = (
@@ -47,7 +62,7 @@ export const useAdminProducts = () => {
       baseURL: apiBaseUrl,
       credentials: 'include',
       method: 'PUT',
-      body: draft,
+      body: toProductPayload(draft),
     }).then((response) => response.product)
 
   const updateProductActive = (slug: string, active: boolean): Promise<void> =>

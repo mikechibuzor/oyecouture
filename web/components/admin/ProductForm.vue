@@ -85,8 +85,8 @@ const submit = (): void => {
       </div>
 
       <label class="admin-field">
-        <span>{{ ADMIN_COPY.priceKoboLabel }}</span>
-        <input v-model.number="draft.priceKobo" type="number" min="0" step="1" required>
+        <span>{{ ADMIN_COPY.priceNairaLabel }}</span>
+        <input v-model.number="draft.priceNaira" type="number" min="0" step="1" required>
       </label>
 
       <label class="admin-field">

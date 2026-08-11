@@ -13,6 +13,7 @@
 - **Latest deployed commit:** `6bb208a` (`feat(admin): manage delivery zones`) — pushed to `origin/main` and deployed on 2026-08-11. Verified live: `/api/healthz` returned 200 and the new `/api/admin/delivery-zones` route returned 401 without an admin session.
 - **Contact form:** public `POST /contact` (`76e8848`) validates feedback and sends it via SendByte to `OWNER_NOTIFY_EMAIL`. **Now throttled — see below.** Dev CORS allows `127.0.0.1`/`localhost`; production stays strict (verified live: a foreign origin *and* localhost both get no CORS header on staging). **Deployed on staging with throttle.**
 - **Admin delivery settings:** deployed on 2026-08-11. Adds authenticated `/admin/delivery`, `GET /admin/delivery-zones`, and `PATCH /admin/delivery-zones/{name}` so fees/availability can be managed without a deploy. Verified with API tests, Nuxt typecheck, Nuxt production build, live health, and unauthenticated 401 on the protected endpoint.
+- **Local pending admin polish:** admin product/delivery money inputs now show naira while submitting kobo to the API. Local-only as of 2026-08-11; user is testing before push/deploy.
 - **Server access:** `ssh oyecouture` (config on the user's Mac, key `~/.ssh/oyecouture`). Deploy with `cd ~/oyecouture && git pull && ./deploy/deploy.sh`.
 - **Admin:** https://82-29-184-79.sslip.io/admin — the user seeded their own account on 3 Aug; **neither agent knows the password, and that is correct.** Re-seed or reset with `docker compose -f compose.prod.yaml --env-file .env.production exec -it api /admin`.
 

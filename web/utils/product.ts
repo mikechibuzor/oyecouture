@@ -9,6 +9,11 @@ export const formatProductPrice = (priceKobo: number): string =>
     maximumFractionDigits: 0,
   }).format(priceKobo / 100)
 
+export const koboToNaira = (amountKobo: number): number => amountKobo / 100
+
+export const nairaToKobo = (amountNaira: number): number =>
+  Math.round(Number(amountNaira || 0) * 100)
+
 // Reads a stable API message when available and otherwise returns safe page copy.
 export const getProductErrorMessage = (
   requestError: unknown,

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ADMIN_COPY, ADMIN_ROUTES } from '~/constants/admin'
 import type { AdminDeliveryZone } from '~/types/admin'
-import { formatProductPrice } from '~/utils/product'
+import { formatProductPrice, koboToNaira, nairaToKobo } from '~/utils/product'
 
 definePageMeta({ layout: 'admin', middleware: 'admin' })
 
@@ -9,7 +9,7 @@ useHead({ title: `${ADMIN_COPY.deliveryHeading} · ${ADMIN_COPY.brand}` })
 
 interface DeliveryZoneDraft {
   readonly name: string
-  feeKobo: number
+  feeNaira: number
   active: boolean
 }
 
@@ -45,7 +45,7 @@ const toDrafts = (deliveryZones: readonly AdminDeliveryZone[]): Record<string, D
   Object.fromEntries(
     deliveryZones.map((zone) => [
       zone.name,
-      { name: zone.name, feeKobo: zone.feeKobo, active: zone.active },
+      { name: zone.name, feeNaira: koboToNaira(zone.feeKobo), active: zone.active },
     ]),
   )
 
@@ -79,11 +79,14 @@ const syncZone = (updatedZone: AdminDeliveryZone): void => {
     ...drafts.value,
     [updatedZone.name]: {
       name: updatedZone.name,
-      feeKobo: updatedZone.feeKobo,
+      feeNaira: koboToNaira(updatedZone.feeKobo),
       active: updatedZone.active,
     },
   }
 }
+
+const formatDraftFee = (draft: DeliveryZoneDraft): string =>
+  formatProductPrice(nairaToKobo(draft.feeNaira))
 
 const saveZone = async (draft: DeliveryZoneDraft): Promise<void> => {
   savingZoneName.value = draft.name
@@ -92,7 +95,7 @@ const saveZone = async (draft: DeliveryZoneDraft): Promise<void> => {
   try {
     const updatedZone = await withLoading(
       () => updateDeliveryZone(draft.name, {
-        feeKobo: Number(draft.feeKobo),
+        feeKobo: nairaToKobo(draft.feeNaira),
         active: draft.active,
       }),
       ADMIN_COPY.deliverySaving,
@@ -158,16 +161,16 @@ onMounted(() => {
             </td>
             <td>
               <input
-                v-model.number="draft.feeKobo"
+                v-model.number="draft.feeNaira"
                 class="admin-delivery-fee-input"
                 type="number"
                 min="0"
-                step="100"
+                step="1"
                 :aria-label="`${ADMIN_COPY.deliveryFeeLabel} for ${draft.name}`"
               >
             </td>
             <td class="admin-table-number">
-              {{ formatProductPrice(draft.feeKobo || 0) }}
+              {{ formatDraftFee(draft) }}
             </td>
             <td>
               <label class="admin-delivery-toggle">

@@ -4,6 +4,7 @@ import {
   ADMIN_ROUTES,
 } from '~/constants/admin'
 import type { AdminProduct, AdminProductDraft } from '~/types/admin'
+import { koboToNaira } from '~/utils/product'
 
 definePageMeta({ layout: 'admin', middleware: 'admin' })
 
@@ -49,7 +50,7 @@ const toDraft = (adminProduct: AdminProduct): AdminProductDraft => ({
   name: adminProduct.name,
   section: adminProduct.section,
   category: adminProduct.category,
-  priceKobo: adminProduct.priceKobo,
+  priceNaira: koboToNaira(adminProduct.priceKobo),
   description: adminProduct.description,
   tag: adminProduct.tag,
   hasSizes: adminProduct.hasSizes,

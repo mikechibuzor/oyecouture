@@ -18,7 +18,7 @@ import type {
 } from '~/types/admin'
 import { ProductSection } from '~/types/product'
 import { formatOrderDate } from '~/utils/admin'
-import { formatProductPrice } from '~/utils/product'
+import { formatProductPrice, koboToNaira } from '~/utils/product'
 
 definePageMeta({ layout: 'admin', middleware: 'admin' })
 
@@ -272,7 +272,7 @@ const toDraft = (adminProduct: AdminProduct): AdminProductDraft => ({
   name: adminProduct.name,
   section: adminProduct.section,
   category: adminProduct.category,
-  priceKobo: adminProduct.priceKobo,
+  priceNaira: koboToNaira(adminProduct.priceKobo),
   description: adminProduct.description,
   tag: adminProduct.tag,
   hasSizes: adminProduct.hasSizes,
@@ -285,7 +285,7 @@ const createEmptyDraft = (): AdminProductDraft => ({
   name: '',
   section: ProductSection.CasualsMen,
   category: '',
-  priceKobo: 0,
+  priceNaira: 0,
   description: '',
   tag: '',
   hasSizes: true,

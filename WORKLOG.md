@@ -5,6 +5,12 @@ One short entry per work session or meaningful chunk. Format:
 
 ---
 
+## 2026-08-11T14:38:16+01:00 · Codex · Admin money inputs switched to naira locally
+- **Did:** Changed admin product and delivery money inputs to display/edit naira while keeping API/database contracts in kobo. Product drafts now use `priceNaira` and convert to `priceKobo` only in `useAdminProducts`; delivery drafts use `feeNaira` and convert to `feeKobo` only in the save handler.
+- **State:** Local-only, pending user test. Verified with Node 22 `npm run typecheck`, Node 22 `NUXT_IGNORE_LOCK=1 npm run build`, and `git diff --check`.
+- **Next:** User tests product and delivery saves locally, then commit/push/deploy if the UX feels right.
+- **Blockers:** None for this slice.
+
 ## 2026-08-11T10:16:25+01:00 · Codex · Admin delivery management deployed
 - **Did:** Added authenticated admin delivery-zone management: `GET /admin/delivery-zones`, `PATCH /admin/delivery-zones/{name}`, a Nuxt `/admin/delivery` page, `useAdminDeliveryZones`, sidebar navigation, fee/active controls, save loading, expired-session handling, and top-right success notifications. Public checkout still only sees active zones. Also tightened `FeeForZone` so real DB errors no longer look like an invalid delivery choice.
 - **State:** Committed/pushed as `6bb208a` and deployed to staging. Verified locally with `GOCACHE=/private/tmp/oyecouture-go-cache go test ./...`, Node 22 `npm run typecheck`, and Node 22 `NUXT_IGNORE_LOCK=1 npm run build`. Verified live health 200 and `/api/admin/delivery-zones` returns 401 without an admin session.

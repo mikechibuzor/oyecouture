@@ -186,12 +186,25 @@ export interface AdminProductDraft {
   name: string
   section: ProductSection
   category: string
-  priceKobo: number
+  priceNaira: number
   description: string
   tag: string
   hasSizes: boolean
   active: boolean
   sortOrder: number
+}
+
+export interface AdminProductPayload {
+  readonly slug: string
+  readonly name: string
+  readonly section: ProductSection
+  readonly category: string
+  readonly priceKobo: number
+  readonly description: string
+  readonly tag: string
+  readonly hasSizes: boolean
+  readonly active: boolean
+  readonly sortOrder: number
 }
 
 export type AdminProductActiveFilter = '' | 'true' | 'false'
