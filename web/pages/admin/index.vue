@@ -5,6 +5,7 @@ import {
   ADMIN_DEFAULT_PERIOD,
   ADMIN_ORDERS_PAGE_SIZE,
   ADMIN_ORDER_FILTER_OPTIONS,
+  ADMIN_ROWS_PER_PAGE_OPTIONS,
   ADMIN_ROUTES,
   ADMIN_SEARCH_DEBOUNCE_MS,
   ORDER_KIND_LABELS,
@@ -14,9 +15,13 @@ import type {
   AdminFilterKey,
   AdminOrderMetrics,
   AdminOrderSummary,
-  MetricsPeriod,
 } from '~/types/admin'
-import { type AdminOrderFilterKey, type AdminOrderFilterValues, OrderStatus } from '~/types/admin'
+import {
+  type AdminOrderFilterKey,
+  type AdminOrderFilterValues,
+  MetricsPeriod,
+  OrderStatus,
+} from '~/types/admin'
 import { OrderKind } from '~/types/order'
 import { formatOrderDate } from '~/utils/admin'
 import { formatProductPrice } from '~/utils/product'
@@ -28,17 +33,63 @@ useHead({ title: `${ADMIN_COPY.ordersHeading} · ${ADMIN_COPY.brand}` })
 const { fetchOrders, fetchMetrics } = useAdminOrders()
 const { session } = useAdminSession()
 const router = useRouter()
+const route = useRoute()
 
-const searchTerm = ref('')
-const statusFilter = ref<OrderStatus | ''>('')
-const kindFilter = ref<OrderKind | ''>('')
-const fromFilter = ref('')
-const toFilter = ref('')
-const offset = ref(0)
+// Normalises a query value because Vue Router may expose repeated keys as arrays.
+const queryString = (value: unknown): string =>
+  Array.isArray(value) ? String(value[0] ?? '') : typeof value === 'string' ? value : ''
+
+// Keeps rows-per-page inside the options the UI can actually render.
+const pageSizeFromQuery = (value: unknown): string => {
+  const queryValue = queryString(value)
+  return ADMIN_ROWS_PER_PAGE_OPTIONS.some((option) => option.value === queryValue)
+    ? queryValue
+    : String(ADMIN_ORDERS_PAGE_SIZE)
+}
+
+// Page numbers are one-based in the URL and converted to an offset internally.
+const pageFromQuery = (value: unknown): number => {
+  const page = Number(queryString(value))
+  return Number.isInteger(page) && page > 0 ? page : 1
+}
+
+// Query status is accepted only when it matches the order lifecycle enum.
+const statusFromQuery = (value: unknown): OrderStatus | '' => {
+  const queryValue = queryString(value)
+  return Object.values(OrderStatus).includes(queryValue as OrderStatus)
+    ? (queryValue as OrderStatus)
+    : ''
+}
+
+// Query order type is accepted only when it matches the order kind enum.
+const kindFromQuery = (value: unknown): OrderKind | '' => {
+  const queryValue = queryString(value)
+  return Object.values(OrderKind).includes(queryValue as OrderKind)
+    ? (queryValue as OrderKind)
+    : ''
+}
+
+// Metrics period is URL-backed too so the summary strip survives a reload.
+const periodFromQuery = (value: unknown): MetricsPeriod => {
+  const queryValue = queryString(value)
+  return Object.values(MetricsPeriod).includes(queryValue as MetricsPeriod)
+    ? (queryValue as MetricsPeriod)
+    : ADMIN_DEFAULT_PERIOD
+}
+
+const initialPageSize = pageSizeFromQuery(route.query.limit)
+
+const searchTerm = ref(queryString(route.query.q))
+const statusFilter = ref<OrderStatus | ''>(statusFromQuery(route.query.status))
+const kindFilter = ref<OrderKind | ''>(kindFromQuery(route.query.kind))
+const fromFilter = ref(queryString(route.query.from))
+const toFilter = ref(queryString(route.query.to))
+const offset = ref((pageFromQuery(route.query.page) - 1) * Number(initialPageSize))
+const pageSize = ref(initialPageSize)
 
 const orders = ref<readonly AdminOrderSummary[]>([])
 const metrics = ref<AdminOrderMetrics | null>(null)
-const metricsPeriod = ref<MetricsPeriod>(ADMIN_DEFAULT_PERIOD)
+const metricsPeriod = ref<MetricsPeriod>(periodFromQuery(route.query.period))
 const total = ref(0)
 const isLoading = ref(true)
 const hasFailed = ref(false)
@@ -67,16 +118,24 @@ const rangeStart = computed(() => (total.value === 0 ? 0 : offset.value + 1))
 // The visible range ends at the number of rows actually loaded on this page.
 const rangeEnd = computed(() => offset.value + orders.value.length)
 
+// Rows per page is stored as a string for UiSelect and converted at the API edge.
+const pageSizeValue = computed(() => Number(pageSize.value) || ADMIN_ORDERS_PAGE_SIZE)
+
 // Pagination controls disable themselves at the list boundaries.
 const canGoBack = computed(() => offset.value > 0)
 const canGoForward = computed(() => rangeEnd.value < total.value)
 
 // Current page derives from offset so direct page jumps and next/previous agree.
-const currentPage = computed(() => Math.floor(offset.value / ADMIN_ORDERS_PAGE_SIZE) + 1)
+const currentPage = computed(() => Math.floor(offset.value / pageSizeValue.value) + 1)
 
 // Total pages bottoms out at one so the pagination area never divides by zero.
 const totalPages = computed(() =>
-  Math.max(1, Math.ceil(total.value / ADMIN_ORDERS_PAGE_SIZE)),
+  Math.max(1, Math.ceil(total.value / pageSizeValue.value)),
+)
+
+// The summary mirrors the compact pagination inspiration while keeping range detail.
+const paginationSummary = computed(() =>
+  `Page ${currentPage.value} of ${totalPages.value}`,
 )
 
 // The owner gets nearby pages plus first/last; ellipses keep large lists tidy.
@@ -105,6 +164,82 @@ const paginationItems = computed<(number | 'ellipsis')[]>(() => {
 // A request counter, not a boolean: a slow early response must not overwrite a
 // fresher one when the owner types quickly.
 let latestRequestId = 0
+let isWritingRouteQuery = false
+let isReadingRouteQuery = false
+
+// The table state is encoded into readable URL query params.
+const adminQuery = computed<Record<string, string>>(() => {
+  const query: Record<string, string> = {
+    page: String(currentPage.value),
+    limit: pageSize.value,
+    period: metricsPeriod.value,
+  }
+
+  if (searchTerm.value) {
+    query.q = searchTerm.value
+  }
+
+  if (statusFilter.value) {
+    query.status = statusFilter.value
+  }
+
+  if (kindFilter.value) {
+    query.kind = kindFilter.value
+  }
+
+  if (fromFilter.value) {
+    query.from = fromFilter.value
+  }
+
+  if (toFilter.value) {
+    query.to = toFilter.value
+  }
+
+  return query
+})
+
+// Prevents replace() churn when the current URL already represents the state.
+const queryMatchesRoute = (query: Record<string, string>): boolean => {
+  const routeKeys = Object.keys(route.query)
+  const queryKeys = Object.keys(query)
+
+  if (routeKeys.length !== queryKeys.length) {
+    return false
+  }
+
+  return queryKeys.every((key) => queryString(route.query[key]) === query[key])
+}
+
+// Writes the current table state into the URL without adding history entries.
+const replaceRouteQuery = (): void => {
+  if (isReadingRouteQuery || queryMatchesRoute(adminQuery.value)) {
+    return
+  }
+
+  isWritingRouteQuery = true
+  void router.replace({ query: adminQuery.value }).finally(() => {
+    isWritingRouteQuery = false
+  })
+}
+
+// Pulls browser back/forward URL state back into the table controls.
+const syncFromRouteQuery = async (): Promise<void> => {
+  isReadingRouteQuery = true
+  const nextPageSize = pageSizeFromQuery(route.query.limit)
+  const nextPage = pageFromQuery(route.query.page)
+
+  searchTerm.value = queryString(route.query.q)
+  statusFilter.value = statusFromQuery(route.query.status)
+  kindFilter.value = kindFromQuery(route.query.kind)
+  fromFilter.value = queryString(route.query.from)
+  toFilter.value = queryString(route.query.to)
+  pageSize.value = nextPageSize
+  metricsPeriod.value = periodFromQuery(route.query.period)
+  offset.value = (nextPage - 1) * Number(nextPageSize)
+
+  await nextTick()
+  isReadingRouteQuery = false
+}
 
 // A session that expired while the page was open should return the owner to
 // sign-in rather than showing a load failure they cannot act on.
@@ -131,11 +266,18 @@ const load = async (): Promise<void> => {
       q: searchTerm.value,
       from: fromFilter.value,
       to: toFilter.value,
-      limit: ADMIN_ORDERS_PAGE_SIZE,
+      limit: pageSizeValue.value,
       offset: offset.value,
     })
 
     if (requestId !== latestRequestId) {
+      return
+    }
+
+    if (page.total > 0 && page.orders.length === 0 && offset.value >= page.total) {
+      offset.value = Math.floor((page.total - 1) / pageSizeValue.value) * pageSizeValue.value
+      replaceRouteQuery()
+      void load()
       return
     }
 
@@ -173,27 +315,70 @@ const loadMetrics = async (): Promise<void> => {
 let searchTimer: ReturnType<typeof setTimeout> | undefined
 
 watch([statusFilter, kindFilter, fromFilter, toFilter], () => {
+  if (isReadingRouteQuery) {
+    return
+  }
+
   offset.value = 0
+  replaceRouteQuery()
   void load()
 })
 
 watch(searchTerm, () => {
+  if (isReadingRouteQuery) {
+    return
+  }
+
   clearTimeout(searchTimer)
   searchTimer = setTimeout(() => {
     offset.value = 0
+    replaceRouteQuery()
     void load()
   }, ADMIN_SEARCH_DEBOUNCE_MS)
 })
 
 // The period narrows the summary only; the list below is unaffected.
 watch(metricsPeriod, () => {
+  if (isReadingRouteQuery) {
+    return
+  }
+
+  replaceRouteQuery()
   void loadMetrics()
 })
+
+watch(pageSize, () => {
+  if (isReadingRouteQuery) {
+    return
+  }
+
+  offset.value = 0
+  replaceRouteQuery()
+  void load()
+})
+
+watch(
+  () => route.query,
+  async () => {
+    if (isWritingRouteQuery) {
+      return
+    }
+
+    const previousPeriod = metricsPeriod.value
+    await syncFromRouteQuery()
+    void load()
+
+    if (metricsPeriod.value !== previousPeriod) {
+      void loadMetrics()
+    }
+  },
+)
 
 onBeforeUnmount(() => clearTimeout(searchTimer))
 
 const goToPreviousPage = (): void => {
-  offset.value = Math.max(0, offset.value - ADMIN_ORDERS_PAGE_SIZE)
+  offset.value = Math.max(0, offset.value - pageSizeValue.value)
+  replaceRouteQuery()
   void load()
 }
 
@@ -203,12 +388,14 @@ const goToPage = (page: number): void => {
     return
   }
 
-  offset.value = (page - 1) * ADMIN_ORDERS_PAGE_SIZE
+  offset.value = (page - 1) * pageSizeValue.value
+  replaceRouteQuery()
   void load()
 }
 
 const goToNextPage = (): void => {
-  offset.value += ADMIN_ORDERS_PAGE_SIZE
+  offset.value += pageSizeValue.value
+  replaceRouteQuery()
   void load()
 }
 
@@ -281,6 +468,7 @@ const handleOrderRowKeydown = (keyboardEvent: KeyboardEvent, orderNo: string): v
 }
 
 onMounted(() => {
+  replaceRouteQuery()
   void load()
   void loadMetrics()
 })
@@ -419,9 +607,19 @@ onMounted(() => {
       </div>
 
       <nav class="admin-pagination">
-        <p class="admin-pagination-count">
-          {{ rangeStart }}–{{ rangeEnd }} of {{ total }}
-        </p>
+        <div class="admin-pagination-meta">
+          <p class="admin-pagination-count">
+            {{ paginationSummary }} · {{ rangeStart }}–{{ rangeEnd }} of {{ total }}
+          </p>
+          <div class="admin-pagination-size">
+            <span>{{ ADMIN_COPY.rowsPerPage }}</span>
+            <UiSelect
+              v-model="pageSize"
+              :options="ADMIN_ROWS_PER_PAGE_OPTIONS"
+              :label="ADMIN_COPY.rowsPerPage"
+            />
+          </div>
+        </div>
 
         <div class="admin-pagination-controls">
           <button

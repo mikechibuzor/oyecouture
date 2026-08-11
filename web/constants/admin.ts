@@ -185,6 +185,7 @@ export const ADMIN_COPY = {
   restoringProduct: 'Restoring…',
   previous: 'Previous',
   next: 'Next',
+  rowsPerPage: 'Rows per page',
   pendingBadge: 'Soon',
   navigationLabel: 'Admin sections',
   collapseSidebar: 'Collapse sidebar',
@@ -240,6 +241,14 @@ export const ADMIN_ORDERS_PAGE_SIZE = 10
 
 // Product rows are denser than orders, so the catalogue desk can show more at once.
 export const ADMIN_PRODUCTS_PAGE_SIZE = 25
+
+// The API clamps limits at 100, so the UI exposes only supported page sizes.
+export const ADMIN_ROWS_PER_PAGE_OPTIONS: readonly SelectOption<string>[] = [
+  { value: '10', label: '10' },
+  { value: '25', label: '25' },
+  { value: '50', label: '50' },
+  { value: '100', label: '100' },
+]
 
 // Typing in the search box should not fire a request per keystroke.
 export const ADMIN_SEARCH_DEBOUNCE_MS = 250

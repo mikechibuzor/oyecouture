@@ -4,6 +4,7 @@ import {
   ADMIN_COPY,
   ADMIN_PRODUCT_FILTER_OPTIONS,
   ADMIN_PRODUCTS_PAGE_SIZE,
+  ADMIN_ROWS_PER_PAGE_OPTIONS,
   ADMIN_ROUTES,
   ADMIN_SEARCH_DEBOUNCE_MS,
   PRODUCT_SECTION_LABELS,
@@ -35,13 +36,49 @@ const {
 } = useAdminProducts()
 const { session } = useAdminSession()
 const router = useRouter()
+const route = useRoute()
 const { notifySuccess } = useAppNotifications()
 const { withLoading } = useAppLoading()
 
-const searchTerm = ref('')
-const sectionFilter = ref<ProductSection | ''>('')
-const activeFilter = ref<AdminProductActiveFilter>('')
-const offset = ref(0)
+// Normalises a query value because Vue Router may expose repeated keys as arrays.
+const queryString = (value: unknown): string =>
+  Array.isArray(value) ? String(value[0] ?? '') : typeof value === 'string' ? value : ''
+
+// Keeps rows-per-page inside the options the UI can actually render.
+const pageSizeFromQuery = (value: unknown): string => {
+  const queryValue = queryString(value)
+  return ADMIN_ROWS_PER_PAGE_OPTIONS.some((option) => option.value === queryValue)
+    ? queryValue
+    : String(ADMIN_PRODUCTS_PAGE_SIZE)
+}
+
+// Page numbers are one-based in the URL and converted to an offset internally.
+const pageFromQuery = (value: unknown): number => {
+  const page = Number(queryString(value))
+  return Number.isInteger(page) && page > 0 ? page : 1
+}
+
+// Query section is accepted only when it matches the product section enum.
+const sectionFromQuery = (value: unknown): ProductSection | '' => {
+  const queryValue = queryString(value)
+  return Object.values(ProductSection).includes(queryValue as ProductSection)
+    ? (queryValue as ProductSection)
+    : ''
+}
+
+// Query active state is accepted only when it matches the availability filter.
+const activeFromQuery = (value: unknown): AdminProductActiveFilter => {
+  const queryValue = queryString(value)
+  return queryValue === 'true' || queryValue === 'false' ? queryValue : ''
+}
+
+const initialPageSize = pageSizeFromQuery(route.query.limit)
+
+const searchTerm = ref(queryString(route.query.q))
+const sectionFilter = ref<ProductSection | ''>(sectionFromQuery(route.query.section))
+const activeFilter = ref<AdminProductActiveFilter>(activeFromQuery(route.query.active))
+const offset = ref((pageFromQuery(route.query.page) - 1) * Number(initialPageSize))
+const pageSize = ref(initialPageSize)
 
 const products = ref<readonly AdminProduct[]>([])
 const total = ref(0)
@@ -75,16 +112,24 @@ const rangeStart = computed(() => (total.value === 0 ? 0 : offset.value + 1))
 // The end of the visible range tracks the loaded page, not just the page size.
 const rangeEnd = computed(() => offset.value + products.value.length)
 
+// Rows per page is stored as a string for UiSelect and converted at the API edge.
+const pageSizeValue = computed(() => Number(pageSize.value) || ADMIN_PRODUCTS_PAGE_SIZE)
+
 // Pagination controls disable themselves at the list boundaries.
 const canGoBack = computed(() => offset.value > 0)
 const canGoForward = computed(() => rangeEnd.value < total.value)
 
 // Current page derives from offset so direct page jumps and next/previous agree.
-const currentPage = computed(() => Math.floor(offset.value / ADMIN_PRODUCTS_PAGE_SIZE) + 1)
+const currentPage = computed(() => Math.floor(offset.value / pageSizeValue.value) + 1)
 
 // Total pages bottoms out at one so the pagination area never divides by zero.
 const totalPages = computed(() =>
-  Math.max(1, Math.ceil(total.value / ADMIN_PRODUCTS_PAGE_SIZE)),
+  Math.max(1, Math.ceil(total.value / pageSizeValue.value)),
+)
+
+// The summary mirrors the compact pagination inspiration while keeping range detail.
+const paginationSummary = computed(() =>
+  `Page ${currentPage.value} of ${totalPages.value}`,
 )
 
 const isEditorOpen = computed(() => productEditorMode.value !== null)
@@ -124,6 +169,70 @@ const paginationItems = computed<(number | 'ellipsis')[]>(() => {
 
 // A request counter prevents stale responses from replacing fresh filter results.
 let latestRequestId = 0
+let isWritingRouteQuery = false
+let isReadingRouteQuery = false
+
+// The table state is encoded into readable URL query params.
+const adminQuery = computed<Record<string, string>>(() => {
+  const query: Record<string, string> = {
+    page: String(currentPage.value),
+    limit: pageSize.value,
+  }
+
+  if (searchTerm.value) {
+    query.q = searchTerm.value
+  }
+
+  if (sectionFilter.value) {
+    query.section = sectionFilter.value
+  }
+
+  if (activeFilter.value) {
+    query.active = activeFilter.value
+  }
+
+  return query
+})
+
+// Prevents replace() churn when the current URL already represents the state.
+const queryMatchesRoute = (query: Record<string, string>): boolean => {
+  const routeKeys = Object.keys(route.query)
+  const queryKeys = Object.keys(query)
+
+  if (routeKeys.length !== queryKeys.length) {
+    return false
+  }
+
+  return queryKeys.every((key) => queryString(route.query[key]) === query[key])
+}
+
+// Writes the current table state into the URL without adding history entries.
+const replaceRouteQuery = (): void => {
+  if (isReadingRouteQuery || queryMatchesRoute(adminQuery.value)) {
+    return
+  }
+
+  isWritingRouteQuery = true
+  void router.replace({ query: adminQuery.value }).finally(() => {
+    isWritingRouteQuery = false
+  })
+}
+
+// Pulls browser back/forward URL state back into the table controls.
+const syncFromRouteQuery = async (): Promise<void> => {
+  isReadingRouteQuery = true
+  const nextPageSize = pageSizeFromQuery(route.query.limit)
+  const nextPage = pageFromQuery(route.query.page)
+
+  searchTerm.value = queryString(route.query.q)
+  sectionFilter.value = sectionFromQuery(route.query.section)
+  activeFilter.value = activeFromQuery(route.query.active)
+  pageSize.value = nextPageSize
+  offset.value = (nextPage - 1) * Number(nextPageSize)
+
+  await nextTick()
+  isReadingRouteQuery = false
+}
 
 const isExpiredSession = async (requestError: unknown): Promise<boolean> => {
   if ((requestError as { status?: number } | null)?.status !== 401) {
@@ -148,13 +257,20 @@ const load = async (): Promise<void> => {
         section: sectionFilter.value,
         active: activeFilter.value,
         q: searchTerm.value,
-        limit: ADMIN_PRODUCTS_PAGE_SIZE,
+        limit: pageSizeValue.value,
         offset: offset.value,
       }),
       ADMIN_COPY.productLoading,
     )
 
     if (requestId !== latestRequestId) {
+      return
+    }
+
+    if (page.total > 0 && page.products.length === 0 && offset.value >= page.total) {
+      offset.value = Math.floor((page.total - 1) / pageSizeValue.value) * pageSizeValue.value
+      replaceRouteQuery()
+      void load()
       return
     }
 
@@ -178,22 +294,55 @@ const load = async (): Promise<void> => {
 let searchTimer: ReturnType<typeof setTimeout> | undefined
 
 watch([sectionFilter, activeFilter], () => {
+  if (isReadingRouteQuery) {
+    return
+  }
+
   offset.value = 0
+  replaceRouteQuery()
   void load()
 })
 
 watch(searchTerm, () => {
+  if (isReadingRouteQuery) {
+    return
+  }
+
   clearTimeout(searchTimer)
   searchTimer = setTimeout(() => {
     offset.value = 0
+    replaceRouteQuery()
     void load()
   }, ADMIN_SEARCH_DEBOUNCE_MS)
 })
 
+watch(pageSize, () => {
+  if (isReadingRouteQuery) {
+    return
+  }
+
+  offset.value = 0
+  replaceRouteQuery()
+  void load()
+})
+
+watch(
+  () => route.query,
+  async () => {
+    if (isWritingRouteQuery) {
+      return
+    }
+
+    await syncFromRouteQuery()
+    void load()
+  },
+)
+
 onBeforeUnmount(() => clearTimeout(searchTimer))
 
 const goToPreviousPage = (): void => {
-  offset.value = Math.max(0, offset.value - ADMIN_PRODUCTS_PAGE_SIZE)
+  offset.value = Math.max(0, offset.value - pageSizeValue.value)
+  replaceRouteQuery()
   void load()
 }
 
@@ -202,12 +351,14 @@ const goToPage = (page: number): void => {
     return
   }
 
-  offset.value = (page - 1) * ADMIN_PRODUCTS_PAGE_SIZE
+  offset.value = (page - 1) * pageSizeValue.value
+  replaceRouteQuery()
   void load()
 }
 
 const goToNextPage = (): void => {
-  offset.value += ADMIN_PRODUCTS_PAGE_SIZE
+  offset.value += pageSizeValue.value
+  replaceRouteQuery()
   void load()
 }
 
@@ -508,6 +659,7 @@ watch(isEditorOpen, (isOpen) => {
 })
 
 onMounted(() => {
+  replaceRouteQuery()
   void load()
 })
 
@@ -644,9 +796,19 @@ onBeforeUnmount(() => {
       </div>
 
       <nav class="admin-pagination">
-        <p class="admin-pagination-count">
-          {{ rangeStart }}–{{ rangeEnd }} of {{ total }}
-        </p>
+        <div class="admin-pagination-meta">
+          <p class="admin-pagination-count">
+            {{ paginationSummary }} · {{ rangeStart }}–{{ rangeEnd }} of {{ total }}
+          </p>
+          <div class="admin-pagination-size">
+            <span>{{ ADMIN_COPY.rowsPerPage }}</span>
+            <UiSelect
+              v-model="pageSize"
+              :options="ADMIN_ROWS_PER_PAGE_OPTIONS"
+              :label="ADMIN_COPY.rowsPerPage"
+            />
+          </div>
+        </div>
 
         <div class="admin-pagination-controls">
           <button

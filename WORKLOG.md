@@ -5,6 +5,18 @@ One short entry per work session or meaningful chunk. Format:
 
 ---
 
+## 2026-08-11T22:38:00+01:00 · Codex · Admin URL state and control polish
+- **Did:** Made Orders and Products persist admin table state in readable query params (`page`, `limit`, `period`, `q`, `status`, `kind`, `from`, `to`, `section`, `active`) so reload/back/forward preserve the current desk view. Added first-mount query normalization, stale-page clamping when a URL points past the available results, custom admin checkbox styling, stronger focus-visible rings, primary save-button treatment, and number-input spinner removal for admin form fields.
+- **State:** Local only; not committed, pushed, or deployed yet. Verified with `git diff --check`, Node 22 `npm run typecheck`, and Node 22 `NUXT_IGNORE_LOCK=1 npm run build`.
+- **Next:** User visually tests admin query persistence and control polish locally; then commit/push/deploy the admin modernization bundle if approved.
+- **Blockers:** None for this slice.
+
+## 2026-08-11T21:36:00+01:00 · Codex · Admin dashboard modernization pass
+- **Did:** Modernized the shared admin dashboard visual system without changing data contracts: dark premium sidebar rail, stronger page headers, elevated metric cards, grouped toolbar/search/filter surfaces, cleaner table headers/row hover/focus affordances, softer status pills, upgraded form field/select focus states, blurred drawer backdrop, smoother drawer/popover entrances, and reduced-motion fallbacks. Also added rows-per-page controls to the paginated Orders and Products desks (`10/25/50/100`), with API `limit`/`offset` kept in sync.
+- **State:** Local only; not committed, pushed, or deployed yet. Verified with `git diff --check`, Node 22 `npm run typecheck`, Node 22 `NUXT_IGNORE_LOCK=1 npm run build`, and in-app browser screenshots for `/admin/home-content`, `/admin/products`, and the product edit drawer. Browser-smoked Products rows-per-page from 25 to 10 rows; Orders local DB currently has no rows, so its footer path was compile-verified rather than interaction-verified.
+- **Next:** User visually tests core admin routes locally; then decide whether to tune the visual direction further or commit/push/deploy.
+- **Blockers:** None for this styling pass.
+
 ## 2026-08-11T18:03:48+01:00 · Codex · Home content admin first slice
 - **Did:** Added JSON-backed home content using the existing `settings` table: public `GET /home-content`, authenticated `GET/PATCH /admin/home-content`, a new `/admin/home-content` page, active sidebar navigation, `useHomeContent`, and storefront homepage bindings for hero copy, CTA link/label, category section copy, and category tile label/heading/image URL/alt/link fields. Static constants remain the fallback if the endpoint is unavailable or unset.
 - **State:** User tested locally and approved. Committed/pushed/deployed as `925ad9b`. Verified with `GOCACHE=/private/tmp/oyecouture-go-cache go test ./...`, Node 22 `npm run typecheck`, Node 22 `NUXT_IGNORE_LOCK=1 npm run build`, `git diff --check`, local smoke checks, and live staging checks: `/api/healthz` 200, `/api/home-content` 200, `/api/admin/home-content` 401 without a session, `/admin/home-content` 200/noindex.
