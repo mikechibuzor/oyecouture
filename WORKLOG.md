@@ -7,13 +7,13 @@ One short entry per work session or meaningful chunk. Format:
 
 ## 2026-08-11T18:03:48+01:00 · Codex · Home content admin first slice
 - **Did:** Added JSON-backed home content using the existing `settings` table: public `GET /home-content`, authenticated `GET/PATCH /admin/home-content`, a new `/admin/home-content` page, active sidebar navigation, `useHomeContent`, and storefront homepage bindings for hero copy, CTA link/label, category section copy, and category tile label/heading/image URL/alt/link fields. Static constants remain the fallback if the endpoint is unavailable or unset.
-- **State:** Local only; not committed or deployed. Verified with `GOCACHE=/private/tmp/oyecouture-go-cache go test ./...`, Node 22 `npm run typecheck`, Node 22 `NUXT_IGNORE_LOCK=1 npm run build`, `git diff --check`, and local smoke checks for `/home-content`, `/admin/home-content`, and `/`.
-- **Next:** User visually tests `/admin/home-content` and homepage updates. Then commit/push this slice if approved, or continue into image upload/reorder for homepage gallery.
+- **State:** User tested locally and approved. Committed/pushed/deployed as `925ad9b`. Verified with `GOCACHE=/private/tmp/oyecouture-go-cache go test ./...`, Node 22 `npm run typecheck`, Node 22 `NUXT_IGNORE_LOCK=1 npm run build`, `git diff --check`, local smoke checks, and live staging checks: `/api/healthz` 200, `/api/home-content` 200, `/api/admin/home-content` 401 without a session, `/admin/home-content` 200/noindex.
+- **Next:** Continue into homepage gallery image upload/reorder when work resumes.
 - **Blockers:** None for text/link content. Homepage gallery upload/reorder remains a separate slice.
 
 ## 2026-08-11T16:45:45+01:00 · Codex · Delivery areas drawer flow
 - **Did:** Added authenticated admin delivery-area creation with `POST /admin/delivery-zones`, duplicate-name handling, and a product-style `/admin/delivery` drawer flow. Delivery areas now render as table rows; clicking a row opens the drawer with fee editing, checkout visibility, and hide/show CTAs. Creating or saving closes the drawer and fires the shared top-right success notification; failures keep the drawer open.
-- **State:** Committed/pushed as `c325b92`. Verified locally with `GOCACHE=/private/tmp/oyecouture-go-cache go test ./...`, Node 22 `npm run typecheck`, Node 22 `NUXT_IGNORE_LOCK=1 npm run build`, and `git diff --check`. User tested add/hide/show locally and approved. Not deployed yet.
+- **State:** Committed/pushed as `c325b92` and deployed in the `925ad9b` staging rollout. Verified locally with `GOCACHE=/private/tmp/oyecouture-go-cache go test ./...`, Node 22 `npm run typecheck`, Node 22 `NUXT_IGNORE_LOCK=1 npm run build`, and `git diff --check`. User tested add/hide/show locally and approved.
 - **Next:** Continue into editable home/content controls.
 - **Blockers:** None for this slice.
 
