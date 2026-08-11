@@ -1129,6 +1129,22 @@ body.has-admin-drawer {
   justify-content: flex-end;
 }
 
+.admin-settings-form {
+  display: grid;
+  max-width: 42rem;
+  gap: var(--space-lg);
+
+  small {
+    color: var(--color-taupe);
+    font-size: var(--text-xs);
+  }
+}
+
+.admin-settings-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
 .admin-product-images-panel {
   max-width: 62rem;
   margin-top: var(--space-xl);

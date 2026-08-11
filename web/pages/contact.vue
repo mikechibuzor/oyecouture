@@ -27,7 +27,7 @@ interface ContactSocialLink {
   readonly icon: IconNode
 }
 
-const runtimeConfig = useRuntimeConfig()
+const { data: siteSettings } = await useSiteSettings()
 const selectedTopic = ref('General')
 const selectedRating = ref(0)
 const senderName = ref('')
@@ -39,7 +39,7 @@ const isFeedbackSubmitting = ref(false)
 const { submitContactFeedback } = useContactFeedback()
 
 const configuredWhatsAppNumber = computed(() =>
-  String(runtimeConfig.public.whatsappNumber ?? '').replace(/\D/g, ''),
+  String(siteSettings.value?.whatsappNumber ?? '').replace(/\D/g, ''),
 )
 const displayedPhoneNumber = computed(() =>
   configuredWhatsAppNumber.value
@@ -52,15 +52,15 @@ const whatsappHref = computed(() =>
     : undefined,
 )
 
-const CONTACT_INFO: readonly ContactInfoItem[] = [
+const contactInfo = computed<readonly ContactInfoItem[]>(() => [
   { label: 'Email', value: 'hello@oyecouture.com', href: 'mailto:hello@oyecouture.com' },
   { label: 'Phone & WhatsApp', value: displayedPhoneNumber.value, href: whatsappHref.value },
   { label: 'Oyecouture', value: '14 Legacy Avenue\nVictoria Island, Lagos' },
   { label: 'Studio Hours', value: 'Mon — Sat\n10am — 7pm WAT' },
-]
+])
 
 const CONTACT_TOPICS = ['Fitting', 'Order', 'Feedback', 'Press'] as const
-const CONTACT_SOCIALS: readonly ContactSocialLink[] = [
+const contactSocials = computed<readonly ContactSocialLink[]>(() => [
   { name: 'Instagram', handle: '@oyecouture', href: 'https://instagram.com', icon: Camera },
   { name: 'X', handle: '@oyecouture', href: 'https://x.com', icon: AtSign },
   { name: 'TikTok', handle: '@oyecouture', href: 'https://tiktok.com', icon: Music2 },
@@ -72,7 +72,7 @@ const CONTACT_SOCIALS: readonly ContactSocialLink[] = [
   },
   { name: 'Email', handle: 'hello@oyecouture.com', href: 'mailto:hello@oyecouture.com', icon: Mail },
   { name: 'Oyecouture', handle: 'Victoria Island, Lagos', href: StorefrontRoute.BookFitting, icon: MapPin },
-]
+])
 
 const stars = computed(() =>
   Array.from({ length: 5 }, (_, starIndex) => ({
@@ -153,7 +153,7 @@ useSeoMeta({
           </p>
 
           <dl class="contact-info-grid">
-            <div v-for="infoItem in CONTACT_INFO" :key="infoItem.label">
+            <div v-for="infoItem in contactInfo" :key="infoItem.label">
               <dt>{{ infoItem.label }}</dt>
               <dd>
                 <a v-if="infoItem.href" :href="infoItem.href" target="_blank" rel="noopener">
@@ -255,7 +255,7 @@ useSeoMeta({
 
         <div class="contact-social-grid">
           <a
-            v-for="socialLink in CONTACT_SOCIALS"
+            v-for="socialLink in contactSocials"
             :key="socialLink.name"
             :href="socialLink.href"
             :target="socialLink.href.startsWith('http') ? '_blank' : undefined"

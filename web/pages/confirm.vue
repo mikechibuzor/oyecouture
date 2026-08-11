@@ -13,7 +13,7 @@ import { formatProductPrice } from '~/utils/product'
 const { clear, isEmpty, lines, subtotalKobo } = useCart()
 const { submitOrder } = useOrders()
 const { data: zoneData } = await useDeliveryZones()
-const runtimeConfig = useRuntimeConfig()
+const { data: siteSettings } = await useSiteSettings()
 const { withLoading } = useAppLoading()
 
 const WHATSAPP_ICON: IconNode = MessageCircle
@@ -47,7 +47,7 @@ const zoneSelectOptions = computed<SelectOption[]>(() =>
   })),
 )
 const configuredWhatsAppNumber = computed(() =>
-  String(runtimeConfig.public.whatsappNumber ?? ''),
+  String(siteSettings.value?.whatsappNumber ?? ''),
 )
 const whatsAppUrl = computed(() =>
   placedOrder.value

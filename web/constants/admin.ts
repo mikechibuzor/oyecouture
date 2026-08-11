@@ -18,12 +18,14 @@ export const ADMIN_ROUTES = {
   products: '/admin/products',
   productNew: '/admin/products/new',
   productEdit: (slug: string) => `/admin/products/${encodeURIComponent(slug)}`,
+  settings: '/admin/settings',
 } as const
 
 export const ADMIN_API_ROUTES = {
   login: '/admin/login',
   logout: '/admin/logout',
   me: '/admin/me',
+  settings: '/admin/settings',
   orders: '/admin/orders',
   orderMetrics: '/admin/orders/metrics',
   orderDetail: (orderNo: string) => `/admin/orders/${encodeURIComponent(orderNo)}`,
@@ -68,6 +70,18 @@ export const ADMIN_COPY = {
   deliverySaving: 'Saving…',
   deliverySavedNotice: 'Delivery zone saved',
   deliverySaveFailed: 'Delivery zone could not be saved.',
+  settingsHeading: 'Settings',
+  settingsSubheading: 'Manage global storefront details',
+  settingsLoading: 'Loading settings…',
+  settingsLoadFailed: 'Settings could not be loaded.',
+  settingsSavedNotice: 'Settings saved',
+  settingsSaveFailed: 'Settings could not be saved.',
+  saveSettings: 'Save settings',
+  savingSettings: 'Saving…',
+  announcementLabel: 'Announcement bar',
+  announcementHint: 'Shown across the top of the storefront.',
+  whatsappNumberLabel: 'WhatsApp number',
+  whatsappNumberHint: 'Use international format, e.g. +2348094939264.',
   newProduct: 'New product',
   editProduct: 'Edit',
   closeProductEditor: 'Close product editor',
@@ -228,7 +242,7 @@ export const ADMIN_NAVIGATION: readonly AdminNavGroup[] = [
   {
     id: 'other',
     label: 'Other',
-    items: [{ id: 'settings', label: 'Settings', isPending: true }],
+    items: [{ id: 'settings', label: 'Settings', route: ADMIN_ROUTES.settings }],
   },
 ]
 

@@ -8,6 +8,7 @@ export const API_ROUTES = {
     `/payments/${encodeURIComponent(payToken)}/initialize`,
   paymentVerify: (payToken: string) => `/payments/${encodeURIComponent(payToken)}/verify`,
   products: '/products',
+  siteSettings: '/site-settings',
 } as const
 
 export const ASYNC_DATA_KEYS = {

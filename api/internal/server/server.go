@@ -20,6 +20,7 @@ import (
 	"github.com/uzor-co/oyecouture/api/internal/payments"
 	"github.com/uzor-co/oyecouture/api/internal/payments/paystack"
 	"github.com/uzor-co/oyecouture/api/internal/products"
+	"github.com/uzor-co/oyecouture/api/internal/settings"
 )
 
 // New wires infrastructure, services, and handlers into the API server.
@@ -46,9 +47,15 @@ func New(applicationConfig config.Config, databasePool *pgxpool.Pool) *http.Serv
 	paystackWebhookHandler := paystack.NewWebhookHandler(
 		paymentService, applicationConfig.PaystackSecretKey,
 	)
+	settingsRepository := settings.NewRepository(databasePool)
+	settingsHandler := settings.NewHandler(settingsRepository, settings.SiteSettings{
+		Announcement:   applicationConfig.Announcement,
+		WhatsAppNumber: applicationConfig.WhatsAppNumber,
+	})
 
 	requestMux := http.NewServeMux()
 	requestMux.Handle("GET /healthz", health.NewHandler(databasePool))
+	requestMux.HandleFunc("GET /site-settings", settingsHandler.Get)
 	requestMux.HandleFunc("GET /products", productHandler.List)
 	requestMux.HandleFunc("GET /products/{slug}", productHandler.GetBySlug)
 	requestMux.HandleFunc("POST /contact", contact.NewHandler(contact.NewService(
@@ -82,6 +89,12 @@ func New(applicationConfig config.Config, databasePool *pgxpool.Pool) *http.Serv
 	requestMux.HandleFunc("POST /admin/logout", adminHandler.LogOut)
 	requestMux.Handle("GET /admin/me", adminHandler.RequireSession(
 		http.HandlerFunc(adminHandler.Me),
+	))
+	requestMux.Handle("GET /admin/settings", adminHandler.RequireSession(
+		http.HandlerFunc(settingsHandler.Get),
+	))
+	requestMux.Handle("PATCH /admin/settings", adminHandler.RequireSession(
+		http.HandlerFunc(settingsHandler.Update),
 	))
 
 	adminOrderHandler := orders.NewAdminHandler(orders.NewAdminService(orderRepository))

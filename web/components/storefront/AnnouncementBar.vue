@@ -1,5 +1,11 @@
 <script setup lang="ts">
 import { STOREFRONT_COPY } from '~/constants/storefront'
+
+const { data: siteSettings } = await useSiteSettings()
+
+const announcement = computed(() =>
+  siteSettings.value?.announcement || STOREFRONT_COPY.announcement,
+)
 </script>
 
 <template>
@@ -7,6 +13,6 @@ import { STOREFRONT_COPY } from '~/constants/storefront'
     class="announcement-bar"
     :aria-label="STOREFRONT_COPY.announcementLabel"
   >
-    <p>{{ STOREFRONT_COPY.announcement }}</p>
+    <p>{{ announcement }}</p>
   </aside>
 </template>

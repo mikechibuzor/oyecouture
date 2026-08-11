@@ -6,10 +6,11 @@ import (
 )
 
 const (
-	defaultAPIAddress  = ":8080"
-	defaultDatabaseURL = "postgres://oye:oye@localhost:5432/oyecouture?sslmode=disable"
-	defaultOwnerEmail  = "iwuagwuchibuzor@gmail.com"
-	defaultWebBaseURL  = "http://localhost:3000"
+	defaultAPIAddress   = ":8080"
+	defaultDatabaseURL  = "postgres://oye:oye@localhost:5432/oyecouture?sslmode=disable"
+	defaultOwnerEmail   = "iwuagwuchibuzor@gmail.com"
+	defaultWebBaseURL   = "http://localhost:3000"
+	defaultAnnouncement = "COMPLIMENTARY TAILORING CONSULTATION · WORLDWIDE DELIVERY · BE EXCLUSIVE"
 	// Origin-relative so product image URLs work in any environment without
 	// knowing the host. Point R2_PUBLIC_BASE at the bucket URL to serve from R2.
 	defaultR2PublicBase = "/images/catalogue"
@@ -31,6 +32,8 @@ type Config struct {
 	R2PublicBase        string
 	SendByteAPIKey      string
 	WebBaseURL          string
+	WhatsAppNumber      string
+	Announcement        string
 }
 
 // Load resolves environment-backed application configuration with development defaults.
@@ -51,6 +54,8 @@ func Load() Config {
 		R2PublicBase:        valueOrDefault(os.Getenv("R2_PUBLIC_BASE"), defaultR2PublicBase),
 		SendByteAPIKey:      os.Getenv("SENDBYTE_API_KEY"),
 		WebBaseURL:          valueOrDefault(os.Getenv("WEB_BASE_URL"), defaultWebBaseURL),
+		WhatsAppNumber:      os.Getenv("WHATSAPP_NUMBER"),
+		Announcement:        valueOrDefault(os.Getenv("ANNOUNCEMENT_TEXT"), defaultAnnouncement),
 	}
 }
 
