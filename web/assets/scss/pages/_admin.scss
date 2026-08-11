@@ -1124,6 +1124,32 @@ body.has-admin-drawer {
   justify-content: flex-end;
 }
 
+.admin-home-content-form {
+  max-width: 62rem;
+}
+
+.admin-home-tiles {
+  display: grid;
+  gap: var(--space-md);
+}
+
+.admin-home-tile {
+  display: grid;
+  padding: var(--space-md);
+  border: 1px solid var(--color-border-warm);
+  margin: 0;
+  background-color: var(--color-canvas);
+  gap: var(--space-md);
+
+  legend {
+    padding: 0 var(--space-2xs);
+    color: var(--color-gold);
+    font-size: var(--text-xs);
+    letter-spacing: var(--tracking-wider);
+    text-transform: uppercase;
+  }
+}
+
 .admin-product-images-panel {
   max-width: 62rem;
   margin-top: var(--space-xl);

@@ -2,17 +2,17 @@
 import type { IconNode } from 'lucide'
 import { ArrowRight } from 'lucide'
 import {
-  CATEGORY_TILES,
   HOME_HERO_IMAGES,
   PRODUCT_COPY,
 } from '~/constants/products'
 import type { Product } from '~/types/product'
-import { StorefrontRoute } from '~/types/storefront'
 import { getProductErrorMessage } from '~/utils/product'
 
 const { data, error, status } = await useProductList()
+const { data: homeContent } = await useHomeContent()
 const HERO_ACTION_ICON: IconNode = ArrowRight
 const heroCarouselImages = [...HOME_HERO_IMAGES, ...HOME_HERO_IMAGES] as const
+const fallbackHomeContent = defaultHomeContent()
 
 // Returns all API products while preserving a stable empty array during loading.
 const products = computed<readonly Product[]>(() => data.value?.products ?? [])
@@ -20,6 +20,8 @@ const products = computed<readonly Product[]>(() => data.value?.products ?? [])
 const errorMessage = computed(() =>
   getProductErrorMessage(error.value, PRODUCT_COPY.catalogue.error),
 )
+const heroContent = computed(() => (homeContent.value ?? fallbackHomeContent).hero)
+const categoryContent = computed(() => (homeContent.value ?? fallbackHomeContent).categories)
 </script>
 
 <template>
@@ -27,12 +29,12 @@ const errorMessage = computed(() =>
     <section class="home-hero" aria-labelledby="home-hero-title">
       <div class="home-hero-content">
         <h1 id="home-hero-title">
-          {{ PRODUCT_COPY.home.heroHeading.lead }}<br>
-          {{ PRODUCT_COPY.home.heroHeading.tail }}
+          {{ heroContent.headingLead }}<br>
+          {{ heroContent.headingTail }}
         </h1>
-        <p>{{ PRODUCT_COPY.home.heroDescription }}</p>
-        <NuxtLink class="home-hero-action" :to="StorefrontRoute.Collection">
-          <span>{{ PRODUCT_COPY.home.heroAction }}</span>
+        <p>{{ heroContent.description }}</p>
+        <NuxtLink class="home-hero-action" :to="heroContent.actionTo">
+          <span>{{ heroContent.actionLabel }}</span>
           <StorefrontIcon
             :icon-node="HERO_ACTION_ICON"
             :size="17"
@@ -57,12 +59,12 @@ const errorMessage = computed(() =>
 
     <section class="category-tiles-section" aria-labelledby="category-tiles-title">
       <header>
-        <p class="eyebrow">{{ PRODUCT_COPY.home.categoryEyebrow }}</p>
-        <h2 id="category-tiles-title">{{ PRODUCT_COPY.categoryTilesHeading }}</h2>
+        <p class="eyebrow">{{ categoryContent.eyebrow }}</p>
+        <h2 id="category-tiles-title">{{ categoryContent.heading }}</h2>
       </header>
       <div class="category-tile-grid">
         <CatalogueCategoryTile
-          v-for="category in CATEGORY_TILES"
+          v-for="category in categoryContent.tiles"
           :key="category.to"
           :category="category"
         />

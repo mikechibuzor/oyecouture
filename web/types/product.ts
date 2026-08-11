@@ -118,7 +118,7 @@ export interface CategoryTileConfig {
   readonly heading: string
   readonly imagePath: string
   readonly imageAlt: string
-  readonly to: StorefrontRoute
+  readonly to: string
 }
 
 export interface HomeHeroImageConfig {

@@ -144,7 +144,7 @@ Verified live end to end: 401 without a cookie · identical error for unknown em
 
 **✅ 2.3 GLOBAL SETTINGS — DONE (`d400339`).** Authenticated admin can edit announcement text and WhatsApp number. `GET /site-settings` powers the announcement bar, Contact WhatsApp, and confirm-page WhatsApp CTA. Contact owner email remains env-backed for now.
 
-**Then 2.4 editable home/content settings:** hero headline both lines, sub-copy, CTA label, sliding gallery upload/reorder, and category tiles.
+**▶ 2.4 EDITABLE HOME/CONTENT SETTINGS — local first slice.** Current local work adds JSON-backed home content in the existing `settings` table, with public `GET /home-content`, authenticated `GET/PATCH /admin/home-content`, active sidebar navigation, and homepage bindings for hero copy, CTA label/link, category section copy, and category tile label/heading/image URL/alt/link fields. Static constants remain fallback. Verified locally; awaiting user visual/admin test before commit. Sliding gallery upload/reorder remains next.
 
 ## Earlier next-action — demo sprint, split between agents (30 Jul)
 📅 **NO FIXED DEMO DATE (updated 2 Aug).** The client has told the user to demo **when the build is ready** — 31 Jul and 3 Aug are both dead as deadlines. Do not optimise for speed or ship thin work to hit a date; build it properly and demo when it is genuinely worth showing. The 40% / ₦180,000 milestone still triggers on demo delivery, so don't drift either. **The only hard date left is the netcup withdrawal window, ~13 Aug** (see PARKED item). Roadmap **step 7 (deploy staging to a live link) was skipped** — we jumped from A.6 to step 8. Two parallel tracks, claimed to avoid collision:

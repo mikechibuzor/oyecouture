@@ -51,11 +51,12 @@ func New(applicationConfig config.Config, databasePool *pgxpool.Pool) *http.Serv
 	settingsHandler := settings.NewHandler(settingsRepository, settings.SiteSettings{
 		Announcement:   applicationConfig.Announcement,
 		WhatsAppNumber: applicationConfig.WhatsAppNumber,
-	})
+	}, settings.DefaultHomeContent())
 
 	requestMux := http.NewServeMux()
 	requestMux.Handle("GET /healthz", health.NewHandler(databasePool))
 	requestMux.HandleFunc("GET /site-settings", settingsHandler.Get)
+	requestMux.HandleFunc("GET /home-content", settingsHandler.GetHomeContent)
 	requestMux.HandleFunc("GET /products", productHandler.List)
 	requestMux.HandleFunc("GET /products/{slug}", productHandler.GetBySlug)
 	requestMux.HandleFunc("POST /contact", contact.NewHandler(contact.NewService(
@@ -95,6 +96,12 @@ func New(applicationConfig config.Config, databasePool *pgxpool.Pool) *http.Serv
 	))
 	requestMux.Handle("PATCH /admin/settings", adminHandler.RequireSession(
 		http.HandlerFunc(settingsHandler.Update),
+	))
+	requestMux.Handle("GET /admin/home-content", adminHandler.RequireSession(
+		http.HandlerFunc(settingsHandler.GetHomeContent),
+	))
+	requestMux.Handle("PATCH /admin/home-content", adminHandler.RequireSession(
+		http.HandlerFunc(settingsHandler.UpdateHomeContent),
 	))
 
 	adminOrderHandler := orders.NewAdminHandler(orders.NewAdminService(orderRepository))

@@ -2,6 +2,7 @@ export const API_ROUTES = {
   contact: '/contact',
   deliveryZones: '/delivery-zones',
   health: '/healthz',
+  homeContent: '/home-content',
   orders: '/orders',
   payment: (payToken: string) => `/payments/${encodeURIComponent(payToken)}`,
   paymentInitialize: (payToken: string) =>
