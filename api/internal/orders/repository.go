@@ -2,6 +2,7 @@ package orders
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
@@ -103,14 +104,25 @@ func (repository *PostgresRepository) Create(
 	}
 
 	if measurements != nil {
+		measurementValues := measurements.Values
+		if measurementValues == nil {
+			measurementValues = map[string]float64{}
+		}
+		measurementValuesJSON, err := json.Marshal(measurementValues)
+		if err != nil {
+			return fmt.Errorf("encode measurements: %w", err)
+		}
+
 		const insertMeasurements = `
 			INSERT INTO measurements (
-				order_id, neck_cm, chest_cm, waist_cm, hips_cm,
+				order_id, profile, unit, values,
+				neck_cm, chest_cm, waist_cm, hips_cm,
 				sleeve_cm, inseam_cm, length_cm, height_cm, weight_kg, notes
-			) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+			) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
 		`
 		if _, err := transaction.Exec(
 			requestContext, insertMeasurements, orderID,
+			measurements.Profile, measurements.Unit, measurementValuesJSON,
 			measurements.NeckCm, measurements.ChestCm, measurements.WaistCm, measurements.HipsCm,
 			measurements.SleeveCm, measurements.InseamCm, measurements.LengthCm,
 			measurements.HeightCm, measurements.WeightKg, measurements.Notes,

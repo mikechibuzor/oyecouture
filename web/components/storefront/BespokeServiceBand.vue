@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { BESPOKE_SERVICE_COPY } from '~/constants/storefront'
-import { StorefrontRoute } from '~/types/storefront'
 
 // The About page runs its own heading and adds a line of copy; every other page
 // uses the shared wording.
@@ -13,6 +12,8 @@ withDefaults(defineProps<BespokeServiceBandProps>(), {
   heading: BESPOKE_SERVICE_COPY.heading,
   description: '',
 })
+
+const { appointmentWhatsAppUrl, opensWhatsApp } = await useAppointmentWhatsApp()
 </script>
 
 <template>
@@ -37,8 +38,13 @@ withDefaults(defineProps<BespokeServiceBandProps>(), {
     <h2 id="bespoke-service-title">{{ heading }}</h2>
     <p v-if="description" class="bespoke-service-description">{{ description }}</p>
 
-    <NuxtLink class="bespoke-service-action" :to="StorefrontRoute.BookFitting">
+    <a
+      class="bespoke-service-action"
+      :href="appointmentWhatsAppUrl"
+      :target="opensWhatsApp ? '_blank' : undefined"
+      :rel="opensWhatsApp ? 'noopener' : undefined"
+    >
       {{ BESPOKE_SERVICE_COPY.action }}
-    </NuxtLink>
+    </a>
   </section>
 </template>

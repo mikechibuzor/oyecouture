@@ -1,4 +1,4 @@
-import type { ProductSize } from '~/types/product'
+import type { ProductSection, ProductSize } from '~/types/product'
 
 // How the whole cart must be checked out. A cart containing any bespoke piece
 // is confirmed on WhatsApp — measurements have to be agreed before money moves.
@@ -14,6 +14,7 @@ export interface CartLine {
   readonly key: string
   readonly slug: string
   readonly name: string
+  readonly section?: ProductSection
   readonly category: string
   readonly priceKobo: number
   readonly hasSizes: boolean

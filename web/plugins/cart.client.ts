@@ -1,5 +1,6 @@
 import { CART_MAXIMUM_QUANTITY, CART_STORAGE_KEY } from '~/constants/cart'
 import type { CartLine } from '~/types/cart'
+import { ProductSection } from '~/types/product'
 
 // Accepts a stored line only if every field is the right shape. A bag written by
 // an older build, hand-edited, or corrupted is discarded rather than crashing the
@@ -10,11 +11,13 @@ const isValidCartLine = (value: unknown): value is CartLine => {
   }
 
   const line = value as Record<string, unknown>
+  const validSections = Object.values(ProductSection)
 
   return (
     typeof line.key === 'string'
     && typeof line.slug === 'string'
     && typeof line.name === 'string'
+    && (line.section === undefined || validSections.includes(line.section as ProductSection))
     && typeof line.category === 'string'
     && typeof line.priceKobo === 'number'
     && Number.isInteger(line.priceKobo)

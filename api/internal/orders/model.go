@@ -41,16 +41,19 @@ type RequestedItem struct {
 // Measurements are optional; customers who already know theirs can skip the
 // back-and-forth on WhatsApp.
 type Measurements struct {
-	NeckCm   *float64 `json:"neckCm"`
-	ChestCm  *float64 `json:"chestCm"`
-	WaistCm  *float64 `json:"waistCm"`
-	HipsCm   *float64 `json:"hipsCm"`
-	SleeveCm *float64 `json:"sleeveCm"`
-	InseamCm *float64 `json:"inseamCm"`
-	LengthCm *float64 `json:"lengthCm"`
-	HeightCm *float64 `json:"heightCm"`
-	WeightKg *float64 `json:"weightKg"`
-	Notes    string   `json:"notes"`
+	Profile  string             `json:"profile,omitempty"`
+	Unit     string             `json:"unit,omitempty"`
+	Values   map[string]float64 `json:"values,omitempty"`
+	NeckCm   *float64           `json:"neckCm"`
+	ChestCm  *float64           `json:"chestCm"`
+	WaistCm  *float64           `json:"waistCm"`
+	HipsCm   *float64           `json:"hipsCm"`
+	SleeveCm *float64           `json:"sleeveCm"`
+	InseamCm *float64           `json:"inseamCm"`
+	LengthCm *float64           `json:"lengthCm"`
+	HeightCm *float64           `json:"heightCm"`
+	WeightKg *float64           `json:"weightKg"`
+	Notes    string             `json:"notes"`
 }
 
 // CreateOrderInput is the untrusted request body.

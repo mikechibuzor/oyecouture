@@ -2,17 +2,13 @@
 import type { IconNode } from 'lucide'
 import {
   ArrowRight,
-  AtSign,
-  Camera,
+  CalendarDays,
   Check,
   Mail,
-  MapPin,
   MessageCircle,
-  Music2,
-  Phone,
   Star,
 } from 'lucide'
-import { StorefrontRoute } from '~/types/storefront'
+import { buildWhatsAppUrl } from '~/utils/whatsapp'
 
 interface ContactInfoItem {
   readonly label: string
@@ -37,41 +33,40 @@ const feedbackSent = ref(false)
 const feedbackError = ref('')
 const isFeedbackSubmitting = ref(false)
 const { submitContactFeedback } = useContactFeedback()
+const { appointmentWhatsAppUrl, opensWhatsApp } = await useAppointmentWhatsApp()
 
 const configuredWhatsAppNumber = computed(() =>
   String(siteSettings.value?.whatsappNumber ?? '').replace(/\D/g, ''),
 )
-const displayedPhoneNumber = computed(() =>
-  configuredWhatsAppNumber.value
-    ? `+${configuredWhatsAppNumber.value}`
-    : '+234 800 000 0000',
-)
+const displayedPhoneNumber = computed(() => `+${configuredWhatsAppNumber.value}`)
 const whatsappHref = computed(() =>
-  configuredWhatsAppNumber.value
-    ? `https://wa.me/${configuredWhatsAppNumber.value}`
-    : undefined,
+  buildWhatsAppUrl(configuredWhatsAppNumber.value) || undefined,
 )
 
 const contactInfo = computed<readonly ContactInfoItem[]>(() => [
   { label: 'Email', value: 'hello@oyecouture.com', href: 'mailto:hello@oyecouture.com' },
-  { label: 'Phone & WhatsApp', value: displayedPhoneNumber.value, href: whatsappHref.value },
-  { label: 'Oyecouture', value: '14 Legacy Avenue\nVictoria Island, Lagos' },
-  { label: 'Studio Hours', value: 'Mon — Sat\n10am — 7pm WAT' },
+  ...(whatsappHref.value
+    ? [{ label: 'Phone & WhatsApp', value: displayedPhoneNumber.value, href: whatsappHref.value }]
+    : []),
 ])
 
 const CONTACT_TOPICS = ['Fitting', 'Order', 'Feedback', 'Press'] as const
 const contactSocials = computed<readonly ContactSocialLink[]>(() => [
-  { name: 'Instagram', handle: '@oyecouture', href: 'https://instagram.com', icon: Camera },
-  { name: 'X', handle: '@oyecouture', href: 'https://x.com', icon: AtSign },
-  { name: 'TikTok', handle: '@oyecouture', href: 'https://tiktok.com', icon: Music2 },
-  {
-    name: 'WhatsApp',
-    handle: displayedPhoneNumber.value,
-    href: whatsappHref.value ?? '#',
-    icon: MessageCircle,
-  },
+  ...(whatsappHref.value
+    ? [{
+        name: 'WhatsApp',
+        handle: displayedPhoneNumber.value,
+        href: whatsappHref.value,
+        icon: MessageCircle,
+      }]
+    : []),
   { name: 'Email', handle: 'hello@oyecouture.com', href: 'mailto:hello@oyecouture.com', icon: Mail },
-  { name: 'Oyecouture', handle: 'Victoria Island, Lagos', href: StorefrontRoute.BookFitting, icon: MapPin },
+  {
+    name: 'Oyecouture',
+    handle: 'Book a private fitting',
+    href: appointmentWhatsAppUrl.value,
+    icon: CalendarDays,
+  },
 ])
 
 const stars = computed(() =>
@@ -164,10 +159,15 @@ useSeoMeta({
             </div>
           </dl>
 
-          <NuxtLink class="contact-primary-link" :to="StorefrontRoute.BookFitting">
+          <a
+            class="contact-primary-link"
+            :href="appointmentWhatsAppUrl"
+            :target="opensWhatsApp ? '_blank' : undefined"
+            :rel="opensWhatsApp ? 'noopener' : undefined"
+          >
             <span>Book a fitting</span>
             <StorefrontIcon :icon-node="ArrowRight" :size="14" :stroke-width="2" aria-hidden="true" />
-          </NuxtLink>
+          </a>
         </div>
 
         <form class="contact-feedback-form" @submit.prevent="submitFeedback">
@@ -246,11 +246,10 @@ useSeoMeta({
 
     <section id="social" class="contact-social-section">
       <div class="contact-social-content">
-        <p class="contact-section-label">03 — Every Space We Keep</p>
-        <h2>Follow the house</h2>
+        <p class="contact-section-label">03 — Contact Oyecouture</p>
+        <h2>Choose how to reach us</h2>
         <p>
-          The cuts, the fittings, the world of Oyecouture — shared daily.
-          Find us wherever you are.
+          Start a conversation, ask about an order or arrange a private fitting.
         </p>
 
         <div class="contact-social-grid">
@@ -288,7 +287,11 @@ useSeoMeta({
           Book a private consultation, feel the cloth, and let us take your measure.
           Be exclusive.
         </p>
-        <NuxtLink :to="StorefrontRoute.BookFitting">Book an appointment</NuxtLink>
+        <a
+          :href="appointmentWhatsAppUrl"
+          :target="opensWhatsApp ? '_blank' : undefined"
+          :rel="opensWhatsApp ? 'noopener' : undefined"
+        >Book an appointment</a>
       </div>
     </section>
   </div>

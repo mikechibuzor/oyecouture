@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"math"
 	"regexp"
 	"strings"
 	"unicode/utf8"
@@ -24,17 +25,24 @@ var (
 )
 
 const (
-	maximumItemsPerOrder = 20
-	maximumNameLength    = 120
-	maximumNotesLength   = 1000
-	payTokenBytes        = 24
+	maximumItemsPerOrder    = 20
+	maximumNameLength       = 120
+	maximumNotesLength      = 1000
+	maximumMeasurementValue = 200
+	payTokenBytes           = 24
 )
 
 var (
-	productSlugPattern = regexp.MustCompile(`^[a-z0-9]+(?:-[a-z0-9]+)*$`)
-	emailPattern       = regexp.MustCompile(`^[^@\s]+@[^@\s.]+\.[^@\s]+$`)
-	phonePattern       = regexp.MustCompile(`^\+?[0-9][0-9\s-]{6,19}$`)
-	validSizes         = map[string]struct{}{"S": {}, "M": {}, "L": {}, "XL": {}}
+	productSlugPattern       = regexp.MustCompile(`^[a-z0-9]+(?:-[a-z0-9]+)*$`)
+	emailPattern             = regexp.MustCompile(`^[^@\s]+@[^@\s.]+\.[^@\s]+$`)
+	phonePattern             = regexp.MustCompile(`^\+?[0-9][0-9\s-]{6,19}$`)
+	validSizes               = map[string]struct{}{"S": {}, "M": {}, "L": {}, "XL": {}}
+	validMeasurementProfiles = map[string]struct{}{"suit": {}, "native": {}, "mixed": {}}
+	validMeasurementFields   = map[string]struct{}{
+		"back": {}, "sleeve": {}, "round-sleeve": {}, "chest": {}, "stomach": {},
+		"jacket-length": {}, "top-length": {}, "trouser-length": {}, "waist": {},
+		"thigh": {}, "calf": {}, "ankle": {}, "neck": {}, "cap": {},
+	}
 )
 
 // CatalogueProduct is the trusted product record used for pricing.
@@ -222,7 +230,27 @@ func sanitizeMeasurements(measurements *Measurements) *Measurements {
 	}
 	measurements.Notes = notes
 
-	hasAnyValue := notes != ""
+	_, validProfile := validMeasurementProfiles[measurements.Profile]
+	if !validProfile || measurements.Unit != "in" {
+		measurements.Profile = ""
+		measurements.Unit = ""
+		measurements.Values = nil
+	} else {
+		sanitizedValues := make(map[string]float64, len(measurements.Values))
+		for field, value := range measurements.Values {
+			_, validField := validMeasurementFields[field]
+			if validField && !math.IsNaN(value) && !math.IsInf(value, 0) && value > 0 && value <= maximumMeasurementValue {
+				sanitizedValues[field] = value
+			}
+		}
+		if len(sanitizedValues) == 0 {
+			measurements.Values = nil
+		} else {
+			measurements.Values = sanitizedValues
+		}
+	}
+
+	hasAnyValue := notes != "" || len(measurements.Values) > 0
 	for _, value := range []*float64{
 		measurements.NeckCm, measurements.ChestCm, measurements.WaistCm,
 		measurements.HipsCm, measurements.SleeveCm, measurements.InseamCm,

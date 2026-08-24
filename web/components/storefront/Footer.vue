@@ -1,21 +1,17 @@
 <script setup lang="ts">
-import type { IconNode } from 'lucide'
-import { AtSign, Camera, MessageCircle, Music2 } from 'lucide'
 import {
   STOREFRONT_COPY,
   STOREFRONT_FOOTER_GROUPS,
-  STOREFRONT_LEGAL_LINKS,
-  STOREFRONT_SOCIAL_LINKS,
   isInternalStorefrontRoute,
 } from '~/constants/storefront'
-import { StorefrontSocialPlatform } from '~/types/storefront'
+import { StorefrontRoute } from '~/types/storefront'
 
-const SOCIAL_ICONS: Readonly<Record<StorefrontSocialPlatform, IconNode>> = {
-  [StorefrontSocialPlatform.Instagram]: Camera,
-  [StorefrontSocialPlatform.X]: AtSign,
-  [StorefrontSocialPlatform.TikTok]: Music2,
-  [StorefrontSocialPlatform.WhatsApp]: MessageCircle,
-}
+const { appointmentWhatsAppUrl } = await useAppointmentWhatsApp()
+
+const resolveFooterLink = (storefrontRoute: string): string =>
+  storefrontRoute === StorefrontRoute.BookFitting
+    ? appointmentWhatsAppUrl.value
+    : storefrontRoute
 </script>
 
 <template>
@@ -26,23 +22,6 @@ const SOCIAL_ICONS: Readonly<Record<StorefrontSocialPlatform, IconNode>> = {
         <StorefrontBrandLogo />
         <p>{{ STOREFRONT_COPY.footer.description }}</p>
 
-        <div class="footer-social-list">
-          <span
-            v-for="socialLink in STOREFRONT_SOCIAL_LINKS"
-            :key="socialLink.platform"
-            class="footer-social-icon"
-            role="img"
-            :aria-label="socialLink.label"
-            :title="socialLink.label"
-          >
-            <StorefrontIcon
-              :icon-node="SOCIAL_ICONS[socialLink.platform]"
-              :size="18"
-              :stroke-width="1.5"
-              aria-hidden="true"
-            />
-          </span>
-        </div>
       </section>
 
       <section
@@ -54,8 +33,8 @@ const SOCIAL_ICONS: Readonly<Record<StorefrontSocialPlatform, IconNode>> = {
         <ul>
           <li v-for="footerLink in footerGroup.links" :key="footerLink.to">
             <NuxtLink
-              :to="footerLink.to"
-              :external="!isInternalStorefrontRoute(footerLink.to)"
+              :to="resolveFooterLink(footerLink.to)"
+              :external="footerLink.to === StorefrontRoute.BookFitting || !isInternalStorefrontRoute(footerLink.to)"
             >
               {{ footerLink.label }}
             </NuxtLink>
@@ -66,16 +45,6 @@ const SOCIAL_ICONS: Readonly<Record<StorefrontSocialPlatform, IconNode>> = {
 
     <div class="storefront-footer-bottom">
       <p>{{ STOREFRONT_COPY.footer.copyright }}</p>
-      <nav :aria-label="STOREFRONT_COPY.footer.legalNavigationLabel">
-        <NuxtLink
-          v-for="legalLink in STOREFRONT_LEGAL_LINKS"
-          :key="legalLink.to"
-          :to="legalLink.to"
-          external
-        >
-          {{ legalLink.label }}
-        </NuxtLink>
-      </nav>
     </div>
   </footer>
 </template>

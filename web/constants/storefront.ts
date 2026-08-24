@@ -2,13 +2,11 @@ import type {
   StorefrontAction,
   StorefrontFooterGroup,
   StorefrontNavigationItem,
-  StorefrontSocialLink,
 } from '~/types/storefront'
 import {
   StorefrontActionId,
   StorefrontNavigationItemId,
   StorefrontRoute,
-  StorefrontSocialPlatform,
 } from '~/types/storefront'
 
 export const STOREFRONT_COPY = {
@@ -65,7 +63,6 @@ export const STOREFRONT_NAVIGATION: readonly StorefrontNavigationItem[] = [
 
 export const DESKTOP_HEADER_ACTIONS = [
   StorefrontActionId.Search,
-  StorefrontActionId.Account,
   StorefrontActionId.Wishlist,
   StorefrontActionId.Cart,
 ] as const satisfies readonly StorefrontActionId[]
@@ -96,7 +93,6 @@ export const MOBILE_HEADER_ACTIONS = [
 
 export const MOBILE_MENU_ACTIONS = [
   StorefrontActionId.Search,
-  StorefrontActionId.Account,
 ] as const satisfies readonly StorefrontActionId[]
 
 export const STOREFRONT_FOOTER_GROUPS = [
@@ -128,18 +124,6 @@ export const STOREFRONT_FOOTER_GROUPS = [
     ],
   },
 ] as const satisfies readonly StorefrontFooterGroup[]
-
-export const STOREFRONT_SOCIAL_LINKS = [
-  { platform: StorefrontSocialPlatform.Instagram, label: 'Instagram' },
-  { platform: StorefrontSocialPlatform.X, label: 'X' },
-  { platform: StorefrontSocialPlatform.TikTok, label: 'TikTok' },
-  { platform: StorefrontSocialPlatform.WhatsApp, label: 'WhatsApp' },
-] as const satisfies readonly StorefrontSocialLink[]
-
-export const STOREFRONT_LEGAL_LINKS = [
-  { label: 'Legal & Privacy', to: StorefrontRoute.Legal },
-  { label: 'Terms', to: StorefrontRoute.Terms },
-] as const
 
 export const INTERNAL_STOREFRONT_ROUTES = [
   StorefrontRoute.Home,

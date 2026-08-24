@@ -2,6 +2,7 @@ package orders
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -22,6 +23,7 @@ func (repository *PostgresRepository) Detail(
 			o.address, o.delivery_zone, o.delivery_fee_kobo,
 			o.subtotal_kobo, o.total_kobo, o.pay_token,
 			o.payment_provider, o.payment_ref, o.created_at,
+			COALESCE(m.profile, ''), COALESCE(m.unit, ''), COALESCE(m.values, '{}'::jsonb),
 			m.neck_cm::float8, m.chest_cm::float8, m.waist_cm::float8,
 			m.hips_cm::float8, m.sleeve_cm::float8, m.inseam_cm::float8,
 			m.length_cm::float8, m.height_cm::float8, m.weight_kg::float8,
@@ -38,6 +40,9 @@ func (repository *PostgresRepository) Detail(
 	var paymentRef pgtype.Text
 	var measurementScalars measurementScan
 	var measurementNotes pgtype.Text
+	var measurementProfile string
+	var measurementUnit string
+	var measurementValuesJSON []byte
 
 	if err := repository.pool.QueryRow(requestContext, query, orderNo).Scan(
 		&detail.orderID, &detail.OrderNo, &detail.Kind, &detail.Status,
@@ -45,6 +50,7 @@ func (repository *PostgresRepository) Detail(
 		&address, &deliveryZone, &detail.DeliveryFeeKobo,
 		&detail.SubtotalKobo, &detail.TotalKobo, &detail.PayToken,
 		&paymentProvider, &paymentRef, &detail.CreatedAt,
+		&measurementProfile, &measurementUnit, &measurementValuesJSON,
 		&measurementScalars.NeckCm, &measurementScalars.ChestCm, &measurementScalars.WaistCm,
 		&measurementScalars.HipsCm, &measurementScalars.SleeveCm,
 		&measurementScalars.InseamCm, &measurementScalars.LengthCm,
@@ -60,7 +66,9 @@ func (repository *PostgresRepository) Detail(
 	detail.DeliveryZone = textValue(deliveryZone)
 	detail.PaymentProvider = textValue(paymentProvider)
 	detail.PaymentRef = textValue(paymentRef)
-	detail.Measurements = measurementScalars.toMeasurements(textValue(measurementNotes))
+	detail.Measurements = measurementScalars.toMeasurements(
+		measurementProfile, measurementUnit, measurementValuesJSON, textValue(measurementNotes),
+	)
 
 	items, err := repository.itemsForOrder(requestContext, detail.orderID)
 	if err != nil {
@@ -146,12 +154,25 @@ type measurementScan struct {
 }
 
 // toMeasurements drops a missing measurement row while preserving submitted zeros.
-func (scan measurementScan) toMeasurements(notes string) *Measurements {
-	if !scan.hasValues() && notes == "" {
+func (scan measurementScan) toMeasurements(
+	profile string,
+	unit string,
+	valuesJSON []byte,
+	notes string,
+) *Measurements {
+	values := map[string]float64{}
+	if err := json.Unmarshal(valuesJSON, &values); err != nil {
+		values = map[string]float64{}
+	}
+
+	if !scan.hasValues() && len(values) == 0 && notes == "" {
 		return nil
 	}
 
 	return &Measurements{
+		Profile:  profile,
+		Unit:     unit,
+		Values:   values,
 		NeckCm:   floatPointer(scan.NeckCm),
 		ChestCm:  floatPointer(scan.ChestCm),
 		WaistCm:  floatPointer(scan.WaistCm),

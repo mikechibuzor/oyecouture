@@ -62,6 +62,7 @@ export const useCart = () => {
         key,
         slug: product.slug,
         name: product.name,
+        section: product.section,
         category: product.category,
         priceKobo: product.priceKobo,
         hasSizes: product.hasSizes,

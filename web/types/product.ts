@@ -105,12 +105,17 @@ export interface ProductSortOption {
   readonly label: string
 }
 
+export interface CategoryFilterOption {
+  readonly label: string
+  readonly value: string
+}
+
 export interface CategoryPageConfig {
   readonly section: ProductSection
   readonly breadcrumb: string
   readonly heading: string
   readonly description: string
-  readonly categories: readonly string[]
+  readonly categories: readonly CategoryFilterOption[]
 }
 
 export interface CategoryTileConfig {

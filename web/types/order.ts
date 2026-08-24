@@ -12,6 +12,9 @@ export interface OrderItemRequest {
 }
 
 export interface MeasurementsRequest {
+  profile?: MeasurementProfile
+  unit?: MeasurementUnit
+  values?: Record<string, number>
   neckCm: number | null
   chestCm: number | null
   waistCm: number | null
@@ -23,6 +26,9 @@ export interface MeasurementsRequest {
   weightKg: number | null
   notes: string
 }
+
+export type MeasurementProfile = 'suit' | 'native' | 'mixed'
+export type MeasurementUnit = 'in'
 
 export interface DeliveryZone {
   readonly name: string

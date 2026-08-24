@@ -9,6 +9,7 @@ import {
 } from '~/constants/admin'
 import type { AdminOrderDetail, OrderStatus } from '~/types/admin'
 import { formatOrderDate } from '~/utils/admin'
+import { measurementFieldLabels } from '~/utils/measurements'
 import { formatProductPrice } from '~/utils/product'
 
 definePageMeta({ layout: 'admin', middleware: 'admin' })
@@ -53,6 +54,29 @@ const measurementRows = computed(() => {
   const measurements = order.value?.measurements
   if (!measurements) {
     return []
+  }
+
+  const structuredRows = Object.entries(measurementFieldLabels)
+    .map(([fieldId, label]) => ({
+      label,
+      value: formatMeasurement(measurements.values?.[fieldId], measurements.unit ?? 'in'),
+    }))
+    .filter((row) => row.value !== '—')
+
+  if (structuredRows.length > 0) {
+    const profileLabels = {
+      suit: 'Suit / tuxedo',
+      native: 'Native / kaftan / agbada',
+      mixed: 'Mixed order',
+    } as const
+
+    return [
+      ...(measurements.profile
+        ? [{ label: 'Garment profile', value: profileLabels[measurements.profile] }]
+        : []),
+      ...structuredRows,
+      ...(measurements.notes ? [{ label: 'Notes', value: measurements.notes }] : []),
+    ]
   }
 
   return [

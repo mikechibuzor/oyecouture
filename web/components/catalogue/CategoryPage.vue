@@ -1,5 +1,9 @@
 <script setup lang="ts">
-import { CATEGORY_ALL_FILTER, PRODUCT_COPY } from '~/constants/products'
+import {
+  CATEGORY_ALL_FILTER,
+  CATEGORY_ALL_FILTER_OPTION,
+  PRODUCT_COPY,
+} from '~/constants/products'
 import type { CategoryPageConfig, Product } from '~/types/product'
 import { StorefrontRoute } from '~/types/storefront'
 import { getProductErrorMessage } from '~/utils/product'
@@ -11,6 +15,7 @@ interface CategoryPageProps {
 const props = defineProps<CategoryPageProps>()
 const { data, error, status } = await useProductList(props.config.section)
 const activeCategory = ref<string>(CATEGORY_ALL_FILTER)
+const categoryOptions = computed(() => [CATEGORY_ALL_FILTER_OPTION, ...props.config.categories])
 
 // Resets the chip when the customer moves between category routes.
 watch(() => props.config.section, () => {
@@ -50,14 +55,16 @@ const selectCategory = (category: string): void => {
 <template>
   <div class="category-page">
     <header class="category-page-header">
-      <nav class="category-breadcrumbs" :aria-label="PRODUCT_COPY.breadcrumbs.label">
-        <NuxtLink :to="StorefrontRoute.Home">{{ PRODUCT_COPY.breadcrumbs.home }}</NuxtLink>
-        <span aria-hidden="true">/</span>
-        <span>{{ config.breadcrumb }}</span>
-      </nav>
+      <div class="category-page-header-inner">
+        <nav class="category-breadcrumbs" :aria-label="PRODUCT_COPY.breadcrumbs.label">
+          <NuxtLink :to="StorefrontRoute.Home">{{ PRODUCT_COPY.breadcrumbs.home }}</NuxtLink>
+          <span aria-hidden="true">/</span>
+          <span>{{ config.breadcrumb }}</span>
+        </nav>
 
-      <h1>{{ config.heading }}</h1>
-      <p>{{ config.description }}</p>
+        <h1>{{ config.heading }}</h1>
+        <p>{{ config.description }}</p>
+      </div>
     </header>
 
     <section class="category-page-body">
@@ -69,14 +76,14 @@ const selectCategory = (category: string): void => {
           :aria-label="PRODUCT_COPY.catalogue.filterLabel"
         >
           <button
-            v-for="category in [CATEGORY_ALL_FILTER, ...config.categories]"
-            :key="category"
+            v-for="category in categoryOptions"
+            :key="category.value"
             type="button"
-            :class="{ 'is-active': isCategoryActive(category) }"
-            :aria-pressed="isCategoryActive(category)"
-            @click="selectCategory(category)"
+            :class="{ 'is-active': isCategoryActive(category.value) }"
+            :aria-pressed="isCategoryActive(category.value)"
+            @click="selectCategory(category.value)"
           >
-            {{ category }}
+            {{ category.label }}
           </button>
         </div>
 

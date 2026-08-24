@@ -16,8 +16,14 @@ export const CONFIRM_COPY = {
   zoneRequired: 'Please choose a delivery area.',
   measurementsHeading: 'Already know your measurements?',
   measurementsHint:
-    'Optional — share them now and we can skip straight to fabric and delivery.',
+    'Optional — add the measurements for this piece now and we can skip straight to fabric and delivery.',
   measurementsToggle: 'Add my measurements',
+  measurementsGuide: 'Open measurement guide',
+  measurementsPaste: 'Paste measurements',
+  measurementsPasteSuccess: 'Your copied measurements have been added.',
+  measurementsPasteEmpty: 'Copy your completed worksheet from the measurement guide first.',
+  measurementsPasteInvalid: 'Those copied measurements could not be read. Please copy them again from the guide.',
+  measurementsPasteUnavailable: 'Clipboard access is unavailable. Please enter the values manually.',
   notes: 'Anything else we should know',
   summaryHeading: 'Your order',
   subtotal: 'Subtotal',
@@ -32,16 +38,3 @@ export const CONFIRM_COPY = {
   successAction: 'Continue on WhatsApp',
   errorFallback: 'We could not place that order. Please try again.',
 } as const
-
-// cm unless stated; the design's measurement set.
-export const MEASUREMENT_FIELDS = [
-  { key: 'neckCm', label: 'Neck (cm)' },
-  { key: 'chestCm', label: 'Chest (cm)' },
-  { key: 'waistCm', label: 'Waist (cm)' },
-  { key: 'hipsCm', label: 'Hips (cm)' },
-  { key: 'sleeveCm', label: 'Sleeve (cm)' },
-  { key: 'inseamCm', label: 'Inseam (cm)' },
-  { key: 'lengthCm', label: 'Length (cm)' },
-  { key: 'heightCm', label: 'Height (cm)' },
-  { key: 'weightKg', label: 'Weight (kg)' },
-] as const

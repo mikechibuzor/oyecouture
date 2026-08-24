@@ -17,6 +17,7 @@ export enum StorefrontRoute {
   Craftsmanship = '/about#craftsmanship',
   Mission = '/about#mission',
   SizeGuide = '/size-guide',
+  Measurements = '/measurements',
   Shipping = '/shipping',
   Returns = '/returns',
   BookFitting = '/#bespoke',

@@ -49,9 +49,13 @@ const VISION_ICON: IconNode = Eye
           </dl>
         </div>
 
-        <div class="about-image-panel" aria-hidden="true">
-          <span>Founder / Oyecouture portrait</span>
-        </div>
+        <figure class="about-image-panel">
+          <img
+            src="https://res.cloudinary.com/exgithrw/image/upload/f_auto,q_auto,w_1000/oyecouture/campaign-4"
+            alt="Oyecouture traditional tailoring"
+            loading="lazy"
+          >
+        </figure>
       </div>
     </section>
 
@@ -86,9 +90,13 @@ const VISION_ICON: IconNode = Eye
     <!-- 03 — Craftsmanship -->
     <section :id="ABOUT_CRAFTSMANSHIP.id" class="about-section">
       <div class="about-section-body">
-        <div class="about-image-panel is-tailor" aria-hidden="true">
-          <span>Tailoring process</span>
-        </div>
+        <figure class="about-image-panel is-tailor">
+          <img
+            src="https://res.cloudinary.com/exgithrw/image/upload/f_auto,q_auto,w_1000/oyecouture/asoke-look-04-3"
+            alt="Hand-finished Oyecouture ceremonial attire"
+            loading="lazy"
+          >
+        </figure>
 
         <div class="about-copy">
           <p class="about-section-label">{{ ABOUT_CRAFTSMANSHIP.label }}</p>

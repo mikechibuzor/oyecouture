@@ -1,5 +1,6 @@
 import type {
   CatalogueFilterOption,
+  CategoryFilterOption,
   CategoryPageConfig,
   CategoryTileConfig,
   HomeHeroImageConfig,
@@ -121,6 +122,15 @@ export const CASUAL_PRODUCT_SECTIONS = [
 ] as const
 
 export const CATEGORY_ALL_FILTER = 'All'
+export const CATEGORY_ALL_FILTER_OPTION: CategoryFilterOption = {
+  label: CATEGORY_ALL_FILTER,
+  value: CATEGORY_ALL_FILTER,
+}
+
+const categoryFilter = (value: string, label = value): CategoryFilterOption => ({
+  label,
+  value,
+})
 
 export const CATEGORY_PAGE_BY_SECTION = {
   [ProductSection.Suits]: {
@@ -129,15 +139,23 @@ export const CATEGORY_PAGE_BY_SECTION = {
     heading: 'Suits',
     description:
       'Structured tailoring for the rooms where decisions are made — two-piece, three-piece and blazers, cut to a single measure.',
-    categories: ['Three-Piece', 'Two-Piece', 'Blazers'],
+    categories: [
+      categoryFilter('Three-Piece'),
+      categoryFilter('Two-Piece'),
+      categoryFilter('Blazers'),
+    ],
   },
   [ProductSection.Trad]: {
     section: ProductSection.Trad,
     breadcrumb: 'Trad Attires',
     heading: 'Trad Attires',
     description:
-      "Heritage cloth, cut for the room you're about to enter — kaftans, agbada and aso-oke, each finished by hand.",
-    categories: ['Kaftans', 'Agbada', 'Aso-Oke'],
+      "Heritage cloth, cut for the room you're about to enter — kaftans, agbada and ceremonial two-piece attire, each finished by hand.",
+    categories: [
+      categoryFilter('Kaftans'),
+      categoryFilter('Agbada'),
+      categoryFilter('Aso-Oke', 'Two Piece'),
+    ],
   },
   [ProductSection.CasualsMen]: {
     section: ProductSection.CasualsMen,

@@ -5,7 +5,7 @@ $category-content-width: 92.5rem;
 // Header band measured from the approved design: #f4f0ec, 64px/56px vertical
 // padding, left-aligned 40px/700 sentence-case title, 520px description.
 .category-page-header {
-  padding: var(--space-4xl) var(--space-md) 3.5rem;
+  padding: var(--space-4xl) 0 3.5rem;
   background: var(--color-category-band);
 
   h1 {
@@ -24,6 +24,15 @@ $category-content-width: 92.5rem;
     font-size: var(--text-md);
     line-height: 1.65;
   }
+}
+
+.category-page-header-inner,
+.category-page-body {
+  width: min(100%, $category-content-width);
+  margin-right: auto;
+  margin-left: auto;
+  padding-right: var(--space-md);
+  padding-left: var(--space-md);
 }
 
 .category-breadcrumbs {
@@ -50,9 +59,8 @@ $category-content-width: 92.5rem;
 }
 
 .category-page-body {
-  width: min(100% - (var(--space-md) * 2), $category-content-width);
-  margin: 0 auto;
-  padding: var(--space-3xl) 0 var(--space-4xl);
+  padding-top: var(--space-3xl);
+  padding-bottom: var(--space-4xl);
 }
 
 // Chips left, piece count right, hairline beneath — as in the design.
@@ -80,21 +88,11 @@ $category-content-width: 92.5rem;
   white-space: nowrap;
 }
 
-// Keep the header text on the same measure as the grid below it.
-.category-page-header > * {
-  width: min(100%, $category-content-width);
-  margin-right: auto;
-  margin-left: auto;
-}
-
 @include breakpoint-min('tablet') {
-  .category-page-header {
+  .category-page-header-inner,
+  .category-page-body {
     padding-right: var(--space-2xl);
     padding-left: var(--space-2xl);
-  }
-
-  .category-page-body {
-    width: min(100% - (var(--space-2xl) * 2), $category-content-width);
   }
 
   .category-toolbar {
@@ -112,16 +110,15 @@ $category-content-width: 92.5rem;
 
 @include breakpoint-min('desktop') {
   .category-page-header {
-    padding-right: 3.5rem;
-    padding-left: 3.5rem;
-
     h1 {
       font-size: var(--text-4xl);
     }
   }
 
+  .category-page-header-inner,
   .category-page-body {
-    width: min(100% - 7rem, $category-content-width);
+    padding-right: var(--space-xl);
+    padding-left: var(--space-xl);
   }
 
   // Category pages are a 3-up grid; the home page stays 4-up. Both use a 22px
@@ -167,14 +164,4 @@ $category-content-width: 92.5rem;
   color: var(--color-body-copy);
   font-size: var(--text-sm);
   line-height: 1.75;
-}
-
-.care-notice {
-  margin: 0;
-  padding: var(--space-md) var(--space-lg);
-  border: 1px dashed var(--color-border);
-  color: var(--color-taupe);
-  background: var(--color-cream-2);
-  font-size: var(--text-sm);
-  font-style: italic;
 }
