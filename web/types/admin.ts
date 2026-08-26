@@ -63,7 +63,7 @@ export interface AdminStatusAction {
   readonly label: string
 }
 
-// The window the summary strip covers. It filters the metrics only — the list
+// The window the summary strip covers. It filters the metrics only; the list
 // below always shows every order matching the current filters.
 export enum MetricsPeriod {
   Today = 'today',

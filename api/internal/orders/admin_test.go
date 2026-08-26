@@ -210,7 +210,7 @@ func TestNormalizeFilterTruncatesLongSearch(t *testing.T) {
 }
 
 // TestEscapeLikePattern stops a wildcard in the search box from matching every
-// order — searching "%" must find orders containing a literal percent sign.
+// order. Searching "%" must find orders containing a literal percent sign.
 func TestEscapeLikePattern(t *testing.T) {
 	t.Parallel()
 

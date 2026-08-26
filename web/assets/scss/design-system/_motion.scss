@@ -1,5 +1,5 @@
 // Motion tokens. Authority: 07-MOTION-AND-MICROINTERACTIONS.md.
-// Never write a raw ms value or cubic-bezier() in a component file — add a token here instead.
+// Never write a raw ms value or cubic-bezier() in a component file. Add a token here instead.
 :root {
   // Duration
   --duration-instant: 90ms; // tap/press feedback, colour-only shifts
@@ -9,7 +9,7 @@
   --duration-editorial: 620ms; // scroll reveals, hero headline, section entrances
   --duration-ceremony: 800ms; // bespoke-only moments
 
-  // Easing. No spring/bounce/elastic on this project — see principle P1.
+  // Easing. No spring/bounce/elastic on this project. See principle P1.
   --ease-settle: cubic-bezier(0.16, 1, 0.3, 1); // signature: long quiet tail, for entrances
   --ease-fine: cubic-bezier(0.33, 1, 0.68, 1); // finer settle for small elements
   --ease-exit: cubic-bezier(0.4, 0, 1, 1); // exits accelerate away

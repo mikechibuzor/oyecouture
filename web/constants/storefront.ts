@@ -22,7 +22,7 @@ export const STOREFRONT_COPY = {
   footer: {
     heading: 'Stay Connected',
     description:
-      'Oyecouture Bespoke — where confidence, simplicity, and class become clothing.',
+      'Oyecouture Bespoke, where confidence, simplicity, and class become clothing.',
     copyright: '© 2026 Oyecouture. All rights reserved.',
     legalNavigationLabel: 'Legal navigation',
   },
@@ -30,7 +30,7 @@ export const STOREFRONT_COPY = {
 
 export const BESPOKE_SERVICE_COPY = {
   eyebrow: 'The Bespoke Service',
-  heading: 'Prefer a piece made to a single measure — yours?',
+  heading: 'Prefer a piece made to a single measure, yours?',
   action: 'Book an Appointment',
 } as const
 

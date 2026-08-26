@@ -61,7 +61,7 @@ func postLogin(handler *Handler, email string, password string) *httptest.Respon
 }
 
 // TestSignInThrottlesBruteForce proves the endpoint stops repeated guessing,
-// and — the part that matters day to day — that the owner cannot lock
+// and, importantly, that the owner cannot lock
 // themselves out by signing in normally.
 func TestSignInThrottlesBruteForce(t *testing.T) {
 	t.Parallel()

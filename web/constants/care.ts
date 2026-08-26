@@ -11,7 +11,7 @@ const carePageFromPolicy = (policy: ProductPolicy) => ({
   sections: policy.lines.map((line) => ({
     // Labels carry their own punctuation for inline use; a heading needs it off.
     title: (line.label ?? policy.linesHeading ?? '').replace(/:$/, ''),
-    body: line.text.replace(/^—\s*/, ''),
+    body: line.text,
   })),
   footnote: policy.footnote,
 })

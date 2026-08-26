@@ -31,7 +31,7 @@ const (
 const MaximumItemQuantity = 10
 
 // RequestedItem is one line as submitted by the storefront. Only the slug, size
-// and quantity are trusted — the price is always re-read from the database.
+// and quantity are trusted. The price is always re-read from the database.
 type RequestedItem struct {
 	Slug     string `json:"slug"`
 	Size     string `json:"size"`
@@ -63,7 +63,8 @@ type CreateOrderInput struct {
 	Phone        string          `json:"phone"`
 	Items        []RequestedItem `json:"items"`
 	Measurements *Measurements   `json:"measurements"`
-	// Ready-to-wear uses these for delivery fees; bespoke stores them for WhatsApp follow-up.
+	// Both checkout paths use server-resolved delivery fees. Bespoke orders still
+	// remain pending until their tailoring details are confirmed on WhatsApp.
 	Address      string `json:"address"`
 	DeliveryZone string `json:"deliveryZone"`
 }

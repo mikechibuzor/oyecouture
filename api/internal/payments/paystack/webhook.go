@@ -57,7 +57,7 @@ func (handler *WebhookHandler) Handle(responseWriter http.ResponseWriter, reques
 		if err := handler.service.ConfirmWebhookReference(request.Context(), event.Data.Reference); err != nil {
 			// Paystack retries any non-2xx. Redelivering an event we can never
 			// accept would retry forever, so those are acknowledged and logged
-			// instead — an amount or currency mismatch is a signal for a human,
+			// instead. An amount or currency mismatch is a signal for a human,
 			// not something a retry can resolve.
 			if isTerminal(err) {
 				log.Printf("paystack webhook not retryable, acknowledged: reference=%s: %v",

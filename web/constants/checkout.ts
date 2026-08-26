@@ -22,7 +22,7 @@ export const CHECKOUT_COPY = {
   // Payment is wired once the client supplies Nomba credentials.
   paymentNote: 'We will send a secure payment link to confirm your order.',
   successEyebrow: 'Order received',
-  successHeading: 'Thank you — your order is in',
+  successHeading: 'Thank you, your order is in',
   successBody:
     'Quote this reference in any message to us. We will send a secure payment link shortly to confirm it.',
   successAction: 'Continue shopping',

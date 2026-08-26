@@ -10,7 +10,7 @@ import {
 } from '~/constants/about'
 
 useSeoMeta({
-  title: 'About — Oyecouture Bespoke',
+  title: 'About | Oyecouture Bespoke',
   description: ABOUT_HERO.description,
 })
 
@@ -30,7 +30,7 @@ const VISION_ICON: IconNode = Eye
       </div>
     </header>
 
-    <!-- 01 — Our Story -->
+    <!-- 01 / Our Story -->
     <section :id="ABOUT_STORY.id" class="about-section">
       <div class="about-section-body">
         <div class="about-copy">
@@ -59,7 +59,7 @@ const VISION_ICON: IconNode = Eye
       </div>
     </section>
 
-    <!-- 02 — The Oyecouture Symbol -->
+    <!-- 02 / The Oyecouture Symbol -->
     <section :id="ABOUT_SYMBOL.id" class="about-section is-inverted">
       <div class="about-section-body">
         <div class="about-symbol-mark" aria-hidden="true">
@@ -87,7 +87,7 @@ const VISION_ICON: IconNode = Eye
       </div>
     </section>
 
-    <!-- 03 — Craftsmanship -->
+    <!-- 03 / Craftsmanship -->
     <section :id="ABOUT_CRAFTSMANSHIP.id" class="about-section">
       <div class="about-section-body">
         <figure class="about-image-panel is-tailor">
@@ -118,7 +118,7 @@ const VISION_ICON: IconNode = Eye
       </div>
     </section>
 
-    <!-- 04 — Mission & Vision -->
+    <!-- 04 / Mission & Vision -->
     <section :id="ABOUT_MISSION.id" class="about-section about-mission-section">
       <p class="about-section-label">{{ ABOUT_MISSION.label }}</p>
       <h2>{{ ABOUT_MISSION.heading }}</h2>

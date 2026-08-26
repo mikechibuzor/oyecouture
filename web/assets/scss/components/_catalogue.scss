@@ -528,7 +528,7 @@ $catalogue-content-width: 92.5rem;
 }
 
 // Card chrome (wishlist, carousel arrows, dots) stays permanently visible by
-// design decision — affordances should never be hover-gated (07 §8). Only the
+// design decision: affordances should never be hover-gated (07 §8). Only the
 // colour/background of those controls responds to hover, via the global button
 // transition in _globals.scss.
 

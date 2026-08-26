@@ -5,7 +5,7 @@ import { StorefrontRoute } from '~/types/storefront'
 const { appointmentWhatsAppUrl, opensWhatsApp } = await useAppointmentWhatsApp()
 
 useSeoMeta({
-  title: 'Size Guide — Oyecouture Bespoke',
+  title: 'Size Guide | Oyecouture Bespoke',
   description: 'Oyecouture ready-to-wear size charts and made-to-measure guidance.',
 })
 </script>
@@ -81,7 +81,7 @@ useSeoMeta({
     <section class="size-guide-next">
       <div>
         <p class="eyebrow">Made to measure</p>
-        <h2>A single measure — yours</h2>
+        <h2>A single measure, yours</h2>
         <p>Follow our visual guide, record each measurement, then keep or print your completed worksheet.</p>
       </div>
       <div class="size-guide-actions">

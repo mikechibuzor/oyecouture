@@ -1,0 +1,1 @@
+-- Copy punctuation cleanup is intentionally retained on rollback.

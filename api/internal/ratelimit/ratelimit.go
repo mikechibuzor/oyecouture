@@ -1,7 +1,7 @@
 // Package ratelimit throttles abuse-prone endpoints by client address.
 //
-// It lives on its own because two very different endpoints need it — admin
-// sign-in and the public contact form — and duplicating the address handling
+// It lives on its own because two very different endpoints need it: admin
+// sign-in and the public contact form. Duplicating the address handling
 // is how a fixed bug comes back. Keying on RemoteAddr including its ephemeral
 // port once gave every request its own bucket, so nothing was ever limited.
 package ratelimit

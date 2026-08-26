@@ -66,7 +66,7 @@ const copyMeasurements = async (): Promise<void> => {
 }
 
 useSeoMeta({
-  title: 'Measurement Guide — Oyecouture Bespoke',
+  title: 'Measurement Guide | Oyecouture Bespoke',
   description: 'Follow Oyecouture’s visual measurement guide and complete a private worksheet.',
 })
 </script>
@@ -88,7 +88,7 @@ useSeoMeta({
 
     <section class="measurement-steps" aria-labelledby="measurement-steps-title">
       <div class="measurement-section-heading">
-        <p class="eyebrow">01 — The guide</p>
+        <p class="eyebrow">01 / The guide</p>
         <h2 id="measurement-steps-title">Take each measurement once, carefully</h2>
       </div>
 
@@ -113,7 +113,7 @@ useSeoMeta({
 
     <section id="worksheet" class="measurement-worksheet" aria-labelledby="measurement-worksheet-title">
       <div class="measurement-section-heading">
-        <p class="eyebrow">02 — Your worksheet</p>
+        <p class="eyebrow">02 / Your worksheet</p>
         <h2 id="measurement-worksheet-title">Record and keep</h2>
         <p>Values are in inches. The worksheet remains in this browser and is not submitted anywhere.</p>
       </div>

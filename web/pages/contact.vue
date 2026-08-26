@@ -115,9 +115,9 @@ const resetFeedback = (): void => {
 }
 
 useSeoMeta({
-  title: 'Contact — Oyecouture Bespoke',
+  title: 'Contact | Oyecouture Bespoke',
   description:
-    "Questions, feedback, a fitting to book, or simply a word about how we're doing — reach Oyecouture directly.",
+    "Questions, feedback, a fitting to book, or simply a word about how we're doing. Reach Oyecouture directly.",
 })
 </script>
 
@@ -131,7 +131,7 @@ useSeoMeta({
           always
         </h1>
         <p>
-          Questions, feedback, a fitting to book, or simply a word about how we're doing —
+          Questions, feedback, a fitting to book, or simply a word about how we're doing.
           reach Oyecouture directly, or find us in every space we keep.
         </p>
       </div>
@@ -140,7 +140,7 @@ useSeoMeta({
     <section id="feedback" class="contact-section">
       <div class="contact-split">
         <div class="contact-reach">
-          <p class="contact-section-label">01 — Reach Us</p>
+          <p class="contact-section-label">01 / Reach Us</p>
           <h2>Speak to the house directly</h2>
           <p>
             Every message is read by someone who cares about the cut. Expect a
@@ -184,7 +184,7 @@ useSeoMeta({
           </div>
 
           <div v-else>
-            <p class="contact-section-label">02 — Share Feedback</p>
+            <p class="contact-section-label">02 / Share Feedback</p>
             <h3>Tell us how we're doing</h3>
 
             <div class="contact-form-row">
@@ -246,7 +246,7 @@ useSeoMeta({
 
     <section id="social" class="contact-social-section">
       <div class="contact-social-content">
-        <p class="contact-section-label">03 — Contact Oyecouture</p>
+        <p class="contact-section-label">03 / Contact Oyecouture</p>
         <h2>Choose how to reach us</h2>
         <p>
           Start a conversation, ask about an order or arrange a private fitting.

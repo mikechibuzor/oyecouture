@@ -10,6 +10,8 @@ export interface WhatsAppOrderDetails {
   readonly phone?: string
   readonly address?: string
   readonly deliveryZone?: string
+  readonly deliveryFeeKobo?: number
+  readonly totalKobo?: number
   readonly measurements?: MeasurementsRequest | null
 }
 
@@ -52,7 +54,7 @@ export const buildWhatsAppOrderMessage = (
     const sizeSuffix = line.size ? ` (Size ${line.size})` : ''
     const lineTotal = formatProductPrice(line.priceKobo * line.quantity)
 
-    return `• ${line.name}${sizeSuffix} x${line.quantity} — ${lineTotal}`
+    return `• ${line.name}${sizeSuffix} x${line.quantity}: ${lineTotal}`
   })
   const opening = orderNo
     ? `Hi Oyecouture! I'd like to confirm order ${orderNo}:`
@@ -73,6 +75,12 @@ export const buildWhatsAppOrderMessage = (
     ...orderLines,
     '',
     `Subtotal: ${formatProductPrice(subtotalKobo)}`,
+    ...(details?.deliveryFeeKobo !== undefined
+      ? [`Delivery: ${formatProductPrice(details.deliveryFeeKobo)}`]
+      : []),
+    ...(details?.totalKobo !== undefined
+      ? [`Total: ${formatProductPrice(details.totalKobo)}`]
+      : []),
     ...customerSection,
     ...deliverySection,
     ...buildMeasurementLines(details?.measurements),
@@ -82,7 +90,7 @@ export const buildWhatsAppOrderMessage = (
 }
 
 // Builds the wa.me deep link that opens WhatsApp with the bag already written
-// out. Phase 1 uses a plain deep link — no WhatsApp Business API, no server call.
+// out. Phase 1 uses a plain deep link, with no WhatsApp Business API or server call.
 export const buildWhatsAppOrderUrl = (
   whatsAppNumber: string,
   lines: readonly CartLine[],
@@ -90,7 +98,7 @@ export const buildWhatsAppOrderUrl = (
   orderNo = '',
   details?: WhatsAppOrderDetails,
 ): string => {
-  // wa.me expects digits only — strip any spacing or leading plus the number
+  // wa.me expects digits only. Strip any spacing or leading plus the number
   // may have been configured with.
   return buildWhatsAppUrl(
     whatsAppNumber,

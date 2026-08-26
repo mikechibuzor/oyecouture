@@ -2,7 +2,7 @@
 //
 //	go run ./cmd/admin
 //
-// The password is read without echoing and stored only as a bcrypt hash — it is
+// The password is read without echoing and stored only as a bcrypt hash. It is
 // never written to .env, logs or the repository.
 package main
 
@@ -78,7 +78,7 @@ func main() {
 }
 
 // readPassword takes input without echoing it when attached to a terminal.
-// When stdin is piped (scripted setup, CI) it falls back to reading a line —
+// When stdin is piped (scripted setup, CI) it falls back to reading a line,
 // the password is then only as private as the calling script makes it.
 func readPassword(reader *bufio.Reader, prompt string) (string, error) {
 	if !term.IsTerminal(int(syscall.Stdin)) {

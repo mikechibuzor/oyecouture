@@ -159,7 +159,7 @@ $storefront-navigation-width: 92.5rem;
   }
 }
 
-// Enters settling, leaves faster — exits are ~0.6x the entrance (07 §2).
+// Enters settling and leaves faster. Exits are ~0.6x the entrance (07 §2).
 .mobile-navigation-enter-active {
   transition:
     opacity var(--duration-slow) var(--ease-settle),

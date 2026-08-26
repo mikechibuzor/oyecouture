@@ -44,7 +44,7 @@ const hasWishlistedProducts = computed(() => wishlistedProducts.value.length > 0
 
 const headerSubcopy = computed(() => {
   if (wishlistCount.value === 0) {
-    return "Tap the heart on any piece to keep it here — a private rail of the cuts you're considering."
+    return "Tap the heart on any piece to keep it here. It is a private rail of the cuts you're considering."
   }
 
   return `${wishlistCount.value} saved ${wishlistCount.value === 1 ? 'piece' : 'pieces'} ready when you are.`
@@ -120,9 +120,9 @@ watch(
 )
 
 useSeoMeta({
-  title: 'Wishlist — Oyecouture Bespoke',
+  title: 'Wishlist | Oyecouture Bespoke',
   description:
-    "Your saved Oyecouture pieces — a private rail of the cuts you're considering.",
+    "Your saved Oyecouture pieces form a private rail of the cuts you're considering.",
 })
 </script>
 
@@ -176,7 +176,7 @@ useSeoMeta({
         </span>
         <h2>Nothing saved yet</h2>
         <p>
-          Tap the heart on any piece to keep it here — a private rail of the cuts
+          Tap the heart on any piece to keep it here. It is a private rail of the cuts
           you're considering.
         </p>
         <NuxtLink :to="StorefrontRoute.Collection">

@@ -9,5 +9,5 @@ const orderDateFormat = new Intl.DateTimeFormat('en-NG', {
 export const formatOrderDate = (isoDate: string): string => {
   const parsed = new Date(isoDate)
 
-  return Number.isNaN(parsed.getTime()) ? '—' : orderDateFormat.format(parsed)
+  return Number.isNaN(parsed.getTime()) ? 'Not available' : orderDateFormat.format(parsed)
 }

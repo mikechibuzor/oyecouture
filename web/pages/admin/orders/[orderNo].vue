@@ -61,7 +61,7 @@ const measurementRows = computed(() => {
       label,
       value: formatMeasurement(measurements.values?.[fieldId], measurements.unit ?? 'in'),
     }))
-    .filter((row) => row.value !== '—')
+    .filter((row) => row.value !== '')
 
   if (structuredRows.length > 0) {
     const profileLabels = {
@@ -89,8 +89,8 @@ const measurementRows = computed(() => {
     { label: 'Length', value: formatMeasurement(measurements.lengthCm, 'cm') },
     { label: 'Height', value: formatMeasurement(measurements.heightCm, 'cm') },
     { label: 'Weight', value: formatMeasurement(measurements.weightKg, 'kg') },
-    { label: 'Notes', value: measurements.notes || '—' },
-  ].filter((row) => row.value !== '—')
+    { label: 'Notes', value: measurements.notes || '' },
+  ].filter((row) => row.value !== '')
 })
 
 // WhatsApp expects digits only; local Nigerian numbers are normalised to 234.
@@ -177,7 +177,7 @@ const applyStatus = async (nextStatus: OrderStatus): Promise<void> => {
 // Formats a nullable measurement value without noisy decimals.
 function formatMeasurement(value: number | null | undefined, unit: string): string {
   if (value === null || value === undefined) {
-    return '—'
+    return ''
   }
 
   return `${new Intl.NumberFormat('en-NG', { maximumFractionDigits: 1 }).format(value)} ${unit}`

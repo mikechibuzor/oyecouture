@@ -29,7 +29,6 @@ export const PRODUCT_ASYNC_DATA_KEYS = {
 } as const
 
 export const PRODUCT_ROUTE_PREFIX = '/product' as const
-export const PRODUCT_MEDIA_PLACEHOLDER_COUNT = 3 as const
 export const PRODUCT_PRICE_FORMAT = {
   currency: 'NGN',
   locale: 'en-NG',
@@ -136,7 +135,7 @@ export const CATEGORY_PAGE_BY_SECTION = {
     breadcrumb: 'Suits',
     heading: 'Suits',
     description:
-      'Structured tailoring for the rooms where decisions are made — two-piece, three-piece and blazers, cut to a single measure.',
+      'Structured tailoring for the rooms where decisions are made: two-piece, three-piece and blazers, cut to a single measure.',
     categories: [
       categoryFilter('Three-Piece'),
       categoryFilter('Two-Piece'),
@@ -148,7 +147,7 @@ export const CATEGORY_PAGE_BY_SECTION = {
     breadcrumb: 'Trad Attires',
     heading: 'Trad Attires',
     description:
-      "Heritage cloth, cut for the room you're about to enter — kaftans, agbada and ceremonial two-piece attire, each finished by hand.",
+      "Heritage cloth, cut for the room you're about to enter: kaftans, agbada and ceremonial two-piece attire, each finished by hand.",
     categories: [
       categoryFilter('Kaftans'),
       categoryFilter('Agbada'),
@@ -158,17 +157,17 @@ export const CATEGORY_PAGE_BY_SECTION = {
   [ProductSection.CasualsMen]: {
     section: ProductSection.CasualsMen,
     breadcrumb: 'Casuals · Men',
-    heading: 'Casuals — Men',
+    heading: 'Casuals / Men',
     description:
-      'Off-duty pieces cut with the same discipline as our tailoring — order online, sized to you.',
+      'Off-duty pieces cut with the same discipline as our tailoring. Order online, sized to you.',
     categories: [],
   },
   [ProductSection.CasualsWomen]: {
     section: ProductSection.CasualsWomen,
     breadcrumb: 'Casuals · Women',
-    heading: 'Casuals — Women',
+    heading: 'Casuals / Women',
     description:
-      'Off-duty pieces cut with the same discipline as our tailoring — order online, sized to you.',
+      'Off-duty pieces cut with the same discipline as our tailoring. Order online, sized to you.',
     categories: [],
   },
 } as const satisfies Readonly<Record<ProductSection, CategoryPageConfig>>
@@ -193,7 +192,7 @@ export const PRODUCT_SECTION_NAVIGATION = {
 } as const satisfies Readonly<Record<ProductSection, ProductSectionNavigation>>
 
 // Trads and Casuals use the client's own photography from Cloudinary. Suits
-// still points at the design-mockup mannequin — there is no suit shoot yet.
+// still points at the design-mockup mannequin because there is no suit shoot yet.
 export const CATEGORY_TILES = [
   {
     label: 'Shop',
@@ -324,7 +323,7 @@ export const getProductRoute = (productSlug: string): string =>
   `${PRODUCT_ROUTE_PREFIX}/${encodeURIComponent(productSlug)}`
 
 // Delivery and returns policy shown on every product page. The copy is the
-// approved design's, verbatim — it sets expectations a made-to-order buyer
+// approved design's verbatim. It sets expectations a made-to-order buyer
 // needs before paying, so it is deliberately not per-product.
 export const PRODUCT_POLICIES: readonly ProductPolicy[] = [
   {
@@ -345,22 +344,22 @@ export const PRODUCT_POLICIES: readonly ProductPolicy[] = [
       },
       {
         label: 'Packaging:',
-        text: 'Every order arrives in Oyecouture signature packaging — garment bag, dust protection, and care card included.',
+        text: 'Every order arrives in Oyecouture signature packaging, including a garment bag, dust protection, and care card.',
       },
     ],
     footnote:
-      'Need it sooner? We can expedite production for an additional 20% of the piece’s price. If you’re working to a date — a wedding, an event — let us know when you order and we’ll prioritise your piece.',
+      'Need it sooner? We can expedite production for an additional 20% of the piece’s price. If you’re working to a date, such as a wedding or event, let us know when you order and we’ll prioritise your piece.',
   },
   {
     id: 'returns',
     title: 'Returns & Exchanges',
     intro:
-      'Because Oyecouture pieces are made to your measurements, we don’t offer standard returns — a bespoke jacket cut for you isn’t something we can resell to someone else.',
+      'Because Oyecouture pieces are made to your measurements, we don’t offer standard returns. A bespoke jacket cut for you isn’t something we can resell to someone else.',
     linesHeading: 'What we do offer',
     lines: [
       {
         label: 'Manufacturing faults',
-        text: '— if something’s wrong with the construction or material, we can reach a consensus to repair, remake, or refund. Reach out within 3 days of receiving your order.',
+        text: 'If something’s wrong with the construction or material, we can reach a consensus to repair, remake, or refund. Reach out within 3 days of receiving your order.',
       },
       {
         label: 'Ready-to-wear items',
@@ -368,6 +367,6 @@ export const PRODUCT_POLICIES: readonly ProductPolicy[] = [
       },
     ],
     footnote:
-      'To start an alteration or flag an issue, contact us with your order number — see Contact Us below.',
+      'To start an alteration or flag an issue, contact us with your order number. See Contact Us below.',
   },
 ]

@@ -372,7 +372,7 @@ func normalizeProductDraft(draft AdminProductDraft) (AdminProductDraft, error) {
 	draft.Name = strings.TrimSpace(draft.Name)
 	draft.Section = strings.TrimSpace(draft.Section)
 	draft.Category = strings.TrimSpace(draft.Category)
-	draft.Description = strings.TrimSpace(draft.Description)
+	draft.Description = normalizeProductDescription(draft.Description)
 	draft.Tag = strings.TrimSpace(draft.Tag)
 
 	if !productSlugPattern.MatchString(draft.Slug) {
@@ -394,6 +394,14 @@ func normalizeProductDraft(draft AdminProductDraft) (AdminProductDraft, error) {
 
 	draft.Section = string(section)
 	return draft, nil
+}
+
+// normalizeProductDescription keeps catalogue prose aligned with the approved
+// copy style while preserving ordinary hyphens inside compound words.
+func normalizeProductDescription(description string) string {
+	normalizedDescription := strings.TrimSpace(description)
+	normalizedDescription = strings.ReplaceAll(normalizedDescription, " \u2014 ", ", ")
+	return strings.ReplaceAll(normalizedDescription, "\u2014", "-")
 }
 
 // validateImageUpload keeps invalid or unsafe files away from the image provider.

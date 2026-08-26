@@ -20,19 +20,21 @@ const props = withDefaults(defineProps<CarePageProps>(), {
   footnote: '',
 })
 
-useSeoMeta({ title: `${props.heading} — Oyecouture Bespoke`, description: props.intro })
+useSeoMeta({ title: `${props.heading} | Oyecouture Bespoke`, description: props.intro })
 </script>
 
 <template>
   <div class="care-page">
     <header class="category-page-header">
-      <nav class="category-breadcrumbs" :aria-label="PRODUCT_COPY.breadcrumbs.label">
-        <NuxtLink :to="StorefrontRoute.Home">{{ PRODUCT_COPY.breadcrumbs.home }}</NuxtLink>
-        <span aria-hidden="true">/</span>
-        <span>{{ breadcrumb }}</span>
-      </nav>
-      <h1>{{ heading }}</h1>
-      <p>{{ intro }}</p>
+      <div class="category-page-header-inner">
+        <nav class="category-breadcrumbs" :aria-label="PRODUCT_COPY.breadcrumbs.label">
+          <NuxtLink :to="StorefrontRoute.Home">{{ PRODUCT_COPY.breadcrumbs.home }}</NuxtLink>
+          <span aria-hidden="true">/</span>
+          <span>{{ breadcrumb }}</span>
+        </nav>
+        <h1>{{ heading }}</h1>
+        <p>{{ intro }}</p>
+      </div>
     </header>
 
     <section class="care-body">

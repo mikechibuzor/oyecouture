@@ -135,7 +135,7 @@ const isCurrentRoute = (itemRoute?: string): boolean =>
               v-else
               class="admin-nav-item is-pending"
               aria-disabled="true"
-              :title="`${item.label} — ${ADMIN_COPY.pendingBadge.toLowerCase()}`"
+              :title="`${item.label}: ${ADMIN_COPY.pendingBadge.toLowerCase()}`"
             >
               <StorefrontIcon
                 :icon-node="NAV_ICONS[item.id]"

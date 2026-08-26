@@ -1,5 +1,5 @@
 // Scroll and load reveals. Authority: 07-MOTION-AND-MICROINTERACTIONS.md §5 (Tier 3).
-// Scroll reveals use CSS scroll-driven animations — no IntersectionObserver, no JS,
+// Scroll reveals use CSS scroll-driven animations, with no IntersectionObserver or JS.
 // and they run off the main thread. Guarded by @supports so unsupported browsers
 // simply see the settled state; content is never trapped behind a failed animation.
 

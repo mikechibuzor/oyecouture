@@ -17,7 +17,7 @@ interface ProductCardProps {
 
 const props = defineProps<ProductCardProps>()
 const activeMediaIndex = ref(0)
-const { mediaItems } = useProductMedia(() => props.product, true)
+const { mediaItems } = useProductMedia(() => props.product)
 const { add, open: openCart } = useCart()
 const { has: hasWishlistedProduct, toggle: toggleWishlistedProduct } = useWishlist()
 const { preloadImages } = useImagePreloader()

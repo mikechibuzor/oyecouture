@@ -40,16 +40,21 @@ const placedLines = ref<typeof lines.value>([])
 const placedSubtotalKobo = ref(0)
 const placedOrderDetails = ref<WhatsAppOrderDetails | null>(null)
 
-useSeoMeta({ title: `${CONFIRM_COPY.heading} — Oyecouture Bespoke` })
+useSeoMeta({ title: `${CONFIRM_COPY.heading} | Oyecouture Bespoke` })
 
 const formattedSubtotal = computed(() => formatProductPrice(subtotalKobo.value))
 const zones = computed<readonly DeliveryZone[]>(() => zoneData.value?.zones ?? [])
 const zoneSelectOptions = computed<SelectOption[]>(() =>
   zones.value.map((zone) => ({
     value: zone.name,
-    label: zone.name,
+    label: `${zone.name} · ${formatProductPrice(zone.feeKobo)}`,
   })),
 )
+const selectedZone = computed(() =>
+  zones.value.find((zone) => zone.name === deliveryZoneName.value) ?? null,
+)
+const deliveryFeeKobo = computed(() => selectedZone.value?.feeKobo ?? 0)
+const totalKobo = computed(() => subtotalKobo.value + deliveryFeeKobo.value)
 const configuredWhatsAppNumber = computed(() =>
   String(siteSettings.value?.whatsappNumber ?? ''),
 )
@@ -221,7 +226,11 @@ const handleSubmit = async (): Promise<void> => {
     placedOrder.value = order
     placedLines.value = submittedLines
     placedSubtotalKobo.value = submittedSubtotal
-    placedOrderDetails.value = submittedOrderDetails
+    placedOrderDetails.value = {
+      ...submittedOrderDetails,
+      deliveryFeeKobo: order.deliveryFeeKobo,
+      totalKobo: order.totalKobo,
+    }
     clear()
   } catch (submitError) {
     const apiError = submitError as { data?: { error?: { message?: string } } }
@@ -386,9 +395,19 @@ const handleSubmit = async (): Promise<void> => {
             </li>
           </ul>
 
-          <div class="confirm-subtotal">
+          <div class="checkout-line">
             <span>{{ CONFIRM_COPY.subtotal }}</span>
             <strong>{{ formattedSubtotal }}</strong>
+          </div>
+
+          <div class="checkout-line">
+            <span>{{ CONFIRM_COPY.delivery }}</span>
+            <strong>{{ formatProductPrice(deliveryFeeKobo) }}</strong>
+          </div>
+
+          <div class="confirm-subtotal">
+            <span>{{ CONFIRM_COPY.total }}</span>
+            <strong>{{ formatProductPrice(totalKobo) }}</strong>
           </div>
 
           <p v-if="errorMessage" class="confirm-error" role="alert">{{ errorMessage }}</p>

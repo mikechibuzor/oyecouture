@@ -1,4 +1,4 @@
-# Go API — multi-stage build producing a small static image.
+# Go API with a multi-stage build producing a small static image.
 # Migrations are embedded in the binary via go:embed, so no SQL files are copied.
 # Must match the go directive in go.mod: GOTOOLCHAIN is local in this image, so
 # an older base fails the build rather than downloading a newer toolchain.
@@ -28,7 +28,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build \
     -o /out/admin \
     ./cmd/admin
 
-# Distroless: no shell, no package manager — a much smaller attack surface than alpine.
+# Distroless has no shell or package manager, giving it a smaller attack surface than alpine.
 FROM gcr.io/distroless/static-debian12:nonroot
 
 COPY --from=build /out/server /server

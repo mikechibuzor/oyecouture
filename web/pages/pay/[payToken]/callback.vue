@@ -19,7 +19,7 @@ const isVerifying = ref(true)
 const isPaid = ref(false)
 const message = ref<string>(PAYMENT_COPY.verifying)
 
-useSeoMeta({ title: `${PAYMENT_COPY.verifying} — Oyecouture Bespoke` })
+useSeoMeta({ title: `${PAYMENT_COPY.verifying} | Oyecouture Bespoke` })
 
 const verify = async (): Promise<void> => {
   if (!reference.value) {

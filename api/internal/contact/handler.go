@@ -26,7 +26,7 @@ const (
 	// abuse here is volume rather than guessing. A real enquiry is one message;
 	// this leaves room to correct a typo and resend without ever letting a
 	// script flood the owner's inbox, burn the SendByte quota, or damage the
-	// sending domain's reputation — which would take order emails down with it.
+	// sending domain's reputation, which would take order emails down with it.
 	submissionWindow   = time.Hour
 	submissionsPerHour = 5
 )

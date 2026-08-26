@@ -56,7 +56,7 @@
   flex-shrink: 0;
   color: var(--color-taupe);
   // transform, not the independent `rotate` property: on an <svg> element
-  // `rotate` is ignored outright — it computes to 0deg even when set inline —
+  // `rotate` is ignored outright. It computes to 0deg even when set inline,
   // while transform applies normally. The icon carries no other transform, so
   // there is nothing here for it to clobber.
   transition: transform var(--duration-quick) var(--ease-standard);

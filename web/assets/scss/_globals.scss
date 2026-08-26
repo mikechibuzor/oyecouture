@@ -86,7 +86,7 @@ p {
 }
 
 // Reduce movement, never remove feedback: state changes (colour, fill, active
-// styling) still resolve — only the travel is removed. See 07 §6.1.
+// styling) still resolve; only the travel is removed. See 07 §6.1.
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

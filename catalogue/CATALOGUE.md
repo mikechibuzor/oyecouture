@@ -1,8 +1,8 @@
 # Catalogue (human-readable)
 
-Canonical data: [`product-data.js`](product-data.js) (27 products). Prices in naira; store as kobo (×100). **`Sizes` column = the critical RTW vs bespoke split** — `hasSizes:false` = bespoke (WhatsApp-first, pay-after-measurement); `hasSizes:true` = ready-to-wear (size picker, pay-now).
+Canonical data: [`product-data.js`](product-data.js) (27 products). Prices in naira; store as kobo (×100). **`Sizes` column = the critical RTW vs bespoke split:** `hasSizes:false` = bespoke (WhatsApp-first, pay-after-measurement); `hasSizes:true` = ready-to-wear (size picker, pay-now).
 
-## Suits — section `suits` (all bespoke, no sizes)
+## Suits: section `suits` (all bespoke, no sizes)
 | slug | Name | Category | Price | Tag |
 |---|---|---|---|---|
 | monarch | The Monarch Three-Piece | Three-Piece | ₦850,000 | Bespoke |
@@ -14,7 +14,7 @@ Canonical data: [`product-data.js`](product-data.js) (27 products). Prices in na
 | diplomat | The Diplomat Two-Piece | Two-Piece | ₦490,000 | |
 | weekend | The Weekend Linen Blazer | Blazers | ₦275,000 | |
 
-## Trad Attires — section `trad` (all bespoke, no sizes)
+## Trad Attires: section `trad` (all bespoke, no sizes)
 | slug | Name | Category | Price | Tag |
 |---|---|---|---|---|
 | agbada | The Royal Agbada | Agbada | ₦950,000 | Bespoke |
@@ -27,7 +27,7 @@ Canonical data: [`product-data.js`](product-data.js) (27 products). Prices in na
 | executive | The Executive Agbada | Agbada | ₦690,000 | New |
 | wedding | Aso-Oke Wedding Ensemble | Aso-Oke | ₦860,000 | Bespoke |
 
-## Casuals · Men — section `casuals-men` (all ready-to-wear, sizes S–XL)
+## Casuals · Men: section `casuals-men` (all ready-to-wear, sizes S–XL)
 | slug | Name | Category | Price | Tag |
 |---|---|---|---|---|
 | linen | The Weekend Linen Shirt | Shirts | ₦78,000 | |
@@ -39,7 +39,7 @@ Canonical data: [`product-data.js`](product-data.js) (27 products). Prices in na
 | crew | The Crewneck Sweater | Knitwear | ₦88,000 | |
 | cardigan | The Merino Cardigan | Knitwear | ₦96,000 | New |
 
-## Casuals · Women — section `casuals-women` (all ready-to-wear, sizes S–XL)
+## Casuals · Women: section `casuals-women` (all ready-to-wear, sizes S–XL)
 | slug | Name | Category | Price | Tag |
 |---|---|---|---|---|
 | wrap | The Silk Wrap Blouse | Tops | ₦82,000 | New |
@@ -47,5 +47,5 @@ Canonical data: [`product-data.js`](product-data.js) (27 products). Prices in na
 
 ## Notes
 - Sizes for RTW: `S`, `M`, `L`, `XL`.
-- The Shop page's filter chips (`ALL / SUITS / ASO-OKE / CASUALS / KAFTANS`) filter by category/section, not by the four `section` values one-to-one — e.g. "ASO-OKE" and "KAFTANS" filter within `trad`. Wire filters from the `category`/`section` fields.
-- Most products currently have **placeholder images** in the design — real photography is a client deliverable. Use `active=false` to hide photo-less items at launch if preferred.
+- The Shop page's filter chips (`ALL / SUITS / ASO-OKE / CASUALS / KAFTANS`) filter by category/section, not by the four `section` values one-to-one. For example, "ASO-OKE" and "KAFTANS" filter within `trad`. Wire filters from the `category`/`section` fields.
+- Most products currently have **placeholder images** in the design because real photography is a client deliverable. Use `active=false` to hide photo-less items at launch if preferred.

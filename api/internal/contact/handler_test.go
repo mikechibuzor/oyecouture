@@ -45,7 +45,7 @@ func validBody() string {
 // TestSubmitThrottlesFlooding is the point of the limiter: the form is public
 // and every accepted message sends an email, so unbounded submissions would
 // bury the owner's inbox, burn the email quota, and put the sending domain's
-// reputation — and therefore order emails — at risk.
+// reputation and therefore order emails at risk.
 func TestSubmitThrottlesFlooding(t *testing.T) {
 	t.Parallel()
 
@@ -63,7 +63,7 @@ func TestSubmitThrottlesFlooding(t *testing.T) {
 		t.Fatalf("submission past the limit returned %d, want 429", recorder.Code)
 	}
 	if stub.calls != submissionsPerHour {
-		t.Fatalf("service was called %d times, want %d — a throttled message still sent an email",
+		t.Fatalf("service was called %d times, want %d; a throttled message still sent an email",
 			stub.calls, submissionsPerHour)
 	}
 
@@ -74,7 +74,7 @@ func TestSubmitThrottlesFlooding(t *testing.T) {
 }
 
 // TestSubmitDoesNotChargeRejectedMessages keeps a mistyped form from eating a
-// real person's allowance — only messages that actually send are counted.
+// real person's allowance. Only messages that actually send are counted.
 func TestSubmitDoesNotChargeRejectedMessages(t *testing.T) {
 	t.Parallel()
 

@@ -1,4 +1,4 @@
-# Nuxt storefront — build stage produces .output, runtime stage serves it.
+# Nuxt storefront. The build stage produces .output and the runtime stage serves it.
 FROM node:22-alpine AS build
 
 WORKDIR /app
@@ -13,7 +13,7 @@ COPY . .
 # Call nuxt directly and let compose supply the environment instead.
 RUN npx nuxt build
 
-# Runtime carries only the built output — no source, no dev dependencies.
+# Runtime carries only the built output, with no source or dev dependencies.
 FROM node:22-alpine
 
 WORKDIR /app

@@ -5,7 +5,7 @@ export const ABOUT_HERO = {
   eyebrow: 'About',
   headingLines: ['Your clothing speaks', 'Long before you do'],
   description:
-    "A premium bespoke house for men who understand that presence isn't announced — it's worn. This is confidence, simplicity, and class, made into clothing.",
+    "A premium bespoke house for men who understand that presence isn't announced; it's worn. This is confidence, simplicity, and class, made into clothing.",
 } as const
 
 export const ABOUT_SECTION_IDS = {
@@ -24,24 +24,24 @@ export const ABOUT_TABS = [
 
 export const ABOUT_STORY = {
   id: ABOUT_SECTION_IDS.story,
-  label: '01 — Our Story',
+  label: '01 / Our Story',
   heading: 'A language of confidence, worn into every room',
   paragraphs: [
-    'Oyecouture Bespoke was founded on a simple truth: your clothing speaks long before you do. We set out to build a brand for men who understand that presence isn’t announced — it’s worn.',
-    'From our earliest pieces, the goal was never just clothing, but a language of confidence, simplicity, and class that any man could carry into a room. Today, Oyecouture stands as a premium entity for two kinds of men — those who already lead with style, and those ready to level up.',
+    'Oyecouture Bespoke was founded on a simple truth: your clothing speaks long before you do. We set out to build a brand for men who understand that presence isn’t announced; it’s worn.',
+    'From our earliest pieces, the goal was never just clothing, but a language of confidence, simplicity, and class that any man could carry into a room. Today, Oyecouture stands as a premium entity for two kinds of men: those who already lead with style, and those ready to level up.',
   ],
   stats: [
     { value: 'Two', label: 'Kinds of men' },
-    { value: 'One', label: 'Standard — premium' },
+    { value: 'One', label: 'Standard: premium' },
   ],
 } as const
 
 export const ABOUT_SYMBOL = {
   id: ABOUT_SECTION_IDS.symbol,
-  label: '02 — The Oyecouture Symbol',
+  label: '02 / The Oyecouture Symbol',
   heading: 'A philosophy made visible',
   paragraphs: [
-    "Our icon is more than a mark. Formed by connecting the letters of our name into one continuous shape, it reads as a pie chart of what we stand for. Look closer and you'll find a window built into the design — our window to exclusivity, a passage into the world of Oyecouture. Simple enough to be replicated anywhere, it remains the most visible signature of who we are.",
+    "Our icon is more than a mark. Formed by connecting the letters of our name into one continuous shape, it reads as a pie chart of what we stand for. Look closer and you'll find a window built into the design: our window to exclusivity and a passage into the world of Oyecouture. Simple enough to be replicated anywhere, it remains the most visible signature of who we are.",
   ],
   pillars: [
     { value: '35%', title: 'Confidence', description: 'Presence you wear' },
@@ -53,10 +53,10 @@ export const ABOUT_SYMBOL = {
 
 export const ABOUT_CRAFTSMANSHIP = {
   id: ABOUT_SECTION_IDS.craftsmanship,
-  label: '03 — Craftsmanship',
+  label: '03 / Craftsmanship',
   heading: 'The patience of a Ruler, the imagination of a Creator',
   paragraphs: [
-    'Every Oyecouture piece is made with the patience of a Ruler and the imagination of a Creator. We are dedicated to timeless quality — pieces, services, and experiences built to outlast trend cycles.',
+    'Every Oyecouture piece is made with the patience of a Ruler and the imagination of a Creator. We are dedicated to timeless quality, with pieces, services, and experiences built to outlast trend cycles.',
     'Nothing leaves our hands until it reflects the standard we set for ourselves: premium, deliberate, and unmistakably exclusive.',
   ],
   principles: [
@@ -68,18 +68,18 @@ export const ABOUT_CRAFTSMANSHIP = {
 
 export const ABOUT_MISSION = {
   id: ABOUT_SECTION_IDS.mission,
-  label: '04 — Mission & Vision',
+  label: '04 / Mission & Vision',
   heading: 'What we are building',
   statements: [
     {
       title: 'Mission',
       description:
-        'To dress the modern man in confidence, simplicity, and class — turning clothing into a language that speaks before a single word is said.',
+        'To dress the modern man in confidence, simplicity, and class, turning clothing into a language that speaks before a single word is said.',
     },
     {
       title: 'Vision',
       description:
-        'To be the definitive symbol of exclusivity in menswear — a brand that connects style, ambition, and identity into one iconic mark, recognized anywhere, worn by those who lead.',
+        'To be the definitive symbol of exclusivity in menswear: a brand that connects style, ambition, and identity into one iconic mark, recognized anywhere and worn by those who lead.',
     },
   ],
 } as const

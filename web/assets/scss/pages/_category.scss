@@ -63,7 +63,7 @@ $category-content-width: 92.5rem;
   padding-bottom: var(--space-4xl);
 }
 
-// Chips left, piece count right, hairline beneath — as in the design.
+// Chips left, piece count right, and hairline beneath, as in the design.
 .category-toolbar {
   display: flex;
   margin-bottom: var(--space-2xl);
@@ -157,7 +157,7 @@ $category-content-width: 92.5rem;
   }
 }
 
-// The closing line of a policy page — real copy, so it reads as prose rather
+// The closing line of a policy page uses real copy, so it reads as prose rather
 // than as the dashed "awaiting wording" box below it.
 .care-footnote {
   margin: 0 0 var(--space-lg);

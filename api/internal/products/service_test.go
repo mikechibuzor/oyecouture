@@ -517,7 +517,7 @@ func TestAdminServiceCreateNormalizesDraft(t *testing.T) {
 		Section:     string(SectionCasualsMen),
 		Category:    " Shirts ",
 		PriceKobo:   12_000_000,
-		Description: " Lightweight linen. ",
+		Description: " Lightweight linen \u2014 cut for warm days. ",
 		Tag:         " New ",
 		HasSizes:    true,
 		Active:      true,
@@ -529,7 +529,7 @@ func TestAdminServiceCreateNormalizesDraft(t *testing.T) {
 	if repository.createDraft.Slug != "linen-shirt" ||
 		repository.createDraft.Name != "Linen Shirt" ||
 		repository.createDraft.Category != "Shirts" ||
-		repository.createDraft.Description != "Lightweight linen." ||
+		repository.createDraft.Description != "Lightweight linen, cut for warm days." ||
 		repository.createDraft.Tag != "New" {
 		t.Fatalf("draft was not normalized: %+v", repository.createDraft)
 	}

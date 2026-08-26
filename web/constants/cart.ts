@@ -17,7 +17,7 @@ export const CART_COPY = {
   empty: 'Your bag is empty.',
   emptyAction: 'Continue shopping',
   bespokeNote:
-    'This order will be confirmed with us on WhatsApp — sizing, fabric & delivery details are finalised there.',
+    'This order will be confirmed with us on WhatsApp. Sizing and fabric details are finalised there; delivery is calculated from your selected area.',
   readyToWearNote:
     'Delivery is calculated at checkout.',
   confirmOnWhatsApp: 'Confirm order on WhatsApp',

@@ -37,7 +37,7 @@ const periodOptions = computed<SelectOption<MetricsPeriod>[]>(() =>
 // Revenue reads as money; every other card is a count.
 const valueFor = (card: AdminMetricCard): string => {
   if (!props.metrics) {
-    return '—'
+    return 'Not available'
   }
 
   const value = props.metrics[card.id as keyof AdminOrderMetrics]

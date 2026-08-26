@@ -147,24 +147,24 @@ func (service *Service) Create(
 		})
 	}
 
-	// Ready-to-wear ships from a chosen zone; the fee comes from the database.
-	var deliveryFeeKobo int64
+	// Every order ships to a configured zone. The server resolves the fee so a
+	// client can never suppress or replace it, including on bespoke orders.
 	deliveryZone := strings.TrimSpace(input.DeliveryZone)
 	address := strings.TrimSpace(input.Address)
 
-	if orderKind == KindReadyToWear {
-		if address == "" || deliveryZone == "" {
-			return Order{}, ErrDeliveryRequired
-		}
+	if address == "" || deliveryZone == "" {
+		return Order{}, ErrDeliveryRequired
+	}
 
-		fee, zoneExists, err := service.deliveryRates.FeeForZone(requestContext, deliveryZone)
-		if err != nil {
-			return Order{}, fmt.Errorf("resolve delivery zone: %w", err)
-		}
-		if !zoneExists {
-			return Order{}, ErrUnknownZone
-		}
-		deliveryFeeKobo = fee
+	deliveryFeeKobo, zoneExists, err := service.deliveryRates.FeeForZone(
+		requestContext,
+		deliveryZone,
+	)
+	if err != nil {
+		return Order{}, fmt.Errorf("resolve delivery zone: %w", err)
+	}
+	if !zoneExists {
+		return Order{}, ErrUnknownZone
 	}
 
 	payToken, err := newPayToken()

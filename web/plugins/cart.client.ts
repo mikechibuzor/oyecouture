@@ -67,7 +67,7 @@ export default defineNuxtPlugin(() => {
       try {
         localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(currentLines))
       } catch {
-        // Private browsing or a full quota — the bag still works for this visit.
+        // The bag still works for this visit in private browsing or at full quota.
       }
     },
     { deep: true },

@@ -145,8 +145,8 @@ export interface ProductMediaItem {
 }
 
 // One line inside a product disclosure panel. A `label` renders as an inline
-// lead-in and carries its own punctuation — the shipping lines read
-// "Production time: …" while the returns lines read "Manufacturing faults — …",
+// lead-in and carries its own punctuation. Shipping lines read
+// "Production time: ..." while returns lines may use sentence-style copy,
 // so the separator cannot be hardcoded at the template.
 export interface ProductPolicyLine {
   readonly label?: string

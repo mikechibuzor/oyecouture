@@ -1,5 +1,5 @@
 // Collapsible policy panels on the product page. Built on native <details>, so
-// the rules below only restyle it — the open/close behaviour and its
+// the rules below only restyle it. The open/close behaviour and its
 // accessibility come from the element itself.
 
 .ui-disclosure {
@@ -38,13 +38,13 @@
   flex-shrink: 0;
   color: var(--color-gold);
   // transform, not the independent `rotate` property: on an <svg> element
-  // `rotate` is ignored outright — it computes to 0deg even when set inline —
+  // `rotate` is ignored outright. It computes to 0deg even when set inline,
   // while transform applies normally. The icon carries no other transform, so
   // there is nothing here for it to clobber.
   transition: transform var(--duration-base) var(--ease-standard);
 }
 
-// 45° turns the plus into a cross — the design's close affordance, rather than
+// 45° turns the plus into a cross, the design's close affordance rather than
 // a chevron flip.
 .ui-disclosure[open] .ui-disclosure-marker {
   transform: rotate(45deg);

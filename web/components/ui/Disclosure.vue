@@ -3,7 +3,7 @@ import { Plus } from 'lucide'
 
 // A collapsible panel built on native <details>. The element is keyboard
 // operable and announced correctly without any script, so the disclosure still
-// works if hydration never arrives — which matters here, because the content is
+// works if hydration never arrives. This matters because the content is
 // delivery and returns policy a customer may need before they buy.
 interface UiDisclosureProps {
   title: string

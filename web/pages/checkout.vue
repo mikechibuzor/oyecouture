@@ -22,7 +22,7 @@ const deliveryZoneName = ref('')
 const isSubmitting = ref(false)
 const errorMessage = ref('')
 
-useSeoMeta({ title: `${CHECKOUT_COPY.heading} — Oyecouture Bespoke` })
+useSeoMeta({ title: `${CHECKOUT_COPY.heading} | Oyecouture Bespoke` })
 
 const zones = computed<readonly DeliveryZone[]>(() => zoneData.value?.zones ?? [])
 
@@ -31,7 +31,7 @@ const zones = computed<readonly DeliveryZone[]>(() => zoneData.value?.zones ?? [
 const zoneSelectOptions = computed<SelectOption[]>(() =>
   zones.value.map((zone) => ({
     value: zone.name,
-    label: `${zone.name} — ${formatProductPrice(zone.feeKobo)}`,
+    label: `${zone.name} · ${formatProductPrice(zone.feeKobo)}`,
   })),
 )
 const selectedZone = computed(() =>

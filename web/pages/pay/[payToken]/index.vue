@@ -23,7 +23,7 @@ const {
   refresh,
 } = await useAsyncData(`payment-${payToken.value}`, () => fetchPayment(payToken.value))
 
-useSeoMeta({ title: `${PAYMENT_COPY.heading} — Oyecouture Bespoke` })
+useSeoMeta({ title: `${PAYMENT_COPY.heading} | Oyecouture Bespoke` })
 
 const canStartPayment = computed(() => Boolean(payment.value?.payable && !isStarting.value))
 
