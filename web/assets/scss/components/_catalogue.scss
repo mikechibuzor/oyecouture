@@ -130,6 +130,48 @@ $catalogue-content-width: 92.5rem;
 
 .product-card {
   min-width: 0;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 38rem;
+}
+
+.product-card-skeleton {
+  display: grid;
+  gap: var(--space-sm);
+  animation: catalogue-skeleton-breathe var(--duration-ceremony) var(--ease-standard) infinite alternate;
+}
+
+.product-card-skeleton-media,
+.product-card-skeleton-line {
+  display: block;
+  background: var(--color-cream-2);
+}
+
+.product-card-skeleton-media {
+  aspect-ratio: 3 / 4;
+}
+
+.product-card-skeleton-line {
+  width: 78%;
+  height: 0.8rem;
+
+  &.is-short {
+    width: 32%;
+    height: 0.55rem;
+  }
+
+  &.is-price {
+    width: 42%;
+  }
+}
+
+@keyframes catalogue-skeleton-breathe {
+  from {
+    opacity: 0.58;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 .product-card-media {
@@ -250,17 +292,27 @@ $catalogue-content-width: 92.5rem;
   left: 0;
   display: flex;
   justify-content: center;
-  gap: var(--space-xs);
+  gap: 0;
 
   button {
-    width: 0.375rem;
-    height: 0.375rem;
+    display: grid;
+    width: 1.5rem;
+    height: 1.5rem;
     padding: 0;
-    border: 1px solid var(--color-white);
-    border-radius: 50%;
-    background: rgb(26 26 26 / 35%);
+    place-items: center;
+    border: 0;
+    background: transparent;
 
-    &.is-active {
+    &::before {
+      width: 0.375rem;
+      height: 0.375rem;
+      border: 1px solid var(--color-white);
+      border-radius: 50%;
+      background: rgb(26 26 26 / 35%);
+      content: '';
+    }
+
+    &.is-active::before {
       background: var(--color-white);
     }
   }

@@ -36,6 +36,9 @@ const activeMediaItem = computed<ProductMediaItem>(
 )
 // Returns the canonical route for this product.
 const productRoute = computed(() => getProductRoute(props.product.slug))
+const productMediaTransitionStyle = computed(() => ({
+  viewTransitionName: `product-${props.product.slug}`,
+}))
 // Formats this product's integer kobo price for display.
 const formattedPrice = computed(() => formatProductPrice(props.product.priceKobo))
 // Reports whether the current product has more than one media frame.
@@ -133,7 +136,10 @@ watch(adjacentMediaSources, preloadAdjacentMediaImages, {
     @mouseenter="preloadAllMediaImages"
   >
     <div class="product-card-media">
-      <CatalogueProductMedia :media-item="activeMediaItem" />
+      <CatalogueProductMedia
+        :media-item="activeMediaItem"
+        :style="productMediaTransitionStyle"
+      />
 
       <span v-if="product.tag" class="product-tag">{{ product.tag }}</span>
 

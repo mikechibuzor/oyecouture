@@ -28,7 +28,7 @@ const CART_ICONS = {
 } as const satisfies Readonly<Record<string, IconNode>>
 
 const closeButton = ref<HTMLButtonElement | null>(null)
-const elementFocusedBeforeOpen = ref<HTMLElement | null>(null)
+const drawer = ref<HTMLElement | null>(null)
 
 const isBespokeOrder = computed(
   () => checkoutRoute.value === CartCheckoutRoute.Bespoke,
@@ -43,40 +43,15 @@ const orderNote = computed(() =>
   isBespokeOrder.value ? CART_COPY.bespokeNote : CART_COPY.readyToWearNote,
 )
 
-// Restores page scrolling and returns focus where the customer left it.
 const closeDrawer = (): void => {
   close()
-  elementFocusedBeforeOpen.value?.focus()
 }
 
-const handleKeyDown = (event: KeyboardEvent): void => {
-  if (event.key === 'Escape' && isOpen.value) {
-    closeDrawer()
-  }
-}
-
-// Locks the page behind the drawer and moves focus into it when it opens.
-watch(isOpen, async (drawerIsOpen) => {
-  if (import.meta.server) {
-    return
-  }
-
-  document.body.style.overflow = drawerIsOpen ? 'hidden' : ''
-
-  if (drawerIsOpen) {
-    elementFocusedBeforeOpen.value = document.activeElement as HTMLElement | null
-    await nextTick()
-    closeButton.value?.focus()
-  }
-})
-
-onMounted(() => {
-  document.addEventListener('keydown', handleKeyDown)
-})
-
-onBeforeUnmount(() => {
-  document.removeEventListener('keydown', handleKeyDown)
-  document.body.style.overflow = ''
+useModalFocus({
+  isOpen,
+  container: drawer,
+  initialFocus: closeButton,
+  onEscape: closeDrawer,
 })
 </script>
 
@@ -89,10 +64,12 @@ onBeforeUnmount(() => {
     <Transition name="cart-drawer">
       <aside
         v-if="isOpen"
+        ref="drawer"
         class="cart-drawer"
         role="dialog"
         aria-modal="true"
         :aria-label="CART_COPY.title"
+        tabindex="-1"
       >
         <header class="cart-drawer-header">
           <h2>{{ CART_COPY.title }} · {{ count }}</h2>

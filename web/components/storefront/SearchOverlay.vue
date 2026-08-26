@@ -119,7 +119,7 @@ const handleProductSelection = (): void => {
 const getSearchResultTransitionStyle = (
   searchResultIndex: number,
 ): SearchResultTransitionStyle => ({
-  '--search-result-index': searchResultIndex,
+  '--search-result-index': Math.min(searchResultIndex, 5),
 })
 
 // Keeps keyboard focus inside the modal and supports immediate Escape dismissal.

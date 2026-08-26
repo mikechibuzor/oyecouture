@@ -567,12 +567,12 @@ onMounted(() => {
               @click="handleOrderRowClick($event, order.orderNo)"
               @keydown="handleOrderRowKeydown($event, order.orderNo)"
             >
-              <td class="admin-table-order-no">
+              <td data-label="Order" class="admin-table-order-no">
                 <NuxtLink :to="ADMIN_ROUTES.orderDetail(order.orderNo)">
                   {{ order.orderNo }}
                 </NuxtLink>
               </td>
-              <td>
+              <td data-label="Customer">
                 <NuxtLink
                   class="admin-customer"
                   :to="ADMIN_ROUTES.orderDetail(order.orderNo)"
@@ -586,21 +586,23 @@ onMounted(() => {
                   </span>
                 </NuxtLink>
               </td>
-              <td>
+              <td data-label="Type">
                 <span class="admin-kind" :data-kind="order.kind">
                   {{ ORDER_KIND_LABELS[order.kind] }}
                 </span>
               </td>
-              <td>
+              <td data-label="Status">
                 <span class="admin-status" :data-status="order.status">
                   {{ ORDER_STATUS_LABELS[order.status] }}
                 </span>
               </td>
-              <td class="admin-table-number">{{ order.itemCount }}</td>
-              <td class="admin-table-number admin-table-total">
+              <td data-label="Items" class="admin-table-number">{{ order.itemCount }}</td>
+              <td data-label="Total" class="admin-table-number admin-table-total">
                 {{ formatProductPrice(order.totalKobo) }}
               </td>
-              <td class="admin-table-placed">{{ formatOrderDate(order.createdAt) }}</td>
+              <td data-label="Placed" class="admin-table-placed">
+                {{ formatOrderDate(order.createdAt) }}
+              </td>
             </tr>
           </tbody>
         </table>

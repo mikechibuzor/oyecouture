@@ -69,6 +69,21 @@ $product-detail-width: 82rem;
   max-width: 100%;
   aspect-ratio: 4 / 5;
   background: var(--color-cream-2);
+
+  > .product-media {
+    position: absolute;
+    inset: 0;
+  }
+}
+
+.product-gallery-media-enter-active,
+.product-gallery-media-leave-active {
+  transition: opacity var(--duration-base) var(--ease-standard);
+}
+
+.product-gallery-media-enter-from,
+.product-gallery-media-leave-to {
+  opacity: 0;
 }
 
 .product-gallery-arrow {

@@ -11,7 +11,7 @@
   position: absolute;
   top: 0;
   left: 0;
-  width: 42%;
+  width: 100%;
   height: 3px;
   background: linear-gradient(
     90deg,
@@ -20,23 +20,9 @@
     var(--color-gold-bright)
   );
   box-shadow: 0 0.5rem 1.25rem rgb(169 138 61 / 24%);
-  animation: app-loader-sweep var(--duration-ceremony) var(--ease-fine) infinite;
-}
-
-.app-loader-label {
-  position: absolute;
-  top: var(--space-sm);
-  left: 50%;
-  padding: var(--space-2xs) var(--space-sm);
-  border: 1px solid var(--color-border-warm);
-  border-radius: 999px;
-  background-color: rgb(255 255 255 / 92%);
-  box-shadow: 0 1rem 2rem rgb(26 26 26 / 8%);
-  color: var(--color-ink-soft);
-  font-size: var(--text-xs);
-  letter-spacing: var(--tracking-label);
-  text-transform: uppercase;
-  translate: -50% 0;
+  animation: app-loader-progress var(--duration-ceremony) var(--ease-standard) infinite alternate;
+  transform: scaleX(0.24);
+  transform-origin: left center;
 }
 
 .app-loader-enter-active,
@@ -112,14 +98,16 @@
 }
 
 .app-toast-close {
+  display: grid;
+  width: 2.5rem;
+  height: 2.5rem;
   padding: 0;
+  place-items: center;
   border: 0;
   background: none;
   color: var(--color-taupe);
   cursor: pointer;
   font: inherit;
-  font-size: var(--text-lg);
-  line-height: 1;
 
   &:hover {
     color: var(--color-ink);
@@ -143,13 +131,9 @@
   transition: transform var(--duration-base) var(--ease-fine);
 }
 
-@keyframes app-loader-sweep {
-  from {
-    translate: -120% 0;
-  }
-
+@keyframes app-loader-progress {
   to {
-    translate: 260% 0;
+    transform: scaleX(0.88);
   }
 }
 
@@ -157,5 +141,6 @@
   .app-loader-bar {
     animation: none;
     width: 100%;
+    transform: scaleX(1);
   }
 }

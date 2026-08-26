@@ -93,7 +93,11 @@ const addAllToBag = (): void => {
 
   for (const product of wishlistedProducts.value) {
     const size = product.hasSizes ? DEFAULT_PRODUCT_SIZE : null
-    addedAnyProduct = addToCart(product, size) || addedAnyProduct
+
+    if (addToCart(product, size)) {
+      removeFromWishlist(product.slug)
+      addedAnyProduct = true
+    }
   }
 
   if (addedAnyProduct) {

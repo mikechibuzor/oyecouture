@@ -26,9 +26,17 @@ const isEmpty = computed(() =>
 
 <template>
   <div class="product-grid-region" aria-live="polite">
-    <p v-if="isLoading" class="catalogue-state" role="status">
-      {{ PRODUCT_COPY.catalogue.loading }}
-    </p>
+    <template v-if="isLoading">
+      <p class="visually-hidden" role="status">{{ PRODUCT_COPY.catalogue.loading }}</p>
+      <div class="product-grid is-loading" aria-hidden="true">
+        <article v-for="skeletonIndex in 4" :key="skeletonIndex" class="product-card-skeleton">
+          <span class="product-card-skeleton-media" />
+          <span class="product-card-skeleton-line is-short" />
+          <span class="product-card-skeleton-line" />
+          <span class="product-card-skeleton-line is-price" />
+        </article>
+      </div>
+    </template>
     <p v-else-if="hasError" class="catalogue-state is-error" role="alert">
       {{ errorMessage }}
     </p>

@@ -7,6 +7,7 @@ export default defineNuxtConfig({
   devtools: { enabled: false },
   experimental: {
     appManifest: false,
+    viewTransition: true,
   },
   css: ['~/assets/scss/main.scss'],
   runtimeConfig: {

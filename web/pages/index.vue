@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { IconNode } from 'lucide'
-import { ArrowRight } from 'lucide'
+import { ArrowRight, Pause, Play } from 'lucide'
 import {
   HOME_HERO_IMAGES,
   PRODUCT_COPY,
@@ -11,6 +11,8 @@ import { getProductErrorMessage } from '~/utils/product'
 const { data, error, status } = await useProductList()
 const { data: homeContent } = await useHomeContent()
 const HERO_ACTION_ICON: IconNode = ArrowRight
+const HERO_MOTION_ICONS = { pause: Pause, play: Play } as const
+const isHeroMotionPaused = ref(false)
 const heroCarouselImages = [...HOME_HERO_IMAGES, ...HOME_HERO_IMAGES] as const
 const fallbackHomeContent = defaultHomeContent()
 
@@ -44,16 +46,33 @@ const categoryContent = computed(() => (homeContent.value ?? fallbackHomeContent
         </NuxtLink>
       </div>
 
-      <div class="home-hero-media" aria-hidden="true">
-        <div class="home-hero-media-track">
-          <img
-            v-for="(heroImage, heroImageIndex) in heroCarouselImages"
-            :key="`${heroImage.id}-${heroImageIndex}`"
-            :class="heroImage.size"
-            :src="heroImage.source"
-            :alt="heroImage.alt"
-          >
+      <div class="home-hero-media-shell" :class="{ 'is-paused': isHeroMotionPaused }">
+        <div class="home-hero-media" aria-hidden="true">
+          <div class="home-hero-media-track">
+            <img
+              v-for="(heroImage, heroImageIndex) in heroCarouselImages"
+              :key="`${heroImage.id}-${heroImageIndex}`"
+              :class="heroImage.size"
+              :src="heroImage.source"
+              :alt="heroImage.alt"
+            >
+          </div>
         </div>
+
+        <button
+          type="button"
+          class="home-hero-motion-toggle"
+          :aria-pressed="isHeroMotionPaused"
+          :aria-label="isHeroMotionPaused ? 'Play image movement' : 'Pause image movement'"
+          @click="isHeroMotionPaused = !isHeroMotionPaused"
+        >
+          <StorefrontIcon
+            :icon-node="isHeroMotionPaused ? HERO_MOTION_ICONS.play : HERO_MOTION_ICONS.pause"
+            :size="15"
+            :stroke-width="1.6"
+            aria-hidden="true"
+          />
+        </button>
       </div>
     </section>
 

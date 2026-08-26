@@ -95,6 +95,8 @@ const hasEditorFailed = ref(false)
 const isEditorSaving = ref(false)
 const editorErrorMessage = ref('')
 const editorSuccessMessage = ref('')
+const editorDrawer = ref<HTMLElement | null>(null)
+const editorCloseButton = ref<HTMLButtonElement | null>(null)
 
 // Any active filter changes the empty state from "no products" to "no matches".
 const hasFilters = computed(
@@ -619,12 +621,6 @@ const retrySelectedProductEditor = (): void => {
   }
 }
 
-const handleEditorKeydown = (keyboardEvent: KeyboardEvent): void => {
-  if (keyboardEvent.key === 'Escape') {
-    closeProductEditor()
-  }
-}
-
 const handleProductRowClick = (mouseEvent: MouseEvent, productSlug: string): void => {
   if (!isInteractiveRowTarget(mouseEvent.target)) {
     void openProductEditor(productSlug)
@@ -643,19 +639,20 @@ const handleProductRowKeydown = (keyboardEvent: KeyboardEvent, productSlug: stri
   void openProductEditor(productSlug)
 }
 
+useModalFocus({
+  isOpen: isEditorOpen,
+  container: editorDrawer,
+  initialFocus: editorCloseButton,
+  onEscape: closeProductEditor,
+  lockScroll: false,
+})
+
 watch(isEditorOpen, (isOpen) => {
   if (!import.meta.client) {
     return
   }
 
   document.body.classList.toggle('has-admin-drawer', isOpen)
-
-  if (isOpen) {
-    document.addEventListener('keydown', handleEditorKeydown)
-    return
-  }
-
-  document.removeEventListener('keydown', handleEditorKeydown)
 })
 
 onMounted(() => {
@@ -665,7 +662,6 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   document.body.classList.remove('has-admin-drawer')
-  document.removeEventListener('keydown', handleEditorKeydown)
 })
 </script>
 
@@ -762,7 +758,7 @@ onBeforeUnmount(() => {
               @click="handleProductRowClick($event, product.slug)"
               @keydown="handleProductRowKeydown($event, product.slug)"
             >
-              <td>
+              <td data-label="Product">
                 <div class="admin-product">
                   <img
                     v-if="productImageUrl(product)"
@@ -779,17 +775,19 @@ onBeforeUnmount(() => {
                   </span>
                 </div>
               </td>
-              <td>{{ PRODUCT_SECTION_LABELS[product.section] }}</td>
-              <td>{{ product.category }}</td>
-              <td class="admin-table-number admin-table-total">
+              <td data-label="Section">{{ PRODUCT_SECTION_LABELS[product.section] }}</td>
+              <td data-label="Category">{{ product.category }}</td>
+              <td data-label="Price" class="admin-table-number admin-table-total">
                 {{ formatProductPrice(product.priceKobo) }}
               </td>
-              <td>
+              <td data-label="Status">
                 <span class="admin-status" :data-status="productStatusTone(product)">
                   {{ productAvailabilityLabel(product) }}
                 </span>
               </td>
-              <td class="admin-table-placed">{{ formatOrderDate(product.createdAt) }}</td>
+              <td data-label="Updated" class="admin-table-placed">
+                {{ formatOrderDate(product.createdAt) }}
+              </td>
             </tr>
           </tbody>
         </table>
@@ -854,10 +852,12 @@ onBeforeUnmount(() => {
         @click.self="closeProductEditor"
       >
         <aside
+          ref="editorDrawer"
           class="admin-drawer"
           role="dialog"
           aria-modal="true"
           aria-labelledby="admin-product-editor-title"
+          tabindex="-1"
         >
           <header class="admin-drawer-head">
             <div>
@@ -876,6 +876,7 @@ onBeforeUnmount(() => {
                 {{ productActionButtonLabel(selectedProduct) }}
               </button>
               <button
+                ref="editorCloseButton"
                 type="button"
                 class="admin-drawer-close"
                 :aria-label="ADMIN_COPY.closeProductEditor"

@@ -4,9 +4,11 @@ import {
   ChevronsLeft,
   ClipboardList,
   House,
+  Menu,
   Settings,
   Shirt,
   Truck,
+  X,
 } from 'lucide'
 import { ADMIN_COPY, ADMIN_NAVIGATION } from '~/constants/admin'
 import type { AdminSession } from '~/types/admin'
@@ -21,6 +23,9 @@ const emit = defineEmits<{ signOut: [] }>()
 
 const route = useRoute()
 const isCollapsed = ref(false)
+const isMobileOpen = ref(false)
+const sidebar = ref<HTMLElement | null>(null)
+const mobileToggle = ref<HTMLButtonElement | null>(null)
 
 const NAV_ICONS: Readonly<Record<string, IconNode>> = {
   orders: ClipboardList,
@@ -30,6 +35,19 @@ const NAV_ICONS: Readonly<Record<string, IconNode>> = {
   settings: Settings,
 }
 
+const closeMobileNavigation = (): void => {
+  isMobileOpen.value = false
+}
+
+useModalFocus({
+  isOpen: isMobileOpen,
+  container: sidebar,
+  initialFocus: mobileToggle,
+  onEscape: closeMobileNavigation,
+})
+
+watch(() => route.path, closeMobileNavigation)
+
 // Only an exact match counts: every pending section would otherwise light up
 // alongside Orders, which owns the admin root.
 const isCurrentRoute = (itemRoute?: string): boolean =>
@@ -37,7 +55,21 @@ const isCurrentRoute = (itemRoute?: string): boolean =>
 </script>
 
 <template>
-  <aside class="admin-sidebar" :class="{ 'is-collapsed': isCollapsed }">
+  <div
+    v-if="isMobileOpen"
+    class="admin-mobile-nav-backdrop"
+    aria-hidden="true"
+    @click="closeMobileNavigation"
+  />
+  <aside
+    ref="sidebar"
+    class="admin-sidebar"
+    :class="{ 'is-collapsed': isCollapsed, 'is-mobile-open': isMobileOpen }"
+    :role="isMobileOpen ? 'dialog' : undefined"
+    :aria-modal="isMobileOpen ? 'true' : undefined"
+    :aria-label="isMobileOpen ? ADMIN_COPY.navigationLabel : undefined"
+    :tabindex="isMobileOpen ? -1 : undefined"
+  >
     <div class="admin-sidebar-head">
       <p class="admin-sidebar-brand">
         <span class="admin-sidebar-mark" aria-hidden="true">O</span>
@@ -52,6 +84,22 @@ const isCurrentRoute = (itemRoute?: string): boolean =>
         @click="isCollapsed = !isCollapsed"
       >
         <StorefrontIcon :icon-node="ChevronsLeft" :size="16" :stroke-width="1.75" />
+      </button>
+
+      <button
+        ref="mobileToggle"
+        type="button"
+        class="admin-sidebar-mobile-toggle"
+        :aria-label="isMobileOpen ? 'Close admin navigation' : 'Open admin navigation'"
+        :aria-expanded="isMobileOpen"
+        @click="isMobileOpen = !isMobileOpen"
+      >
+        <StorefrontIcon
+          :icon-node="isMobileOpen ? X : Menu"
+          :size="19"
+          :stroke-width="1.75"
+          aria-hidden="true"
+        />
       </button>
     </div>
 
@@ -71,6 +119,7 @@ const isCurrentRoute = (itemRoute?: string): boolean =>
               :aria-current="isCurrentRoute(item.route) ? 'page' : undefined"
               :aria-label="item.label"
               :title="item.label"
+              @click="closeMobileNavigation"
             >
               <StorefrontIcon
                 :icon-node="NAV_ICONS[item.id]"

@@ -10,7 +10,8 @@ interface ProductGalleryProps {
 
 const props = defineProps<ProductGalleryProps>()
 const activeMediaIndex = ref(0)
-const { mediaItems } = useProductMedia(() => props.product, true)
+const { mediaItems } = useProductMedia(() => props.product)
+const { preloadImages } = useImagePreloader()
 
 const GALLERY_ICONS = {
   next: ArrowRight,
@@ -21,6 +22,23 @@ const GALLERY_ICONS = {
 const activeMediaItem = computed<ProductMediaItem>(
   () => mediaItems.value[activeMediaIndex.value]!,
 )
+const productMediaTransitionStyle = computed(() => ({
+  viewTransitionName: `product-${props.product.slug}`,
+}))
+const hasMultipleMediaItems = computed(() => mediaItems.value.length > 1)
+const adjacentMediaSources = computed(() => {
+  if (mediaItems.value.length <= 1) {
+    return []
+  }
+
+  const previousIndex = (
+    activeMediaIndex.value - 1 + mediaItems.value.length
+  ) % mediaItems.value.length
+  const nextIndex = (activeMediaIndex.value + 1) % mediaItems.value.length
+
+  return [...new Set([previousIndex, nextIndex])]
+    .map((mediaIndex) => mediaItems.value[mediaIndex]?.source)
+})
 
 // Selects one known thumbnail in the product gallery.
 const selectMediaItem = (mediaIndex: number): void => {
@@ -45,15 +63,28 @@ const getThumbnailLabel = (mediaIndex: number): string =>
 
 const isMediaItemActive = (mediaIndex: number): boolean =>
   mediaIndex === activeMediaIndex.value
+
+watch(adjacentMediaSources, (sources) => preloadImages(sources), {
+  flush: 'post',
+  immediate: true,
+})
 </script>
 
 <template>
   <section class="product-gallery" :aria-label="PRODUCT_COPY.galleryLabel">
     <div class="product-gallery-stage">
-      <CatalogueProductMedia :media-item="activeMediaItem" eager />
+      <Transition name="product-gallery-media">
+        <CatalogueProductMedia
+          :key="activeMediaItem.id"
+          :media-item="activeMediaItem"
+          :style="productMediaTransitionStyle"
+          eager
+        />
+      </Transition>
       <span v-if="product.tag" class="product-tag">{{ product.tag }}</span>
 
       <button
+        v-if="hasMultipleMediaItems"
         class="product-gallery-arrow is-previous"
         type="button"
         :aria-label="PRODUCT_COPY.actions.previousImage"
@@ -68,6 +99,7 @@ const isMediaItemActive = (mediaIndex: number): boolean =>
         />
       </button>
       <button
+        v-if="hasMultipleMediaItems"
         class="product-gallery-arrow is-next"
         type="button"
         :aria-label="PRODUCT_COPY.actions.nextImage"
@@ -83,7 +115,7 @@ const isMediaItemActive = (mediaIndex: number): boolean =>
       </button>
     </div>
 
-    <div class="product-gallery-thumbnails">
+    <div v-if="hasMultipleMediaItems" class="product-gallery-thumbnails">
       <button
         v-for="(mediaItem, mediaIndex) in mediaItems"
         :key="mediaItem.id"

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { X } from 'lucide'
+
 const { notifications, dismiss } = useAppNotifications()
 </script>
 
@@ -23,7 +25,7 @@ const { notifications, dismiss } = useAppNotifications()
           aria-label="Dismiss notification"
           @click="dismiss(notification.id)"
         >
-          x
+          <StorefrontIcon :icon-node="X" :size="16" :stroke-width="1.75" aria-hidden="true" />
         </button>
       </article>
     </TransitionGroup>

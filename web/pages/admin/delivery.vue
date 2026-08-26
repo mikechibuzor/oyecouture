@@ -33,6 +33,8 @@ const selectedZone = ref<AdminDeliveryZone | null>(null)
 const selectedDraft = ref<DeliveryZoneDraft | null>(null)
 const isEditorSaving = ref(false)
 const editorErrorMessage = ref('')
+const editorDrawer = ref<HTMLElement | null>(null)
+const editorCloseButton = ref<HTMLButtonElement | null>(null)
 
 const sortedDrafts = computed(() =>
   [...zones.value]
@@ -252,11 +254,13 @@ const handleZoneRowKeydown = (keyboardEvent: KeyboardEvent, zoneName: string): v
   openZoneEditor(zoneName)
 }
 
-const handleEditorKeydown = (keyboardEvent: KeyboardEvent): void => {
-  if (keyboardEvent.key === 'Escape') {
-    closeZoneEditor()
-  }
-}
+useModalFocus({
+  isOpen: isEditorOpen,
+  container: editorDrawer,
+  initialFocus: editorCloseButton,
+  onEscape: closeZoneEditor,
+  lockScroll: false,
+})
 
 watch(isEditorOpen, (isOpen) => {
   if (!import.meta.client) {
@@ -264,13 +268,6 @@ watch(isEditorOpen, (isOpen) => {
   }
 
   document.body.classList.toggle('has-admin-drawer', isOpen)
-
-  if (isOpen) {
-    document.addEventListener('keydown', handleEditorKeydown)
-    return
-  }
-
-  document.removeEventListener('keydown', handleEditorKeydown)
 })
 
 onMounted(() => {
@@ -279,7 +276,6 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   document.body.classList.remove('has-admin-drawer')
-  document.removeEventListener('keydown', handleEditorKeydown)
 })
 </script>
 
@@ -333,13 +329,13 @@ onBeforeUnmount(() => {
             @click="handleZoneRowClick($event, draft.name)"
             @keydown="handleZoneRowKeydown($event, draft.name)"
           >
-            <td>
+            <td :data-label="ADMIN_COPY.deliveryZoneLabel">
               <strong>{{ draft.name }}</strong>
             </td>
-            <td class="admin-table-number">
+            <td :data-label="ADMIN_COPY.deliveryFeeLabel" class="admin-table-number">
               {{ formatDraftFee(draft) }}
             </td>
-            <td>
+            <td data-label="Status">
               <span class="admin-status" :data-status="zoneStatusTone(draft)">
                 {{ zoneStatusLabel(draft) }}
               </span>
@@ -357,10 +353,12 @@ onBeforeUnmount(() => {
         @click.self="closeZoneEditor"
       >
         <aside
+          ref="editorDrawer"
           class="admin-drawer"
           role="dialog"
           aria-modal="true"
           aria-labelledby="admin-delivery-editor-title"
+          tabindex="-1"
         >
           <header class="admin-drawer-head">
             <div>
@@ -379,6 +377,7 @@ onBeforeUnmount(() => {
                 {{ selectedDraft.active ? ADMIN_COPY.deliveryHide : ADMIN_COPY.deliveryShow }}
               </button>
               <button
+                ref="editorCloseButton"
                 type="button"
                 class="admin-drawer-close"
                 :aria-label="ADMIN_COPY.closeDeliveryEditor"
