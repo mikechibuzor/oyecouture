@@ -7,8 +7,8 @@ One short entry per work session or meaningful chunk. Format:
 
 ## 2026-08-27T11:20:45+01:00 · Codex · Social links and duplicate catalogue cleanup
 - **Did:** Added the client-provided Instagram, TikTok, and X destinations to the shared storefront footer with accessible external-link controls. Added reversible migration `000015` to archive the duplicate Diplomat product, retained Chairman Two-Piece, and aligned canonical catalogue/fallback data. A requested two-row collection and Show More control was implemented, then fully reverted when the client withdrew that request; all category filters still render their complete result set.
-- **State:** Local only, not committed, pushed, or deployed. `GOCACHE=/private/tmp/oyecouture-go-cache go test ./...`, Node 22 Nuxt production build, `git diff --check`, and the storefront/catalogue em-dash scan pass.
-- **Next:** Apply migration `000015` locally and browser-check the footer links plus active catalogue before commit/push/deploy when approved.
+- **State:** Committed as `119ad8e`, pushed to `origin/main`, and deployed successfully. `GOCACHE=/private/tmp/oyecouture-go-cache go test ./...`, Node 22 typecheck/build, `git diff --check`, and the storefront/catalogue em-dash scan pass. Production is on `119ad8e`, migration state is `15:false`, all five containers are running with PostgreSQL healthy, and live health returns 200. Browser QA confirms all 27 active products render, no Show More control remains, Chairman appears once, Diplomat is absent, and the three social destinations are exact.
+- **Next:** User runs production acceptance for the footer links and catalogue, then continues the payment/email and authenticated admin acceptance already tracked in this baton.
 - **Blockers:** None.
 
 ## 2026-08-26T09:03:59+01:00 · Codex · Product media and universal delivery pricing
