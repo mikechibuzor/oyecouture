@@ -2,11 +2,13 @@ import type {
   StorefrontAction,
   StorefrontFooterGroup,
   StorefrontNavigationItem,
+  StorefrontSocialLink,
 } from '~/types/storefront'
 import {
   StorefrontActionId,
   StorefrontNavigationItemId,
   StorefrontRoute,
+  StorefrontSocialPlatform,
 } from '~/types/storefront'
 
 export const STOREFRONT_COPY = {
@@ -25,6 +27,7 @@ export const STOREFRONT_COPY = {
       'Oyecouture Bespoke, where confidence, simplicity, and class become clothing.',
     copyright: '© 2026 Oyecouture. All rights reserved.',
     legalNavigationLabel: 'Legal navigation',
+    socialNavigationLabel: 'Oyecouture social media',
   },
 } as const
 
@@ -124,6 +127,24 @@ export const STOREFRONT_FOOTER_GROUPS = [
     ],
   },
 ] as const satisfies readonly StorefrontFooterGroup[]
+
+export const STOREFRONT_SOCIAL_LINKS = [
+  {
+    platform: StorefrontSocialPlatform.Instagram,
+    label: 'Oyecouture on Instagram',
+    href: 'https://www.instagram.com/_oyecouture?igsi=OGwyYWtsY2VxbG4z&utm_source=qr',
+  },
+  {
+    platform: StorefrontSocialPlatform.TikTok,
+    label: 'Oyecouture on TikTok',
+    href: 'https://www.tiktok.com/@oye_oyecouture?_r=1&_t=ZS-99CydxzaFeM',
+  },
+  {
+    platform: StorefrontSocialPlatform.X,
+    label: 'Oyecouture on X',
+    href: 'https://x.com/_oyecouture?s=11',
+  },
+] as const satisfies readonly StorefrontSocialLink[]
 
 export const INTERNAL_STOREFRONT_ROUTES = [
   StorefrontRoute.Home,

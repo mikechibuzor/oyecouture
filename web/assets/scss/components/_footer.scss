@@ -52,7 +52,10 @@ $storefront-footer-width: 92.5rem;
 
 .footer-social-list {
   display: flex;
+  margin: 0;
+  padding: 0;
   gap: var(--space-sm);
+  list-style: none;
 }
 
 .footer-social-icon {
@@ -68,6 +71,12 @@ $storefront-footer-width: 92.5rem;
     border-color: var(--color-ink);
     color: var(--color-ink);
   }
+}
+
+.footer-social-letter {
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-medium);
+  line-height: 1;
 }
 
 .footer-link-column {

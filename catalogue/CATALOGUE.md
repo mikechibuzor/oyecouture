@@ -1,6 +1,6 @@
 # Catalogue (human-readable)
 
-Canonical data: [`product-data.js`](product-data.js) (27 products). Prices in naira; store as kobo (×100). **`Sizes` column = the critical RTW vs bespoke split:** `hasSizes:false` = bespoke (WhatsApp-first, pay-after-measurement); `hasSizes:true` = ready-to-wear (size picker, pay-now).
+Canonical data: [`product-data.js`](product-data.js) (26 products). Prices in naira; store as kobo (×100). **`Sizes` column = the critical RTW vs bespoke split:** `hasSizes:false` = bespoke (WhatsApp-first, pay-after-measurement); `hasSizes:true` = ready-to-wear (size picker, pay-now).
 
 ## Suits: section `suits` (all bespoke, no sizes)
 | slug | Name | Category | Price | Tag |
@@ -9,9 +9,8 @@ Canonical data: [`product-data.js`](product-data.js) (27 products). Prices in na
 | sovereign | The Sovereign Suit | Two-Piece | ₦620,000 | |
 | regent | The Regent Two-Piece | Two-Piece | ₦540,000 | |
 | heir | The Heir Blazer | Blazers | ₦380,000 | New |
-| ambassador | The Ambassador Three-Piece | Three-Piece | ₦720,000 | New |
-| chairman | The Chairman Three-Piece | Three-Piece | ₦680,000 | |
-| diplomat | The Diplomat Two-Piece | Two-Piece | ₦490,000 | |
+| ambassador | The Ambassador Two-Piece | Two-Piece | ₦720,000 | New |
+| chairman | The Chairman Two-Piece | Two-Piece | ₦680,000 | |
 | weekend | The Weekend Linen Blazer | Blazers | ₦275,000 | |
 
 ## Trad Attires: section `trad` (all bespoke, no sizes)

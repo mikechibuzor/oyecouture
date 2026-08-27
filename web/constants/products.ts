@@ -264,7 +264,6 @@ export const PRODUCT_FALLBACK_IMAGES: Readonly<
     '/images/catalogue/oye-p-ambassador-2.webp',
   ],
   chairman: ['/images/catalogue/oye-p-chairman.webp'],
-  diplomat: ['/images/catalogue/oye-p-diplomat.webp'],
   weekend: ['/images/catalogue/oye-p-weekend.webp'],
   linen: [
     '/images/catalogue/oye-p-linen-1.webp',

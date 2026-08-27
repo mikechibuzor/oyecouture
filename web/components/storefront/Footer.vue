@@ -1,10 +1,16 @@
 <script setup lang="ts">
+import type { IconNode } from 'lucide'
+import { Camera, Music2 } from 'lucide'
 import {
   STOREFRONT_COPY,
   STOREFRONT_FOOTER_GROUPS,
+  STOREFRONT_SOCIAL_LINKS,
   isInternalStorefrontRoute,
 } from '~/constants/storefront'
-import { StorefrontRoute } from '~/types/storefront'
+import {
+  StorefrontRoute,
+  StorefrontSocialPlatform,
+} from '~/types/storefront'
 
 const { appointmentWhatsAppUrl } = await useAppointmentWhatsApp()
 
@@ -12,6 +18,18 @@ const resolveFooterLink = (storefrontRoute: string): string =>
   storefrontRoute === StorefrontRoute.BookFitting
     ? appointmentWhatsAppUrl.value
     : storefrontRoute
+
+const socialIconByPlatform: Readonly<
+  Partial<Record<StorefrontSocialPlatform, IconNode>>
+> = {
+  [StorefrontSocialPlatform.Instagram]: Camera,
+  [StorefrontSocialPlatform.TikTok]: Music2,
+}
+
+const footerSocialLinks = STOREFRONT_SOCIAL_LINKS.map((socialLink) => ({
+  ...socialLink,
+  icon: socialIconByPlatform[socialLink.platform],
+}))
 </script>
 
 <template>
@@ -22,6 +40,29 @@ const resolveFooterLink = (storefrontRoute: string): string =>
         <StorefrontBrandLogo />
         <p>{{ STOREFRONT_COPY.footer.description }}</p>
 
+        <ul
+          class="footer-social-list"
+          :aria-label="STOREFRONT_COPY.footer.socialNavigationLabel"
+        >
+          <li v-for="socialLink in footerSocialLinks" :key="socialLink.platform">
+            <a
+              class="footer-social-icon"
+              :href="socialLink.href"
+              target="_blank"
+              rel="noopener noreferrer"
+              :aria-label="socialLink.label"
+            >
+              <StorefrontIcon
+                v-if="socialLink.icon"
+                :icon-node="socialLink.icon"
+                :size="17"
+                :stroke-width="1.6"
+                aria-hidden="true"
+              />
+              <span v-else class="footer-social-letter" aria-hidden="true">X</span>
+            </a>
+          </li>
+        </ul>
       </section>
 
       <section

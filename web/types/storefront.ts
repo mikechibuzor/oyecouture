@@ -82,4 +82,5 @@ export interface StorefrontFooterGroup {
 export interface StorefrontSocialLink {
   readonly platform: StorefrontSocialPlatform
   readonly label: string
+  readonly href: string
 }
