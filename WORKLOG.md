@@ -5,6 +5,12 @@ One short entry per work session or meaningful chunk. Format:
 
 ---
 
+## 2026-08-27T13:02:13+01:00 · Codex · Production Cloudinary upload configuration restored
+- **Did:** Traced admin product image upload failures to the API's explicit `image_upload_unavailable` branch. Confirmed the required Cloudinary cloud name, API key, and API secret were configured locally but missing from production. After explicit user approval, securely synchronized only the Cloudinary settings into `.env.production`, preserved a server-side backup, recreated the API container, and removed temporary credential files without displaying or committing any values.
+- **State:** Production `.env.production` and the running API container both report all four Cloudinary variables as set with values redacted. The API container is running without startup errors, and public `/api/healthz` returns HTTP 200 with both API and database healthy. No application-code release was required.
+- **Next:** User retries an authenticated product image upload in the production admin to complete the functional acceptance check.
+- **Blockers:** None at infrastructure level. The Cloudinary secret remains scheduled for rotation because it appeared in an earlier chat transcript.
+
 ## 2026-08-27T11:20:45+01:00 · Codex · Social links and duplicate catalogue cleanup
 - **Did:** Added the client-provided Instagram, TikTok, and X destinations to the shared storefront footer with accessible external-link controls. Added reversible migration `000015` to archive the duplicate Diplomat product, retained Chairman Two-Piece, and aligned canonical catalogue/fallback data. A requested two-row collection and Show More control was implemented, then fully reverted when the client withdrew that request; all category filters still render their complete result set.
 - **State:** Committed as `119ad8e`, pushed to `origin/main`, and deployed successfully. `GOCACHE=/private/tmp/oyecouture-go-cache go test ./...`, Node 22 typecheck/build, `git diff --check`, and the storefront/catalogue em-dash scan pass. Production is on `119ad8e`, migration state is `15:false`, all five containers are running with PostgreSQL healthy, and live health returns 200. Browser QA confirms all 27 active products render, no Show More control remains, Chairman appears once, Diplomat is absent, and the three social destinations are exact.
