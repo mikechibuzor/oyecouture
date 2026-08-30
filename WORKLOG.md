@@ -5,6 +5,12 @@ One short entry per work session or meaningful chunk. Format:
 
 ---
 
+## 2026-08-30T12:30:02+01:00 · Codex · Measurement-aware checkout deployed
+- **Did:** Deployed `origin/main` through the standard production script, rebuilding the API and Nuxt images and recreating both application services.
+- **State:** Production runs exact Git head `eb686d6`, containing application feature `e128be8`. All five containers are up, PostgreSQL is healthy, migration state is clean at `15:false`, 42 GB remains free, and independent HTTPS checks return 200 for `/api/healthz` and `/confirm`.
+- **Next:** User runs production acceptance for complete, partial, and absent measurement paths, then retries one authenticated admin product image upload.
+- **Blockers:** No deployment blocker. Final acceptance still depends on the configured production WhatsApp and Paystack flows.
+
 ## 2026-08-29T16:26:00+01:00 · Codex · Measurement-aware bespoke payment routing
 - **Did:** Made bespoke payment eligibility server-authoritative. The API derives the expected measurement profile from trusted product section/category data and returns `awaiting_payment` only when every required structured measurement is present under the matching profile. The storefront routes that status to the existing Paystack page, leaves measurement-free orders on the WhatsApp confirmation path, and blocks partial or invalid measurement submissions with explicit guidance.
 - **State:** Committed as `e128be8` and pushed to `origin/main` on 2026-08-30; not deployed. Full Go tests, Node 22 typecheck, Nuxt production build, and browser QA pass. A complete native measurement set reached `/pay/{token}` with the correct order total; a partial set stayed on `/confirm`; a measurement-free order created `OYE-1003` and reached the WhatsApp confirmation state.
