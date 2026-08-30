@@ -2,9 +2,8 @@ package orders
 
 import "time"
 
-// Kind decides how an order is paid for. A bag containing any made-to-measure
-// piece is confirmed on WhatsApp first, because measurements must be agreed
-// before money moves.
+// Kind identifies whether an order contains a made-to-measure piece. Complete
+// measurements make a bespoke order payable; otherwise WhatsApp confirms it.
 type Kind string
 
 const (
@@ -12,8 +11,8 @@ const (
 	KindReadyToWear Kind = "ready-to-wear"
 )
 
-// Status is the order lifecycle. Bespoke orders start at PendingConfirmation;
-// ready-to-wear orders start at AwaitingPayment.
+// Status is the order lifecycle. Bespoke orders with complete measurements and
+// ready-to-wear orders start at AwaitingPayment; other bespoke orders wait.
 type Status string
 
 const (
@@ -63,8 +62,8 @@ type CreateOrderInput struct {
 	Phone        string          `json:"phone"`
 	Items        []RequestedItem `json:"items"`
 	Measurements *Measurements   `json:"measurements"`
-	// Both checkout paths use server-resolved delivery fees. Bespoke orders still
-	// remain pending until their tailoring details are confirmed on WhatsApp.
+	// Both checkout paths use server-resolved delivery fees. Bespoke orders only
+	// remain pending when complete measurements were not submitted.
 	Address      string `json:"address"`
 	DeliveryZone string `json:"deliveryZone"`
 }

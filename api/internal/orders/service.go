@@ -38,10 +38,26 @@ var (
 	phonePattern             = regexp.MustCompile(`^\+?[0-9][0-9\s-]{6,19}$`)
 	validSizes               = map[string]struct{}{"S": {}, "M": {}, "L": {}, "XL": {}}
 	validMeasurementProfiles = map[string]struct{}{"suit": {}, "native": {}, "mixed": {}}
+	suitCategoryTerms        = []string{"suit", "tuxedo", "blazer", "two-piece", "three-piece"}
+	nativeCategoryTerms      = []string{"agbada", "aso-oke", "kaftan", "buba", "native"}
 	validMeasurementFields   = map[string]struct{}{
 		"back": {}, "sleeve": {}, "round-sleeve": {}, "chest": {}, "stomach": {},
 		"jacket-length": {}, "top-length": {}, "trouser-length": {}, "waist": {},
 		"thigh": {}, "calf": {}, "ankle": {}, "neck": {}, "cap": {},
+	}
+	requiredMeasurementFields = map[string][]string{
+		"suit": {
+			"back", "sleeve", "round-sleeve", "chest", "stomach", "jacket-length",
+			"trouser-length", "waist", "thigh", "calf", "ankle", "neck",
+		},
+		"native": {
+			"back", "sleeve", "round-sleeve", "chest", "stomach", "top-length",
+			"trouser-length", "waist", "thigh", "calf", "ankle", "neck", "cap",
+		},
+		"mixed": {
+			"back", "sleeve", "round-sleeve", "chest", "stomach", "jacket-length",
+			"top-length", "trouser-length", "waist", "thigh", "calf", "ankle", "neck", "cap",
+		},
 	}
 )
 
@@ -50,6 +66,8 @@ type CatalogueProduct struct {
 	ID        string
 	Slug      string
 	Name      string
+	Section   string
+	Category  string
 	PriceKobo int64
 	HasSizes  bool
 }
@@ -112,6 +130,7 @@ func (service *Service) Create(
 	items := make([]Item, 0, len(input.Items))
 	var subtotalKobo int64
 	orderKind := KindReadyToWear
+	bespokeProfiles := make(map[string]struct{})
 
 	for _, requested := range input.Items {
 		product, isKnown := catalogue[requested.Slug]
@@ -129,8 +148,9 @@ func (service *Service) Create(
 				return Order{}, ErrSizeNotApplicable
 			}
 			// Anything without a size is made to measure, so the whole order
-			// goes down the WhatsApp confirmation route.
+			// uses the bespoke confirmation and measurement rules.
 			orderKind = KindBespoke
+			bespokeProfiles[measurementProfileForProduct(product)] = struct{}{}
 		}
 
 		lineKobo := product.PriceKobo * int64(requested.Quantity)
@@ -172,9 +192,14 @@ func (service *Service) Create(
 		return Order{}, fmt.Errorf("generate pay token: %w", err)
 	}
 
-	// Bespoke orders cannot take payment until measurements are agreed.
+	// Complete measurements make a bespoke order immediately payable. Orders
+	// without them remain available for the existing WhatsApp confirmation flow.
+	sanitizedMeasurements := sanitizeMeasurements(input.Measurements)
 	status := StatusAwaitingPayment
-	if orderKind == KindBespoke {
+	if orderKind == KindBespoke && !hasCompleteMeasurements(
+		sanitizedMeasurements,
+		requiredProfile(bespokeProfiles),
+	) {
 		status = StatusPendingConfirmation
 	}
 
@@ -191,7 +216,7 @@ func (service *Service) Create(
 	}
 
 	if err := service.repository.Create(
-		requestContext, &order, items, sanitizeMeasurements(input.Measurements), input,
+		requestContext, &order, items, sanitizedMeasurements, input,
 	); err != nil {
 		return Order{}, fmt.Errorf("create order: %w", err)
 	}
@@ -267,6 +292,66 @@ func sanitizeMeasurements(measurements *Measurements) *Measurements {
 	}
 
 	return measurements
+}
+
+// hasCompleteMeasurements keeps payment eligibility server-authoritative by
+// requiring every field defined for the submitted garment profile.
+func hasCompleteMeasurements(measurements *Measurements, expectedProfile string) bool {
+	if measurements == nil || measurements.Unit != "in" || measurements.Profile != expectedProfile {
+		return false
+	}
+
+	requiredFields, profileExists := requiredMeasurementFields[measurements.Profile]
+	if !profileExists {
+		return false
+	}
+
+	for _, field := range requiredFields {
+		if _, fieldExists := measurements.Values[field]; !fieldExists {
+			return false
+		}
+	}
+
+	return true
+}
+
+// requiredProfile collapses one or more trusted product profiles into the
+// worksheet profile the customer must complete.
+func requiredProfile(profiles map[string]struct{}) string {
+	if len(profiles) != 1 {
+		return "mixed"
+	}
+
+	for profile := range profiles {
+		return profile
+	}
+
+	return "mixed"
+}
+
+// measurementProfileForProduct derives tailoring requirements from trusted
+// catalogue fields rather than accepting a client-selected shortcut.
+func measurementProfileForProduct(product CatalogueProduct) string {
+	if product.Section == "suits" {
+		return "suit"
+	}
+	if product.Section == "trad" {
+		return "native"
+	}
+
+	description := strings.ToLower(product.Category + " " + product.Name)
+	for _, term := range suitCategoryTerms {
+		if strings.Contains(description, term) {
+			return "suit"
+		}
+	}
+	for _, term := range nativeCategoryTerms {
+		if strings.Contains(description, term) {
+			return "native"
+		}
+	}
+
+	return "mixed"
 }
 
 // newPayToken generates the unguessable token behind the /pay/<token> link.

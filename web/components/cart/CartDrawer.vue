@@ -34,10 +34,9 @@ const isBespokeOrder = computed(
   () => checkoutRoute.value === CartCheckoutRoute.Bespoke,
 )
 const formattedSubtotal = computed(() => formatProductPrice(subtotalKobo.value))
-// The bespoke route cannot take payment until measurements are agreed, so the
-// bag hands over to WhatsApp instead of checkout.
+// Bespoke orders collect measurements before choosing payment or WhatsApp.
 const primaryActionLabel = computed(() =>
-  isBespokeOrder.value ? CART_COPY.confirmOnWhatsApp : CART_COPY.checkout,
+  isBespokeOrder.value ? CART_COPY.confirmBespoke : CART_COPY.checkout,
 )
 const orderNote = computed(() =>
   isBespokeOrder.value ? CART_COPY.bespokeNote : CART_COPY.readyToWearNote,

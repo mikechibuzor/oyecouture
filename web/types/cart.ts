@@ -1,7 +1,7 @@
 import type { ProductSection, ProductSize } from '~/types/product'
 
-// How the whole cart must be checked out. A cart containing any bespoke piece
-// is confirmed on WhatsApp because measurements must be agreed before money moves.
+// How the cart enters confirmation. Bespoke payment eligibility is decided
+// after the customer either completes or skips the measurement form.
 export enum CartCheckoutRoute {
   Bespoke = 'bespoke',
   ReadyToWear = 'ready-to-wear',

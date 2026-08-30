@@ -17,10 +17,10 @@ export const CART_COPY = {
   empty: 'Your bag is empty.',
   emptyAction: 'Continue shopping',
   bespokeNote:
-    'This order will be confirmed with us on WhatsApp. Sizing and fabric details are finalised there; delivery is calculated from your selected area.',
+    'Add complete measurements at confirmation to pay online, or continue on WhatsApp for sizing and fabric support.',
   readyToWearNote:
     'Delivery is calculated at checkout.',
-  confirmOnWhatsApp: 'Confirm order on WhatsApp',
+  confirmBespoke: 'Confirm bespoke order',
   checkout: 'Proceed to checkout',
   openBag: 'Open bag',
 } as const

@@ -32,8 +32,8 @@ export const useCart = () => {
   )
   const isEmpty = computed(() => lines.value.length === 0)
 
-  // Any bespoke piece routes the whole bag through WhatsApp: measurements must
-  // be agreed before payment, so a mixed bag cannot take the pay-now path.
+  // Any bespoke piece routes the whole bag through confirmation, where complete
+  // measurements unlock payment and an empty form keeps the WhatsApp path.
   const checkoutRoute = computed(() =>
     lines.value.some((line) => !line.hasSizes)
       ? CartCheckoutRoute.Bespoke

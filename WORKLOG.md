@@ -5,6 +5,12 @@ One short entry per work session or meaningful chunk. Format:
 
 ---
 
+## 2026-08-29T16:26:00+01:00 · Codex · Measurement-aware bespoke payment routing
+- **Did:** Made bespoke payment eligibility server-authoritative. The API derives the expected measurement profile from trusted product section/category data and returns `awaiting_payment` only when every required structured measurement is present under the matching profile. The storefront routes that status to the existing Paystack page, leaves measurement-free orders on the WhatsApp confirmation path, and blocks partial or invalid measurement submissions with explicit guidance.
+- **State:** Local and unreleased. Full Go tests, Node 22 typecheck, Nuxt production build, and browser QA pass. A complete native measurement set reached `/pay/{token}` with the correct order total; a partial set stayed on `/confirm`; a measurement-free order created `OYE-1003` and reached the WhatsApp confirmation state. Local API runs on `:8080` and Nuxt on `http://127.0.0.1:3011`.
+- **Next:** User reviews the three local paths, then approves commit, push, and deployment.
+- **Blockers:** Local site settings do not contain a WhatsApp number, so the success CTA is hidden locally; production must retain its configured WhatsApp number for the final continuation link.
+
 ## 2026-08-27T13:02:13+01:00 · Codex · Production Cloudinary upload configuration restored
 - **Did:** Traced admin product image upload failures to the API's explicit `image_upload_unavailable` branch. Confirmed the required Cloudinary cloud name, API key, and API secret were configured locally but missing from production. After explicit user approval, securely synchronized only the Cloudinary settings into `.env.production`, preserved a server-side backup, recreated the API container, and removed temporary credential files without displaying or committing any values.
 - **State:** Production `.env.production` and the running API container both report all four Cloudinary variables as set with values redacted. The API container is running without startup errors, and public `/api/healthz` returns HTTP 200 with both API and database healthy. No application-code release was required.

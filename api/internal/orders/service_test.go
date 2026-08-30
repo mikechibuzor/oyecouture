@@ -51,6 +51,8 @@ func TestCreateAppliesDeliveryFeeToBespokeOrder(t *testing.T) {
 			ID:        "product-1",
 			Slug:      "gold-agbada",
 			Name:      "Gold Agbada",
+			Section:   "trad",
+			Category:  "Agbada",
 			PriceKobo: 78000000,
 			HasSizes:  false,
 		},
@@ -80,6 +82,92 @@ func TestCreateAppliesDeliveryFeeToBespokeOrder(t *testing.T) {
 	}
 }
 
+func TestCreateMakesBespokeOrderPayableWithCompleteMeasurements(t *testing.T) {
+	t.Parallel()
+
+	repository := &orderRepositoryStub{products: map[string]CatalogueProduct{
+		"gold-agbada": {
+			ID:        "product-1",
+			Slug:      "gold-agbada",
+			Name:      "Gold Agbada",
+			Section:   "trad",
+			Category:  "Agbada",
+			PriceKobo: 78000000,
+			HasSizes:  false,
+		},
+	}}
+	service := NewService(repository, &deliveryRatesStub{feeKobo: 350000, exists: true})
+	input := validCreateOrderInput()
+	input.Measurements = completeNativeMeasurements()
+
+	order, err := service.Create(context.Background(), input)
+	if err != nil {
+		t.Fatalf("Create() error = %v", err)
+	}
+	if order.Kind != KindBespoke || order.Status != StatusAwaitingPayment {
+		t.Fatalf("kind/status = %q/%q, want bespoke/awaiting_payment", order.Kind, order.Status)
+	}
+}
+
+func TestCreateKeepsPartiallyMeasuredBespokeOrderPending(t *testing.T) {
+	t.Parallel()
+
+	repository := &orderRepositoryStub{products: map[string]CatalogueProduct{
+		"gold-agbada": {
+			ID:        "product-1",
+			Slug:      "gold-agbada",
+			Name:      "Gold Agbada",
+			Section:   "trad",
+			Category:  "Agbada",
+			PriceKobo: 78000000,
+			HasSizes:  false,
+		},
+	}}
+	service := NewService(repository, &deliveryRatesStub{feeKobo: 350000, exists: true})
+	input := validCreateOrderInput()
+	input.Measurements = &Measurements{
+		Profile: "native",
+		Unit:    "in",
+		Values:  map[string]float64{"chest": 42},
+	}
+
+	order, err := service.Create(context.Background(), input)
+	if err != nil {
+		t.Fatalf("Create() error = %v", err)
+	}
+	if order.Status != StatusPendingConfirmation {
+		t.Fatalf("status = %q, want pending_confirmation", order.Status)
+	}
+}
+
+func TestCreateRejectsCompleteMeasurementsForWrongProductProfile(t *testing.T) {
+	t.Parallel()
+
+	repository := &orderRepositoryStub{products: map[string]CatalogueProduct{
+		"gold-agbada": {
+			ID:        "product-1",
+			Slug:      "gold-agbada",
+			Name:      "Gold Agbada",
+			Section:   "trad",
+			Category:  "Agbada",
+			PriceKobo: 78000000,
+			HasSizes:  false,
+		},
+	}}
+	service := NewService(repository, &deliveryRatesStub{feeKobo: 350000, exists: true})
+	input := validCreateOrderInput()
+	input.Measurements = completeNativeMeasurements()
+	input.Measurements.Profile = "suit"
+
+	order, err := service.Create(context.Background(), input)
+	if err != nil {
+		t.Fatalf("Create() error = %v", err)
+	}
+	if order.Status != StatusPendingConfirmation {
+		t.Fatalf("status = %q, want pending_confirmation", order.Status)
+	}
+}
+
 func TestCreateRequiresDeliveryDetailsForBespokeOrder(t *testing.T) {
 	t.Parallel()
 
@@ -88,6 +176,8 @@ func TestCreateRequiresDeliveryDetailsForBespokeOrder(t *testing.T) {
 			ID:        "product-1",
 			Slug:      "gold-agbada",
 			Name:      "Gold Agbada",
+			Section:   "trad",
+			Category:  "Agbada",
 			PriceKobo: 78000000,
 			HasSizes:  false,
 		},
@@ -117,5 +207,17 @@ func validCreateOrderInput() CreateOrderInput {
 			Slug:     "gold-agbada",
 			Quantity: 1,
 		}},
+	}
+}
+
+func completeNativeMeasurements() *Measurements {
+	return &Measurements{
+		Profile: "native",
+		Unit:    "in",
+		Values: map[string]float64{
+			"back": 18, "sleeve": 25, "round-sleeve": 15, "chest": 42,
+			"stomach": 40, "top-length": 35, "trouser-length": 42, "waist": 36,
+			"thigh": 24, "calf": 16, "ankle": 14, "neck": 16, "cap": 23,
+		},
 	}
 }

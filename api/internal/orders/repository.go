@@ -24,7 +24,7 @@ func (repository *PostgresRepository) ProductsBySlugs(
 	slugs []string,
 ) (map[string]CatalogueProduct, error) {
 	const query = `
-		SELECT id, slug, name, price_kobo, has_sizes
+		SELECT id, slug, name, section, category, price_kobo, has_sizes
 		FROM products
 		WHERE active = TRUE AND slug = ANY($1)
 	`
@@ -39,7 +39,8 @@ func (repository *PostgresRepository) ProductsBySlugs(
 	for rows.Next() {
 		var product CatalogueProduct
 		if err := rows.Scan(
-			&product.ID, &product.Slug, &product.Name, &product.PriceKobo, &product.HasSizes,
+			&product.ID, &product.Slug, &product.Name, &product.Section, &product.Category,
+			&product.PriceKobo, &product.HasSizes,
 		); err != nil {
 			return nil, fmt.Errorf("scan product: %w", err)
 		}

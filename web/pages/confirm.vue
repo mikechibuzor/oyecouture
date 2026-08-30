@@ -16,6 +16,7 @@ const { submitOrder } = useOrders()
 const { data: zoneData } = await useDeliveryZones()
 const { data: siteSettings } = await useSiteSettings()
 const { withLoading } = useAppLoading()
+const router = useRouter()
 
 const WHATSAPP_ICON: IconNode = MessageCircle
 const MEASUREMENT_GUIDE_ICON: IconNode = Ruler
@@ -28,7 +29,7 @@ const address = ref('')
 const deliveryZoneName = ref('')
 const showMeasurements = ref(false)
 const notes = ref('')
-const measurementValues = ref<Record<string, string>>({})
+const measurementValues = ref<Record<string, string | number>>({})
 const measurementFeedback = ref<{ message: string, status: 'success' | 'error' } | null>(null)
 
 const isSubmitting = ref(false)
@@ -82,11 +83,29 @@ const measurementGuideUrl = computed(() => {
 })
 
 const measurementNumber = (fieldId: string): number | null => {
-  const rawValue = measurementValues.value[fieldId]?.trim()
+  const rawValue = String(measurementValues.value[fieldId] ?? '').trim()
   const value = rawValue ? Number(rawValue) : Number.NaN
 
   return Number.isFinite(value) && value > 0 ? value : null
 }
+
+// Detects any entry so a partially completed worksheet cannot silently
+// fall back to WhatsApp after the customer expected to pay.
+const hasAnyMeasurementEntry = computed(() =>
+  measurementFields.value.some((field) => String(measurementValues.value[field.id] ?? '').trim().length > 0),
+)
+
+// Payment requires the complete field set for the cart's derived profile.
+const hasCompleteMeasurements = computed(() =>
+  showMeasurements.value
+  && measurementFields.value.length > 0
+  && measurementFields.value.every((field) => measurementNumber(field.id) !== null),
+)
+
+// Keeps the primary action honest about the branch the current form will take.
+const submitLabel = computed(() =>
+  hasCompleteMeasurements.value ? CONFIRM_COPY.paySubmit : CONFIRM_COPY.submit,
+)
 
 const inchesToCentimetres = (value: number | null): number | null =>
   value === null ? null : Math.round(value * 25.4) / 10
@@ -94,7 +113,11 @@ const inchesToCentimetres = (value: number | null): number | null =>
 // Converts the free-text measurement inputs into numbers, dropping blanks so an
 // untouched field is sent as null rather than 0.
 const buildMeasurements = (): MeasurementsRequest | null => {
-  if (!showMeasurements.value || !measurementRequirements.value) {
+  if (
+    !showMeasurements.value
+    || !measurementRequirements.value
+    || !hasCompleteMeasurements.value
+  ) {
     return null
   }
 
@@ -189,6 +212,11 @@ const handleSubmit = async (): Promise<void> => {
     return
   }
 
+  if (showMeasurements.value && hasAnyMeasurementEntry.value && !hasCompleteMeasurements.value) {
+    errorMessage.value = CONFIRM_COPY.measurementsIncomplete
+    return
+  }
+
   isSubmitting.value = true
   errorMessage.value = ''
 
@@ -223,6 +251,15 @@ const handleSubmit = async (): Promise<void> => {
       CONFIRM_COPY.submitting,
     )
 
+    clear()
+
+    // The API owns payment eligibility. A complete bespoke measurement profile
+    // returns awaiting_payment and follows the established Paystack route.
+    if (order.status === 'awaiting_payment') {
+      await router.push(`/pay/${order.payToken}`)
+      return
+    }
+
     placedOrder.value = order
     placedLines.value = submittedLines
     placedSubtotalKobo.value = submittedSubtotal
@@ -231,7 +268,6 @@ const handleSubmit = async (): Promise<void> => {
       deliveryFeeKobo: order.deliveryFeeKobo,
       totalKobo: order.totalKobo,
     }
-    clear()
   } catch (submitError) {
     const apiError = submitError as { data?: { error?: { message?: string } } }
     errorMessage.value = apiError?.data?.error?.message ?? CONFIRM_COPY.errorFallback
@@ -368,7 +404,7 @@ const handleSubmit = async (): Promise<void> => {
                   type="number"
                   inputmode="decimal"
                   step="0.25"
-                  min="0"
+                  min="0.25"
                   :name="`measurement-${field.id}`"
                 >
               </label>
@@ -413,7 +449,7 @@ const handleSubmit = async (): Promise<void> => {
           <p v-if="errorMessage" class="confirm-error" role="alert">{{ errorMessage }}</p>
 
           <button class="confirm-submit" type="submit" :disabled="isSubmitting">
-            {{ isSubmitting ? CONFIRM_COPY.submitting : CONFIRM_COPY.submit }}
+            {{ isSubmitting ? CONFIRM_COPY.submitting : submitLabel }}
           </button>
         </aside>
       </form>
