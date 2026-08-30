@@ -7,8 +7,8 @@ One short entry per work session or meaningful chunk. Format:
 
 ## 2026-08-29T16:26:00+01:00 · Codex · Measurement-aware bespoke payment routing
 - **Did:** Made bespoke payment eligibility server-authoritative. The API derives the expected measurement profile from trusted product section/category data and returns `awaiting_payment` only when every required structured measurement is present under the matching profile. The storefront routes that status to the existing Paystack page, leaves measurement-free orders on the WhatsApp confirmation path, and blocks partial or invalid measurement submissions with explicit guidance.
-- **State:** Local and unreleased. Full Go tests, Node 22 typecheck, Nuxt production build, and browser QA pass. A complete native measurement set reached `/pay/{token}` with the correct order total; a partial set stayed on `/confirm`; a measurement-free order created `OYE-1003` and reached the WhatsApp confirmation state. Local API runs on `:8080` and Nuxt on `http://127.0.0.1:3011`.
-- **Next:** User reviews the three local paths, then approves commit, push, and deployment.
+- **State:** Committed as `e128be8` and pushed to `origin/main` on 2026-08-30; not deployed. Full Go tests, Node 22 typecheck, Nuxt production build, and browser QA pass. A complete native measurement set reached `/pay/{token}` with the correct order total; a partial set stayed on `/confirm`; a measurement-free order created `OYE-1003` and reached the WhatsApp confirmation state.
+- **Next:** Deploy after explicit approval, then verify the three paths against production configuration.
 - **Blockers:** Local site settings do not contain a WhatsApp number, so the success CTA is hidden locally; production must retain its configured WhatsApp number for the final continuation link.
 
 ## 2026-08-27T13:02:13+01:00 · Codex · Production Cloudinary upload configuration restored
