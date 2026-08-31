@@ -5,6 +5,12 @@ One short entry per work session or meaningful chunk. Format:
 
 ---
 
+## 2026-08-31T03:05:00+01:00 · Codex · Quantity limited by fulfillment type
+- **Did:** Kept the existing 1–10 quantity controls for sized/ready-to-wear products while fixing made-to-measure products at one unit across repeat adds, cart restoration, drawer presentation, and server validation. Added backend coverage proving multi-unit bespoke requests fail and multi-unit ready-to-wear requests retain correct totals.
+- **State:** Committed locally as `a0232c8`; not pushed or deployed. Full Go tests, Node 22 strict typecheck, Nuxt production build, and `git diff --check` pass. A populated local browser interaction could not run because the local API was unavailable; the temporary web process was stopped.
+- **Next:** User approves or requests changes, then commit/push/deploy if explicitly authorized.
+- **Blockers:** None in code. Full browser interaction can be repeated when the local API is available.
+
 ## 2026-08-31T02:21:00+01:00 · Codex · Customer order tracking deployed
 - **Did:** Committed the approved tracking implementation as `8bac779`, pushed `main`, and deployed through the standard Hostinger script. Both production images rebuilt and API/web were recreated; migration `000016` applied cleanly.
 - **State:** All five containers are running, PostgreSQL is healthy, migration state is `16:false`, and public health returns 200. A live invalid token returns 404 with `private, no-store` and `noindex, nofollow`; the admin timeline route returns 401 without a session. The running API resolves the correct HTTPS `WEB_BASE_URL`, and SendByte configuration remains present. No Paystack outcome was selected and no real email was sent.
