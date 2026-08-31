@@ -5,6 +5,12 @@ One short entry per work session or meaningful chunk. Format:
 
 ---
 
+## 2026-08-31T09:42:00+01:00 · Codex · Quantity scope deployed
+- **Did:** Pushed `a0232c8` plus its handoff record, deployed through the standard Hostinger script, rebuilt both production images, and recreated API/web.
+- **State:** Server repository head is `b81d37d`; all five containers are running, PostgreSQL is healthy, migration remains `16:false`, and live health returns 200. A forged quantity-2 bespoke request returned 400 `invalid_items`, and a direct count confirmed it created zero orders.
+- **Next:** User verifies ready-to-wear `− / +` controls and fixed bespoke `Qty 1` on staging, then returns to authenticated tracking acceptance.
+- **Blockers:** None for quantity. Authenticated tracking and real dispatch-email checks still require the user's staging session and an explicitly selected test order.
+
 ## 2026-08-31T03:05:00+01:00 · Codex · Quantity limited by fulfillment type
 - **Did:** Kept the existing 1–10 quantity controls for sized/ready-to-wear products while fixing made-to-measure products at one unit across repeat adds, cart restoration, drawer presentation, and server validation. Added backend coverage proving multi-unit bespoke requests fail and multi-unit ready-to-wear requests retain correct totals.
 - **State:** Committed locally as `a0232c8`; not pushed or deployed. Full Go tests, Node 22 strict typecheck, Nuxt production build, and `git diff --check` pass. A populated local browser interaction could not run because the local API was unavailable; the temporary web process was stopped.
