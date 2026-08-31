@@ -20,6 +20,15 @@
 
 **First action for the user:** log in to Hostinger and check the VPS billing/power state. If it is suspended pending payment, pay and reboot. If a grace period is running, treat it as urgent — reclaim is unrecoverable. Nothing in the repo is lost either way (all code is on GitHub); what is at risk is the **database**: admin account, delivery zones, site settings, home content, and the catalogue edits made through the admin.
 
+## 🔑 PRODUCTION CONFIG — what is gathered, what is missing (Claude, 2026-08-31)
+
+**Gathered and staged on the user's Mac, NOT yet on any server:**
+- **Paystack live keys** are in `~/oyecouture-prod-keys.env`, mode `600`, outside the repo so they cannot be committed. Verified as `sk_live_`/`pk_live_` with clean formatting; **neither agent has seen the values and it must stay that way** — verify with `grep -c` patterns, never `cat`. Install by pasting into `.env.production` on the server directly, or `scp` once the box is reachable. ⚠️ Confirm with the user whether these belong to the **client's** Paystack account: live keys settle real money into whichever account owns them, and it must not be the developer's.
+- **`OWNER_NOTIFY_EMAIL` = `frontdeskoyecouture@gmail.com`** (client's front desk, supplied 31 Aug). This replaces the hardcoded fallback `iwuagwuchibuzor@gmail.com` in `api/internal/config/config.go:11` — if the variable is ever unset in production, order and contact notifications silently go to the developer's personal Gmail instead. Always set it explicitly.
+- ⚠️ **`EMAIL_FROM` cannot be that Gmail address.** `OWNER_NOTIFY_EMAIL` is where mail is *received*; `EMAIL_FROM` is the sender customers see and must sit on a domain verified with SendByte. It is still unknown and blocked on the domain decision.
+
+**Still missing before production:** the client's **domain** (blocks `SITE_HOST`, `WEB_BASE_URL`, `API_BASE_URL`, `EMAIL_FROM`, and the Paystack webhook URL — this is the critical path), the client's **WhatsApp business number** (production still carries the developer's own `2348094939264`), a fresh `POSTGRES_PASSWORD` via `openssl rand -hex 32`, and the three outstanding credential rotations (SendByte live key, Cloudinary secret, Nomba key).
+
 ## Current status
 - **Phase:** 1 (MVP). First 40% milestone **paid**; build authorized.
 - ⚠️ **TWO CHECKOUTS OF THIS REPO EXIST ON THE MAC — they are not in sync.** Codex works in `/Users/chibuzoriwuagwu/Documents/oyecouture`; Claude has been working in `/Users/chibuzoriwuagwu/Downloads/share/oyecouture`. On 31 Aug the `Downloads/share` copy was **9 commits behind** `origin/main` and has been fast-forwarded to `5543292`. Full Go suite passes there, including the new `internal/tracking` package. **Whoever picks up the baton must `git fetch` and confirm which checkout they are in before touching anything** — this is how one agent silently reverts the other.
