@@ -10,7 +10,11 @@
 
 **The outage is hours old, not gradual.** Codex deployed `a0232c8` to this same server earlier today (31 Aug) and recorded live health returning 200 with all five containers running. So the box went from fully healthy to answering nothing on any port within the same day.
 
-**Most likely cause: the Hostinger term expired.** The 1-month term was paid on 2 Aug; today is 31 Aug — day 29 of ~30. The baton has been carrying a ⏰ warning about exactly this date since 2 Aug. Renewal is $19.49/mo (~₦26,900). A billing suspension explains the symptom precisely: an abrupt, total, all-port cutoff at the provider edge rather than at the host. This is a diagnosis from the outside only — it has not been confirmed in the Hostinger panel, and a hardware or hypervisor fault would look identical from here.
+**NOT billing — checked and ruled out.** Claude first guessed an expired term; the Hostinger panel disproves it. `srv1875150.hstgr.cloud` shows status **Running** with expiration **2026-09-02**. The VM is powered on and paid for. Do not spend time on the billing theory again.
+
+**So the hypervisor is up and the guest OS is not answering.** Ports 22/80/443 and ICMP are all dead while Hostinger reports the VM running — that is a hung or wedged guest, a firewall change, or a network fault, not a suspension. The leading candidate is **resource exhaustion from today's deploy**: this is a 1 vCPU / 3.9 GB KVM 1, the Nuxt production build runs `vue-tsc`, and 2 GB of swap was added on 2 Aug specifically because that build is the heavy step. A build or rebuild that exhausts RAM and swap on a single core can leave the box alive to the hypervisor but unresponsive on every port. Codex did report a clean deploy with health 200 afterwards, so if this is the cause it bit after that check.
+
+⏰ **Separate live clock: expiration is 2026-09-02.** Two days. Monthly renewal is $19.49 (~₦26,900), which alone exceeds the entire ₦25k maintenance retainer; the 12-month term is ~$9,646/mo equivalent. Decide before it lapses — a lapse here would turn a recoverable outage into the unrecoverable one described below.
 
 ⚠️ **Backups do not leave the box.** `deploy/backup.sh` writes to `/backups`, which is the `postgres-backups` Docker volume on the same VPS. If Hostinger reclaims the server, the database **and every backup are destroyed together**. There is no off-server copy. The most recent known-good dump pulled to the Mac is `oyecouture-20260825T090120Z.sql.gz` (20,531 bytes, 25 Aug).
 
