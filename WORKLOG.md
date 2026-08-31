@@ -7,7 +7,7 @@ One short entry per work session or meaningful chunk. Format:
 
 ## 2026-08-31T09:42:00+01:00 · Codex · Quantity scope deployed
 - **Did:** Pushed `a0232c8` plus its handoff record, deployed through the standard Hostinger script, rebuilt both production images, and recreated API/web.
-- **State:** Server repository head is `b81d37d`; all five containers are running, PostgreSQL is healthy, migration remains `16:false`, and live health returns 200. A forged quantity-2 bespoke request returned 400 `invalid_items`, and a direct count confirmed it created zero orders.
+- **State:** Application images were built from release head `b81d37d`; all five containers are running, PostgreSQL is healthy, migration remains `16:false`, and live health returns 200. A forged quantity-2 bespoke request returned 400 `invalid_items`, and a direct count confirmed it created zero orders.
 - **Next:** User verifies ready-to-wear `− / +` controls and fixed bespoke `Qty 1` on staging, then returns to authenticated tracking acceptance.
 - **Blockers:** None for quantity. Authenticated tracking and real dispatch-email checks still require the user's staging session and an explicitly selected test order.
 
