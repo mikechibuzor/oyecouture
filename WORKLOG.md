@@ -5,6 +5,12 @@ One short entry per work session or meaningful chunk. Format:
 
 ---
 
+## 2026-08-31T02:21:00+01:00 · Codex · Customer order tracking deployed
+- **Did:** Committed the approved tracking implementation as `8bac779`, pushed `main`, and deployed through the standard Hostinger script. Both production images rebuilt and API/web were recreated; migration `000016` applied cleanly.
+- **State:** All five containers are running, PostgreSQL is healthy, migration state is `16:false`, and public health returns 200. A live invalid token returns 404 with `private, no-store` and `noindex, nofollow`; the admin timeline route returns 401 without a session. The running API resolves the correct HTTPS `WEB_BASE_URL`, and SendByte configuration remains present. No Paystack outcome was selected and no real email was sent.
+- **Next:** User verifies a populated timeline using their staging admin session, then explicitly selects a user-owned test order before dispatch-email acceptance. Resume the paused production audit afterward.
+- **Blockers:** Codex does not have the admin password/session, so authenticated populated-timeline and real inbox acceptance remain user-owned checks.
+
 ## 2026-08-31T02:14:00+01:00 · Codex · Tracking release approved and verified locally
 - **Did:** Received explicit commit/push/deploy approval, stopped the local review servers, and reran full Go tests, Node 22 strict typecheck, Nuxt production build, and `git diff --check` successfully.
 - **State:** Tracking implementation is release-ready and still uncommitted. The disposable review order remains isolated in the developer's local database because deleting database records requires separate approval; no fixture data exists in Git or can reach staging.
