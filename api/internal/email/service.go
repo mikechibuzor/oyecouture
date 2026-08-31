@@ -3,11 +3,15 @@ package email
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"log"
 	"strings"
+	"time"
 )
+
+const fulfillmentWorkerInterval = 10 * time.Second
 
 type Service struct {
 	repository Repository
@@ -23,6 +27,83 @@ func NewService(repository Repository, provider Provider, from string, siteURL s
 		provider:   provider,
 		from:       strings.TrimSpace(from),
 		siteURL:    strings.TrimRight(siteURL, "/"),
+	}
+}
+
+// RunFulfillmentWorker delivers due order-progress emails until shutdown.
+func (service *Service) RunFulfillmentWorker(requestContext context.Context) {
+	if service == nil || service.provider == nil || service.repository == nil || service.from == "" {
+		return
+	}
+
+	service.drainFulfillmentQueue(requestContext)
+	ticker := time.NewTicker(fulfillmentWorkerInterval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-requestContext.Done():
+			return
+		case <-ticker.C:
+			service.drainFulfillmentQueue(requestContext)
+		}
+	}
+}
+
+// drainFulfillmentQueue processes every currently due email without overlapping claims.
+func (service *Service) drainFulfillmentQueue(requestContext context.Context) {
+	for requestContext.Err() == nil {
+		event, found, err := service.repository.ClaimNext(requestContext)
+		if err != nil {
+			log.Printf("claim fulfillment email: %v", err)
+			return
+		}
+		if !found {
+			return
+		}
+
+		service.deliverQueuedEvent(requestContext, event)
+	}
+}
+
+// deliverQueuedEvent renders and sends one leased event, recording either outcome.
+func (service *Service) deliverQueuedEvent(
+	requestContext context.Context,
+	event QueuedEvent,
+) {
+	var payload FulfillmentPayload
+	if err := json.Unmarshal(event.Payload, &payload); err != nil {
+		_ = service.repository.MarkFailed(
+			requestContext, event.IdempotencyKey, "decode fulfillment payload: "+err.Error(), nil,
+		)
+		return
+	}
+
+	htmlBody, textBody, err := renderFulfillmentEmail(event.Type, payload)
+	if err != nil {
+		_ = service.repository.MarkFailed(requestContext, event.IdempotencyKey, err.Error(), nil)
+		return
+	}
+
+	result, providerPayload, err := service.provider.Send(requestContext, Message{
+		From:           service.from,
+		To:             event.RecipientEmail,
+		Subject:        event.Subject,
+		HTML:           htmlBody,
+		Text:           textBody,
+		IdempotencyKey: event.IdempotencyKey,
+	})
+	if err != nil {
+		_ = service.repository.MarkFailed(
+			requestContext, event.IdempotencyKey, err.Error(), providerPayload,
+		)
+		return
+	}
+
+	if err := service.repository.MarkSent(
+		requestContext, event.IdempotencyKey, result, providerPayload,
+	); err != nil {
+		log.Printf("mark fulfillment email sent: %v", err)
 	}
 }
 

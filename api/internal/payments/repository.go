@@ -267,13 +267,29 @@ func (repository *PostgresRepository) ConfirmSuccessfulPayment(
 
 	const updateOrder = `
 		UPDATE orders
-		SET status = $2, payment_provider = $3, payment_ref = $4
+		SET status = $2, payment_provider = $3, payment_ref = $4,
+			fulfillment_stage = $5, fulfillment_version = fulfillment_version + 1
 		WHERE id = $1
 	`
 	if _, err := transaction.Exec(
-		requestContext, updateOrder, order.ID, OrderStatusPaid, attempt.Provider, verification.Reference,
+		requestContext, updateOrder, order.ID, OrderStatusPaid, attempt.Provider,
+		verification.Reference, "payment_confirmed",
 	); err != nil {
 		return Order{}, fmt.Errorf("mark order paid: %w", err)
+	}
+
+	const insertFulfillmentEvent = `
+		INSERT INTO order_fulfillment_events (order_id, stage, public_note)
+		VALUES ($1, $2, $3)
+	`
+	if _, err := transaction.Exec(
+		requestContext,
+		insertFulfillmentEvent,
+		order.ID,
+		"payment_confirmed",
+		"Payment received and confirmed.",
+	); err != nil {
+		return Order{}, fmt.Errorf("record payment fulfillment event: %w", err)
 	}
 
 	if err := transaction.Commit(requestContext); err != nil {

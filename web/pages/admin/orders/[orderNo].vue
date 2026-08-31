@@ -4,10 +4,13 @@ import {
   ADMIN_COPY,
   ADMIN_ROUTES,
   ADMIN_STATUS_ACTIONS,
+  FULFILLMENT_STAGE_LABELS,
   ORDER_KIND_LABELS,
   ORDER_STATUS_LABELS,
 } from '~/constants/admin'
 import type { AdminOrderDetail, OrderStatus } from '~/types/admin'
+import { FulfillmentStage } from '~/types/tracking'
+import type { AdminOrderTracking } from '~/types/tracking'
 import { formatOrderDate } from '~/utils/admin'
 import { measurementFieldLabels } from '~/utils/measurements'
 import { formatProductPrice } from '~/utils/product'
@@ -19,6 +22,8 @@ const router = useRouter()
 const requestUrl = useRequestURL()
 const { session } = useAdminSession()
 const { fetchOrder, updateOrderStatus } = useAdminOrders()
+const { advanceOrderTracking, fetchOrderTracking } = useAdminOrderTracking()
+const { notifyError, notifySuccess } = useAppNotifications()
 
 const order = ref<AdminOrderDetail | null>(null)
 const isLoading = ref(true)
@@ -26,6 +31,20 @@ const hasFailed = ref(false)
 const updatingStatus = ref<OrderStatus | null>(null)
 const statusError = ref('')
 const copiedPaymentLink = ref(false)
+const tracking = ref<AdminOrderTracking | null>(null)
+const isTrackingLoading = ref(false)
+const trackingUnavailable = ref(false)
+const trackingLoadFailed = ref(false)
+const isAdvancingTracking = ref(false)
+const trackingError = ref('')
+const copiedTrackingLink = ref(false)
+const trackingForm = reactive({
+  publicNote: '',
+  estimatedDeliveryDate: '',
+  carrierName: '',
+  carrierTrackingNumber: '',
+  carrierTrackingUrl: '',
+})
 
 let copiedTimer: ReturnType<typeof setTimeout> | undefined
 
@@ -38,6 +57,20 @@ const orderNo = computed(() => {
 // Status actions are derived from the current order state.
 const statusActions = computed(() =>
   order.value ? ADMIN_STATUS_ACTIONS[order.value.status] : [],
+)
+
+const nextFulfillmentStage = computed(
+  () => tracking.value?.allowedNextStages[0] ?? null,
+)
+
+const nextFulfillmentLabel = computed(() =>
+  nextFulfillmentStage.value
+    ? FULFILLMENT_STAGE_LABELS[nextFulfillmentStage.value]
+    : '',
+)
+
+const isDispatchTransition = computed(
+  () => nextFulfillmentStage.value === FulfillmentStage.Dispatched,
 )
 
 // The pay link is shareable even before payment provider credentials are added.
@@ -129,6 +162,7 @@ const loadOrder = async (): Promise<void> => {
 
   try {
     order.value = await fetchOrder(orderNo.value)
+    await loadTracking()
   } catch (loadError) {
     if ((loadError as { status?: number } | null)?.status === 401) {
       session.value = null
@@ -139,6 +173,28 @@ const loadOrder = async (): Promise<void> => {
     hasFailed.value = true
   } finally {
     isLoading.value = false
+  }
+}
+
+const loadTracking = async (): Promise<void> => {
+  isTrackingLoading.value = true
+  trackingUnavailable.value = false
+  trackingLoadFailed.value = false
+
+  try {
+    tracking.value = await fetchOrderTracking(orderNo.value)
+    syncTrackingForm(tracking.value)
+  } catch (loadError) {
+    const statusCode = (loadError as { status?: number; statusCode?: number } | null)
+    const status = statusCode?.status ?? statusCode?.statusCode
+    tracking.value = null
+    if (status === 409) {
+      trackingUnavailable.value = true
+    } else {
+      trackingLoadFailed.value = true
+    }
+  } finally {
+    isTrackingLoading.value = false
   }
 }
 
@@ -154,6 +210,54 @@ const copyPaymentLink = async (): Promise<void> => {
   copiedTimer = setTimeout(() => {
     copiedPaymentLink.value = false
   }, 1600)
+}
+
+const copyTrackingLink = async (): Promise<void> => {
+  if (!tracking.value?.trackingUrl || typeof navigator === 'undefined') {
+    return
+  }
+
+  await navigator.clipboard.writeText(tracking.value.trackingUrl)
+  copiedTrackingLink.value = true
+  notifySuccess(ADMIN_COPY.trackingLinkCopied)
+  clearTimeout(copiedTimer)
+  copiedTimer = setTimeout(() => {
+    copiedTrackingLink.value = false
+  }, 1600)
+}
+
+const advanceFulfillment = async (): Promise<void> => {
+  if (!tracking.value || !nextFulfillmentStage.value) {
+    return
+  }
+
+  isAdvancingTracking.value = true
+  trackingError.value = ''
+
+  try {
+    tracking.value = await advanceOrderTracking(orderNo.value, {
+      stage: nextFulfillmentStage.value,
+      expectedVersion: tracking.value.version,
+      publicNote: trackingForm.publicNote,
+      estimatedDeliveryDate: trackingForm.estimatedDeliveryDate,
+      carrierName: isDispatchTransition.value ? trackingForm.carrierName : '',
+      carrierTrackingNumber: isDispatchTransition.value
+        ? trackingForm.carrierTrackingNumber
+        : '',
+      carrierTrackingUrl: isDispatchTransition.value ? trackingForm.carrierTrackingUrl : '',
+    })
+    order.value = await fetchOrder(orderNo.value)
+    syncTrackingForm(tracking.value)
+    notifySuccess(ADMIN_COPY.fulfillmentUpdatedNotice, tracking.value.currentStageLabel)
+  } catch (updateError) {
+    trackingError.value = ADMIN_COPY.fulfillmentUpdateFailed
+    notifyError(ADMIN_COPY.fulfillmentUpdateFailed)
+    if ((updateError as { status?: number } | null)?.status === 409) {
+      await loadTracking()
+    }
+  } finally {
+    isAdvancingTracking.value = false
+  }
 }
 
 // Applies one backend-approved status transition.
@@ -181,6 +285,14 @@ function formatMeasurement(value: number | null | undefined, unit: string): stri
   }
 
   return `${new Intl.NumberFormat('en-NG', { maximumFractionDigits: 1 }).format(value)} ${unit}`
+}
+
+function syncTrackingForm(currentTracking: AdminOrderTracking): void {
+  trackingForm.publicNote = ''
+  trackingForm.estimatedDeliveryDate = currentTracking.estimatedDeliveryDate?.slice(0, 10) ?? ''
+  trackingForm.carrierName = currentTracking.shipment.carrierName ?? ''
+  trackingForm.carrierTrackingNumber = currentTracking.shipment.carrierTrackingNumber ?? ''
+  trackingForm.carrierTrackingUrl = currentTracking.shipment.carrierTrackingUrl ?? ''
 }
 
 onMounted(loadOrder)
@@ -265,6 +377,109 @@ onBeforeUnmount(() => clearTimeout(copiedTimer))
           <p v-if="statusError" class="admin-detail-error" role="alert">
             {{ statusError }}
           </p>
+        </section>
+
+        <section class="admin-detail-panel admin-detail-panel-wide admin-fulfillment-panel">
+          <h2>{{ ADMIN_COPY.fulfillment }}</h2>
+
+          <p v-if="isTrackingLoading" class="admin-detail-muted">
+            {{ ADMIN_COPY.fulfillmentLoading }}
+          </p>
+          <p v-else-if="trackingUnavailable" class="admin-detail-muted">
+            {{ ADMIN_COPY.fulfillmentUnavailable }}
+          </p>
+          <div v-else-if="trackingLoadFailed" class="admin-detail-error" role="alert">
+            <p>{{ ADMIN_COPY.fulfillmentLoadFailed }}</p>
+            <button type="button" class="admin-inline-action" @click="loadTracking">
+              {{ ADMIN_COPY.retry }}
+            </button>
+          </div>
+
+          <template v-else-if="tracking">
+            <ol class="admin-fulfillment-timeline">
+              <li v-for="event in tracking.events" :key="event.id">
+                <span class="admin-fulfillment-marker" aria-hidden="true" />
+                <div>
+                  <div class="admin-fulfillment-event-head">
+                    <strong>{{ event.label }}</strong>
+                    <time :datetime="event.occurredAt">{{ formatOrderDate(event.occurredAt) }}</time>
+                  </div>
+                  <p v-if="event.publicNote">{{ event.publicNote }}</p>
+                  <small v-if="event.actorEmail">Updated by {{ event.actorEmail }}</small>
+                </div>
+              </li>
+            </ol>
+
+            <div v-if="tracking.trackingUrl" class="admin-fulfillment-link">
+              <span>
+                <small>{{ ADMIN_COPY.customerTrackingLink }}</small>
+                <strong>{{ tracking.trackingUrl }}</strong>
+              </span>
+              <button type="button" class="admin-inline-action" @click="copyTrackingLink">
+                <StorefrontIcon
+                  :icon-node="copiedTrackingLink ? Check : Copy"
+                  :size="14"
+                  :stroke-width="1.75"
+                />
+                {{ copiedTrackingLink ? ADMIN_COPY.copied : ADMIN_COPY.copyTrackingLink }}
+              </button>
+            </div>
+
+            <form
+              v-if="nextFulfillmentStage"
+              class="admin-fulfillment-form"
+              @submit.prevent="advanceFulfillment"
+            >
+              <div class="admin-fulfillment-form-grid">
+                <label class="admin-field">
+                  <span>{{ ADMIN_COPY.estimatedDeliveryLabel }}</span>
+                  <input v-model="trackingForm.estimatedDeliveryDate" type="date">
+                </label>
+
+                <template v-if="isDispatchTransition">
+                  <label class="admin-field">
+                    <span>{{ ADMIN_COPY.carrierNameLabel }}</span>
+                    <input v-model.trim="trackingForm.carrierName" type="text" maxlength="200">
+                  </label>
+                  <label class="admin-field">
+                    <span>{{ ADMIN_COPY.carrierTrackingNumberLabel }}</span>
+                    <input
+                      v-model.trim="trackingForm.carrierTrackingNumber"
+                      type="text"
+                      maxlength="200"
+                    >
+                  </label>
+                  <label class="admin-field">
+                    <span>{{ ADMIN_COPY.carrierTrackingUrlLabel }}</span>
+                    <input v-model.trim="trackingForm.carrierTrackingUrl" type="url">
+                  </label>
+                </template>
+
+                <label class="admin-field admin-field-wide">
+                  <span>{{ ADMIN_COPY.fulfillmentNoteLabel }}</span>
+                  <textarea v-model.trim="trackingForm.publicNote" maxlength="500" rows="3" />
+                  <small>{{ ADMIN_COPY.fulfillmentNoteHint }}</small>
+                </label>
+              </div>
+
+              <p v-if="trackingError" class="admin-detail-error" role="alert">
+                {{ trackingError }}
+              </p>
+              <div class="admin-fulfillment-submit">
+                <button
+                  type="submit"
+                  class="admin-inline-action is-primary"
+                  :disabled="isAdvancingTracking"
+                >
+                  {{
+                    isAdvancingTracking
+                      ? ADMIN_COPY.advancingFulfillment
+                      : `${ADMIN_COPY.advanceFulfillment} ${nextFulfillmentLabel}`
+                  }}
+                </button>
+              </div>
+            </form>
+          </template>
         </section>
 
         <section class="admin-detail-panel admin-detail-panel-wide">

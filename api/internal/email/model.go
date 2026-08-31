@@ -1,16 +1,24 @@
 package email
 
-import "context"
+import (
+	"context"
+	"encoding/json"
+	"time"
+)
 
 const (
 	ProviderSendByte = "sendbyte"
 
 	TypeOrderConfirmation = "order_confirmation"
 	TypePaymentReceipt    = "payment_receipt"
+	TypeFulfillmentUpdate = "fulfillment_update"
+	TypeOrderDispatched   = "order_dispatched"
+	TypeOrderDelivered    = "order_delivered"
 
-	StatusPending = "pending"
-	StatusSent    = "sent"
-	StatusFailed  = "failed"
+	StatusPending    = "pending"
+	StatusProcessing = "processing"
+	StatusSent       = "sent"
+	StatusFailed     = "failed"
 )
 
 type Provider interface {
@@ -32,12 +40,39 @@ type SendResult struct {
 }
 
 type Event struct {
-	OrderID        string
-	Type           string
-	Provider       string
+	OrderID            string
+	Type               string
+	Provider           string
+	IdempotencyKey     string
+	RecipientEmail     string
+	Subject            string
+	FulfillmentEventID string
+	Payload            json.RawMessage
+}
+
+// QueuedEvent is one fulfillment email claimed by the retry worker.
+type QueuedEvent struct {
 	IdempotencyKey string
+	Type           string
 	RecipientEmail string
 	Subject        string
+	Payload        json.RawMessage
+}
+
+// FulfillmentPayload contains only the customer-facing data needed to render
+// an order-progress email. It intentionally excludes measurements and payment data.
+type FulfillmentPayload struct {
+	CustomerName          string    `json:"customerName"`
+	OrderNo               string    `json:"orderNo"`
+	Stage                 string    `json:"stage"`
+	StageLabel            string    `json:"stageLabel"`
+	PublicNote            string    `json:"publicNote,omitempty"`
+	TrackingURL           string    `json:"trackingUrl,omitempty"`
+	CarrierName           string    `json:"carrierName,omitempty"`
+	CarrierTrackingNumber string    `json:"carrierTrackingNumber,omitempty"`
+	CarrierTrackingURL    string    `json:"carrierTrackingUrl,omitempty"`
+	EstimatedDeliveryDate string    `json:"estimatedDeliveryDate,omitempty"`
+	OccurredAt            time.Time `json:"occurredAt"`
 }
 
 type Order struct {

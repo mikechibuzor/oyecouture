@@ -10,6 +10,7 @@ export const API_ROUTES = {
   paymentVerify: (payToken: string) => `/payments/${encodeURIComponent(payToken)}/verify`,
   products: '/products',
   siteSettings: '/site-settings',
+  tracking: (trackingToken: string) => `/tracking/${encodeURIComponent(trackingToken)}`,
 } as const
 
 export const ASYNC_DATA_KEYS = {

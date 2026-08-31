@@ -9,6 +9,7 @@ import type {
 import { AdminFilterType, MetricsPeriod, OrderStatus } from '~/types/admin'
 import { ProductSection } from '~/types/product'
 import type { SelectOption } from '~/types/ui'
+import { FULFILLMENT_STAGE_LABELS } from '~/constants/tracking'
 
 export const ADMIN_ROUTES = {
   login: '/admin/login',
@@ -31,6 +32,8 @@ export const ADMIN_API_ROUTES = {
   orderMetrics: '/admin/orders/metrics',
   orderDetail: (orderNo: string) => `/admin/orders/${encodeURIComponent(orderNo)}`,
   orderStatus: (orderNo: string) => `/admin/orders/${encodeURIComponent(orderNo)}/status`,
+  orderTracking: (orderNo: string) =>
+    `/admin/orders/${encodeURIComponent(orderNo)}/tracking`,
   deliveryZones: '/admin/delivery-zones',
   deliveryZone: (name: string) => `/admin/delivery-zones/${encodeURIComponent(name)}`,
   homeContent: '/admin/home-content',
@@ -213,7 +216,26 @@ export const ADMIN_COPY = {
   subtotal: 'Subtotal',
   delivery: 'Delivery',
   total: 'Total',
+  fulfillment: 'Order progress',
+  fulfillmentLoading: 'Loading order progress…',
+  fulfillmentUnavailable: 'Order progress starts after payment is confirmed.',
+  fulfillmentLoadFailed: 'Order progress could not be loaded.',
+  fulfillmentNoteLabel: 'Customer update',
+  fulfillmentNoteHint: 'Optional. This appears on the customer tracking page and email.',
+  estimatedDeliveryLabel: 'Estimated delivery date',
+  carrierNameLabel: 'Courier name',
+  carrierTrackingNumberLabel: 'Courier tracking number',
+  carrierTrackingUrlLabel: 'Courier tracking link',
+  advanceFulfillment: 'Move to',
+  advancingFulfillment: 'Updating…',
+  fulfillmentUpdatedNotice: 'Order progress updated',
+  fulfillmentUpdateFailed: 'Order progress could not be updated.',
+  copyTrackingLink: 'Copy tracking link',
+  trackingLinkCopied: 'Tracking link copied',
+  customerTrackingLink: 'Customer tracking link',
 } as const
+
+export { FULFILLMENT_STAGE_LABELS }
 
 // The summary strip covers this window by default.
 export const ADMIN_DEFAULT_PERIOD = MetricsPeriod.AllTime
@@ -435,17 +457,13 @@ export const ADMIN_STATUS_ACTIONS: Readonly<Record<OrderStatus, readonly AdminSt
     { status: OrderStatus.Cancelled, label: 'Cancel order' },
   ],
   [OrderStatus.Paid]: [
-    { status: OrderStatus.InProgress, label: 'Start fulfilment' },
     { status: OrderStatus.Cancelled, label: 'Cancel order' },
     { status: OrderStatus.Refunded, label: 'Mark refunded' },
   ],
   [OrderStatus.InProgress]: [
-    { status: OrderStatus.Shipped, label: 'Mark shipped' },
     { status: OrderStatus.Cancelled, label: 'Cancel order' },
   ],
-  [OrderStatus.Shipped]: [
-    { status: OrderStatus.Delivered, label: 'Mark delivered' },
-  ],
+  [OrderStatus.Shipped]: [],
   [OrderStatus.Delivered]: [],
   [OrderStatus.Cancelled]: [],
   [OrderStatus.Refunded]: [],

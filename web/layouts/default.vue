@@ -13,6 +13,8 @@ const bespokeBandProps = computed(() =>
   route.path === StorefrontRoute.About ? ABOUT_BESPOKE_BAND : {},
 )
 
+const showsBespokeBand = computed(() => !route.path.startsWith('/track/'))
+
 // Routes implemented header actions to their owning storefront surfaces.
 const handleStorefrontAction = (storefrontActionId: StorefrontActionId): void => {
   if (storefrontActionId === StorefrontActionId.Search) {
@@ -43,7 +45,7 @@ const closeSearchOverlay = (): void => {
     <main class="storefront-main">
       <slot />
     </main>
-    <StorefrontBespokeServiceBand v-bind="bespokeBandProps" />
+    <StorefrontBespokeServiceBand v-if="showsBespokeBand" v-bind="bespokeBandProps" />
     <StorefrontFooter />
     <CartDrawer />
     <StorefrontSearchOverlay

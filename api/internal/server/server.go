@@ -21,6 +21,7 @@ import (
 	"github.com/uzor-co/oyecouture/api/internal/payments/paystack"
 	"github.com/uzor-co/oyecouture/api/internal/products"
 	"github.com/uzor-co/oyecouture/api/internal/settings"
+	"github.com/uzor-co/oyecouture/api/internal/tracking"
 )
 
 // New wires infrastructure, services, and handlers into the API server.
@@ -70,6 +71,14 @@ func New(applicationConfig config.Config, databasePool *pgxpool.Pool) *http.Serv
 	requestMux.HandleFunc("POST /payments/{payToken}/initialize", paymentHandler.Initialize)
 	requestMux.HandleFunc("POST /payments/{payToken}/verify", paymentHandler.Verify)
 	requestMux.HandleFunc("POST /webhooks/paystack", paystackWebhookHandler.Handle)
+
+	trackingService := tracking.NewService(
+		tracking.NewPostgresRepository(databasePool),
+		applicationConfig.EmailProvider,
+		applicationConfig.WebBaseURL,
+	)
+	trackingHandler := tracking.NewHandler(trackingService)
+	requestMux.HandleFunc("GET /tracking/{trackingToken}", trackingHandler.Public)
 
 	// Ghost admin. Unlinked from the storefront and gated by a session cookie;
 	// every route below RequireSession is unreachable without signing in.
@@ -130,6 +139,12 @@ func New(applicationConfig config.Config, databasePool *pgxpool.Pool) *http.Serv
 	requestMux.Handle("PATCH /admin/orders/{orderNo}/status", adminHandler.RequireSession(
 		http.HandlerFunc(adminOrderHandler.UpdateStatus),
 	))
+	requestMux.Handle("GET /admin/orders/{orderNo}/tracking", adminHandler.RequireSession(
+		http.HandlerFunc(trackingHandler.Admin),
+	))
+	requestMux.Handle("PATCH /admin/orders/{orderNo}/tracking", adminHandler.RequireSession(
+		http.HandlerFunc(trackingHandler.Transition),
+	))
 	requestMux.Handle("GET /admin/products", adminHandler.RequireSession(
 		http.HandlerFunc(adminProductHandler.List),
 	))
@@ -168,11 +183,18 @@ func New(applicationConfig config.Config, databasePool *pgxpool.Pool) *http.Serv
 		http.HandlerFunc(adminProductHandler.DeleteImage),
 	))
 
-	return &http.Server{
+	httpServer := &http.Server{
 		Addr:              applicationConfig.APIAddress,
 		Handler:           allowOrigin(applicationConfig.WebBaseURL, applicationConfig.AppEnv, requestMux),
 		ReadHeaderTimeout: 5 * time.Second,
 	}
+	if emailService != nil {
+		workerContext, stopWorker := context.WithCancel(context.Background())
+		httpServer.RegisterOnShutdown(stopWorker)
+		go emailService.RunFulfillmentWorker(workerContext)
+	}
+
+	return httpServer
 }
 
 // paymentProvider selects the configured gateway while keeping unsupported
@@ -189,7 +211,7 @@ func paymentProvider(applicationConfig config.Config) payments.Provider {
 func emailService(
 	applicationConfig config.Config,
 	databasePool *pgxpool.Pool,
-) payments.PaidOrderEmailSender {
+) *emailpkg.Service {
 	emailProvider := emailProvider(applicationConfig)
 	if emailProvider == nil || applicationConfig.EmailFrom == "" {
 		return nil

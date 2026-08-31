@@ -1,7 +1,9 @@
 package email
 
 import (
+	"bytes"
 	"fmt"
+	"html/template"
 	"strings"
 )
 
@@ -29,6 +31,87 @@ type emailItemView struct {
 	Quantity int
 	Price    string
 	Line     string
+}
+
+type fulfillmentEmailView struct {
+	CustomerName          string
+	OrderNo               string
+	StageLabel            string
+	Heading               string
+	Intro                 string
+	PublicNote            string
+	TrackingURL           string
+	CarrierName           string
+	CarrierTrackingNumber string
+	CarrierTrackingURL    string
+	EstimatedDeliveryDate string
+}
+
+// renderFulfillmentEmail creates branded HTML and plain-text milestone updates.
+func renderFulfillmentEmail(
+	emailType string,
+	payload FulfillmentPayload,
+) (string, string, error) {
+	view := fulfillmentEmailView{
+		CustomerName:          payload.CustomerName,
+		OrderNo:               payload.OrderNo,
+		StageLabel:            payload.StageLabel,
+		PublicNote:            payload.PublicNote,
+		TrackingURL:           payload.TrackingURL,
+		CarrierName:           payload.CarrierName,
+		CarrierTrackingNumber: payload.CarrierTrackingNumber,
+		CarrierTrackingURL:    payload.CarrierTrackingURL,
+		EstimatedDeliveryDate: payload.EstimatedDeliveryDate,
+	}
+
+	switch emailType {
+	case TypeOrderDispatched:
+		view.Heading = "Your order is on its way."
+		view.Intro = "Your Oyecouture order has been dispatched. Follow its progress using the secure link below."
+	case TypeOrderDelivered:
+		view.Heading = "Your order has arrived."
+		view.Intro = "Your Oyecouture order has been marked as delivered. We hope it feels every bit as considered as it was made."
+	default:
+		view.Heading = "Your piece is in production."
+		view.Intro = "Work has begun on your Oyecouture order. We will keep you updated as it moves toward dispatch."
+	}
+
+	parsedTemplate, err := template.New("fulfillment").Parse(fulfillmentUpdateHTML)
+	if err != nil {
+		return "", "", err
+	}
+
+	var htmlBuffer bytes.Buffer
+	if err := parsedTemplate.Execute(&htmlBuffer, view); err != nil {
+		return "", "", err
+	}
+
+	var textBuilder strings.Builder
+	textBuilder.WriteString(view.Heading + "\n\n")
+	textBuilder.WriteString("Hi " + view.CustomerName + ",\n")
+	textBuilder.WriteString(view.Intro + "\n\n")
+	textBuilder.WriteString("Order: " + view.OrderNo + "\n")
+	textBuilder.WriteString("Status: " + view.StageLabel + "\n")
+	if view.EstimatedDeliveryDate != "" {
+		textBuilder.WriteString("Estimated delivery: " + view.EstimatedDeliveryDate + "\n")
+	}
+	if view.CarrierName != "" {
+		textBuilder.WriteString("Courier: " + view.CarrierName + "\n")
+	}
+	if view.CarrierTrackingNumber != "" {
+		textBuilder.WriteString("Courier reference: " + view.CarrierTrackingNumber + "\n")
+	}
+	if view.PublicNote != "" {
+		textBuilder.WriteString("\n" + view.PublicNote + "\n")
+	}
+	if view.TrackingURL != "" {
+		textBuilder.WriteString("\nTrack order: " + view.TrackingURL + "\n")
+	}
+	if view.CarrierTrackingURL != "" {
+		textBuilder.WriteString("Courier tracking: " + view.CarrierTrackingURL + "\n")
+	}
+
+	return htmlBuffer.String(), textBuilder.String(), nil
 }
 
 // newEmailView flattens an order into template-safe display values.
@@ -164,6 +247,7 @@ const emailBaseStyles = `
   .total { font-size: 19px; }
   .grand-total td { padding-top: 15px; border-top: 1px solid #d7cabc; }
   .note { padding: 18px 20px; background: #f7f3ee; border-left: 3px solid #b49a5e; color: #5d5751; font-size: 14px; line-height: 1.65; }
+  .action { display: inline-block; padding: 14px 22px; background: #24211f; color: #e0cf9c !important; font-size: 12px; font-weight: 700; letter-spacing: 2.5px; text-decoration: none; text-transform: uppercase; }
   .footer { padding: 26px 38px 34px; color: #8d847c; font-size: 13px; line-height: 1.7; }
   .footer strong { color: #24211f; letter-spacing: 2px; text-transform: uppercase; }
   @media only screen and (max-width: 600px) {
@@ -173,6 +257,53 @@ const emailBaseStyles = `
     .summary td { display: block; width: auto; }
   }
 `
+
+const fulfillmentUpdateHTML = `<!doctype html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>` + emailBaseStyles + `</style></head>
+<body>
+  <div class="preheader">{{.StageLabel}} for Oyecouture order {{.OrderNo}}.</div>
+  <div class="shell">
+    <div class="card">
+      <div class="topline"></div>
+      <div class="header">
+        <div class="brand">Oyecouture<span>Bespoke</span></div>
+        <div class="eyebrow">Order progress</div>
+        <h1>{{.Heading}}</h1>
+        <table class="summary">
+          <tr>
+            <td>Order<strong>{{.OrderNo}}</strong></td>
+            <td>Status<br><span class="badge">{{.StageLabel}}</span></td>
+          </tr>
+        </table>
+      </div>
+      <div class="section">
+        <p>Hi {{.CustomerName}}, {{.Intro}}</p>
+      </div>
+      {{if or .EstimatedDeliveryDate .CarrierName .CarrierTrackingNumber}}
+      <div class="section alt">
+        <div class="label">Delivery details</div>
+        <table class="row">
+          {{if .EstimatedDeliveryDate}}<tr><td>Estimated delivery</td><td class="value">{{.EstimatedDeliveryDate}}</td></tr>{{end}}
+          {{if .CarrierName}}<tr><td>Courier</td><td class="value">{{.CarrierName}}</td></tr>{{end}}
+          {{if .CarrierTrackingNumber}}<tr><td>Courier reference</td><td class="value">{{.CarrierTrackingNumber}}</td></tr>{{end}}
+        </table>
+      </div>
+      {{end}}
+      {{if .PublicNote}}
+      <div class="section"><div class="note">{{.PublicNote}}</div></div>
+      {{end}}
+      {{if .TrackingURL}}
+      <div class="section"><a class="action" href="{{.TrackingURL}}">Track your order</a></div>
+      {{end}}
+      {{if .CarrierTrackingURL}}
+      <div class="section alt"><p>You can also <a href="{{.CarrierTrackingURL}}">view updates from the courier</a>.</p></div>
+      {{end}}
+      <div class="footer"><strong>Oyecouture Bespoke</strong><br>This update was sent from your Oyecouture order timeline.</div>
+    </div>
+  </div>
+</body>
+</html>`
 
 const orderConfirmationHTML = `<!doctype html>
 <html>

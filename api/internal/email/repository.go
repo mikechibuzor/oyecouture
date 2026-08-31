@@ -3,13 +3,17 @@ package email
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type Repository interface {
 	Reserve(context.Context, Event) (bool, error)
+	Enqueue(context.Context, Event) error
+	ClaimNext(context.Context) (QueuedEvent, bool, error)
 	MarkSent(context.Context, string, SendResult, []byte) error
 	MarkFailed(context.Context, string, string, []byte) error
 }
@@ -68,6 +72,77 @@ func (repository *PostgresRepository) Reserve(
 	return commandTag.RowsAffected() > 0, nil
 }
 
+// Enqueue stores a fulfillment email for asynchronous, retryable delivery.
+func (repository *PostgresRepository) Enqueue(
+	requestContext context.Context,
+	event Event,
+) error {
+	const query = `
+		INSERT INTO outbound_emails (
+			order_id, fulfillment_event_id, type, provider, idempotency_key,
+			recipient_email, subject, status, payload, next_attempt_at
+		) VALUES ($1, NULLIF($2, '')::uuid, $3, $4, $5, $6, $7, $8, $9::jsonb, NOW())
+		ON CONFLICT (idempotency_key) DO NOTHING
+	`
+
+	payload := jsonPayload(event.Payload)
+	if _, err := repository.pool.Exec(
+		requestContext, query, event.OrderID, event.FulfillmentEventID,
+		event.Type, event.Provider, event.IdempotencyKey, event.RecipientEmail,
+		event.Subject, StatusPending, payload,
+	); err != nil {
+		return fmt.Errorf("enqueue outbound email: %w", err)
+	}
+
+	return nil
+}
+
+// ClaimNext atomically leases one due fulfillment email. Stale leases are
+// reclaimed so a process crash cannot strand a customer notification.
+func (repository *PostgresRepository) ClaimNext(
+	requestContext context.Context,
+) (QueuedEvent, bool, error) {
+	const query = `
+		WITH candidate AS (
+			SELECT id
+			FROM outbound_emails
+			WHERE type IN ($1, $2, $3)
+				AND next_attempt_at <= NOW()
+				AND (
+					status IN ($4, $5)
+					OR (status = $6 AND locked_at < NOW() - INTERVAL '5 minutes')
+				)
+			ORDER BY created_at, id
+			FOR UPDATE SKIP LOCKED
+			LIMIT 1
+		)
+		UPDATE outbound_emails AS email
+		SET status = $6, locked_at = NOW(), updated_at = NOW()
+		FROM candidate
+		WHERE email.id = candidate.id
+		RETURNING email.idempotency_key, email.type, email.recipient_email,
+			email.subject, email.payload
+	`
+
+	var event QueuedEvent
+	err := repository.pool.QueryRow(
+		requestContext, query,
+		TypeFulfillmentUpdate, TypeOrderDispatched, TypeOrderDelivered,
+		StatusPending, StatusFailed, StatusProcessing,
+	).Scan(
+		&event.IdempotencyKey, &event.Type, &event.RecipientEmail,
+		&event.Subject, &event.Payload,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return QueuedEvent{}, false, nil
+		}
+		return QueuedEvent{}, false, fmt.Errorf("claim outbound email: %w", err)
+	}
+
+	return event, true, nil
+}
+
 // MarkSent records a successful provider delivery attempt.
 func (repository *PostgresRepository) MarkSent(
 	requestContext context.Context,
@@ -78,7 +153,8 @@ func (repository *PostgresRepository) MarkSent(
 	const query = `
 		UPDATE outbound_emails
 		SET status = $2, provider_message_id = $3, provider_payload = $4::jsonb,
-			error_message = NULL, attempts = attempts + 1, sent_at = NOW(), updated_at = NOW()
+			error_message = NULL, attempts = attempts + 1, sent_at = NOW(),
+			locked_at = NULL, updated_at = NOW()
 		WHERE idempotency_key = $1
 	`
 
@@ -102,7 +178,9 @@ func (repository *PostgresRepository) MarkFailed(
 	const query = `
 		UPDATE outbound_emails
 		SET status = $2, provider_payload = $3::jsonb, error_message = $4,
-			attempts = attempts + 1, updated_at = NOW()
+			attempts = attempts + 1, locked_at = NULL,
+			next_attempt_at = NOW() + LEAST(60, POWER(2, LEAST(attempts, 6))::int) * INTERVAL '1 minute',
+			updated_at = NOW()
 		WHERE idempotency_key = $1
 	`
 

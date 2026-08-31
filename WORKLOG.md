@@ -5,6 +5,30 @@ One short entry per work session or meaningful chunk. Format:
 
 ---
 
+## 2026-08-31T02:14:00+01:00 · Codex · Tracking release approved and verified locally
+- **Did:** Received explicit commit/push/deploy approval, stopped the local review servers, and reran full Go tests, Node 22 strict typecheck, Nuxt production build, and `git diff --check` successfully.
+- **State:** Tracking implementation is release-ready and still uncommitted. The disposable review order remains isolated in the developer's local database because deleting database records requires separate approval; no fixture data exists in Git or can reach staging.
+- **Next:** Commit as `mikechibuzor`, push `main`, deploy migration `000016`, and run production smoke checks without touching Paystack order `OYE-1033` or sending a real email.
+- **Blockers:** None for release. Populated authenticated timeline and dispatch-email acceptance remain user-session/test-order checks after rollout.
+
+## 2026-08-31T01:29:00+01:00 · Codex · Local tracking review environment restored
+- **Did:** Reconciled the baton and uncommitted tracking implementation, reran full Go tests and Nuxt typecheck, started the local API/web stack, and added disposable fixture `OYE-QA-TRACKING` with `.invalid` contact data so the populated admin and customer timelines can be reviewed without Paystack or real email.
+- **State:** Local API runs on `:8080`, web on `:3010`, and the active local PostgreSQL instance is clean at migration `16:false`. The fixture response contains only approved public fields and returns `private, no-store` plus `noindex, nofollow`; no code was committed, pushed, or deployed.
+- **Next:** User reviews both local views and explicitly approves or requests changes. Remove the fixture before commit/release.
+- **Blockers:** None. Production rollout and any real dispatch email remain approval-gated.
+
+## 2026-08-30T18:50:00+01:00 · Codex · Email-only customer order tracking implemented
+- **Did:** Added migration `000016`, separate bespoke/ready-to-wear fulfillment stage machines, immutable admin-attributed timeline events, optimistic transition locking, secure dispatch-time tracking tokens, ETA/courier metadata, PII-minimized public tracking API/page, authenticated admin timeline/actions, branded milestone email templates, and a PostgreSQL-backed retry worker. Payment verification now creates the first tracking event atomically, while legacy order status remains a compatibility projection. Removed direct shipped/delivered admin actions so fulfillment cannot bypass the audited path.
+- **State:** Local only; not committed, pushed, or deployed. Full Go tests, Node 22 typecheck, Nuxt production build, `git diff --check`, migration application, public 200/404 cache and noindex headers, and browser QA pass. A disposable order was advanced through the authenticated admin to Delivered; the public page updated immediately without customer/admin PII, success notification rendered, no horizontal overflow or alert errors appeared, migration state is clean at `16:false`, and all disposable order/admin data was removed.
+- **Next:** User reviews locally, then explicitly approves commit/push/deploy. Production smoke checks must cover migration state, authenticated timeline load, invalid token behavior, and a dispatch email using a real user-owned test order. Resume the paused production audit afterward.
+- **Blockers:** No implementation blocker. Production email delivery cannot be safely exercised locally because local email config is intentionally absent; the real dispatch email requires the existing production SendByte configuration and an explicitly approved user-owned test order. SMS remains out of scope because there is no approved live SMS provider.
+
+## 2026-08-30T18:20:00+01:00 · Codex · Tracking architecture research and production-audit pause
+- **Did:** Paused the production-readiness pass before completing its Paystack TEST transaction, mapped the existing payment, order-status, admin-action, and outbound-email paths, and reviewed current official guidance for customer order-status pages, fulfillment separation, secure object access, transactional outboxes, accessible status updates, and SMS consent.
+- **State:** No feature code changed and no payment was submitted. The current system automatically attempts confirmation and receipt emails after verified payment and permits admin transitions from paid through in-progress, shipped, and delivered, but has no status-event history, public tracking page, carrier metadata, transition notifications, or automatic email retry worker. The tailored recommendation is documented in the baton and awaiting user approval.
+- **Next:** Implement the approved email-first tracking MVP backend-first, then resume the paused production audit from the remaining payment, email, admin, responsive, accessibility, and failure-path checks.
+- **Blockers:** SMS cannot ship in the MVP without a live provider and explicit customer consent; SendByte currently exposes transactional email while SMS remains listed as coming soon.
+
 ## 2026-08-30T12:30:02+01:00 · Codex · Measurement-aware checkout deployed
 - **Did:** Deployed `origin/main` through the standard production script, rebuilding the API and Nuxt images and recreating both application services.
 - **State:** Production runs exact Git head `eb686d6`, containing application feature `e128be8`. All five containers are up, PostgreSQL is healthy, migration state is clean at `15:false`, 42 GB remains free, and independent HTTPS checks return 200 for `/api/healthz` and `/confirm`.

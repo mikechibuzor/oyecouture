@@ -2,6 +2,7 @@ package email
 
 import (
 	"context"
+	"encoding/json"
 	"strings"
 	"testing"
 )
@@ -57,6 +58,39 @@ func TestSendPaidOrderEmailsSkipsAlreadyReservedEmails(t *testing.T) {
 	}
 }
 
+func TestFulfillmentWorkerDeliversQueuedTrackingEmail(t *testing.T) {
+	t.Parallel()
+
+	payload, err := json.Marshal(FulfillmentPayload{
+		CustomerName: "Ada",
+		OrderNo:      "OYE-1001",
+		StageLabel:   "Dispatched",
+		TrackingURL:  "https://oyecouture.test/track/secure-token",
+	})
+	if err != nil {
+		t.Fatalf("marshal payload: %v", err)
+	}
+
+	repository := &repositoryStub{queuedEvent: &QueuedEvent{
+		IdempotencyKey: "order:OYE-1001:fulfillment:5:dispatched",
+		Type:           TypeOrderDispatched,
+		RecipientEmail: "ada@example.com",
+		Subject:        "Your order is on its way",
+		Payload:        payload,
+	}}
+	provider := &providerStub{}
+	service := NewService(repository, provider, "Oyecouture <orders@example.com>", "https://oyecouture.test")
+
+	service.drainFulfillmentQueue(context.Background())
+
+	if provider.sentCount != 1 || repository.sentCount != 1 {
+		t.Fatalf("sent = %d, recorded = %d, want 1 each", provider.sentCount, repository.sentCount)
+	}
+	if !strings.Contains(provider.messages[0].HTML, "https://oyecouture.test/track/secure-token") {
+		t.Fatal("dispatch email did not contain the secure tracking link")
+	}
+}
+
 func testOrder() Order {
 	return Order{
 		ID:              "order-id",
@@ -85,8 +119,9 @@ func testOrder() Order {
 }
 
 type repositoryStub struct {
-	reserved  bool
-	sentCount int
+	reserved    bool
+	sentCount   int
+	queuedEvent *QueuedEvent
 }
 
 func (repository *repositoryStub) Reserve(context.Context, Event) (bool, error) {
@@ -94,6 +129,20 @@ func (repository *repositoryStub) Reserve(context.Context, Event) (bool, error) 
 		return false, nil
 	}
 	return true, nil
+}
+
+func (repository *repositoryStub) Enqueue(context.Context, Event) error {
+	return nil
+}
+
+func (repository *repositoryStub) ClaimNext(context.Context) (QueuedEvent, bool, error) {
+	if repository.queuedEvent == nil {
+		return QueuedEvent{}, false, nil
+	}
+
+	event := *repository.queuedEvent
+	repository.queuedEvent = nil
+	return event, true, nil
 }
 
 func (repository *repositoryStub) MarkSent(context.Context, string, SendResult, []byte) error {
