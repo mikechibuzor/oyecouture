@@ -5,6 +5,13 @@ One short entry per work session or meaningful chunk. Format:
 
 ---
 
+## 2026-08-31T22:36:21+01:00 · Claude · Staging server unreachable; production-readiness inventory
+
+- **Did:** Ran a state check ahead of a production-readiness review. Found `82.29.184.79` completely unreachable (ICMP, 22, 80, 443 all timing out; `traceroute` terminating inside Hostinger's `man01` network; control request to github.com returning 200, so local connectivity is fine). Fast-forwarded the `Downloads/share` checkout from 9 commits behind to `origin/main` at `5543292` and ran the full Go suite, which passes including Codex's new `internal/tracking` package. Inventoried remaining production blockers: `sslip.io` hostname with no real domain, `sk_test_` Paystack, unwritten Legal/Terms copy, three parked navigation routes, mockup suit photography, unlicensed Gilmer font, ~5 test orders plus `OYE-1033` still in the staging database, and 22 unconfirmed placeholder prices.
+- **State:** Server down and **not diagnosed from the inside** — the cause is inferred from external probes only. Codex deployed `a0232c8` to this same box earlier today and recorded live health 200, so the outage is hours old rather than gradual, which fits the Hostinger 1-month term reaching day 29 of ~30. Discovered two hazards that were not in the baton: **backups never leave the server** (`deploy/backup.sh` writes to the `postgres-backups` Docker volume on the same VPS, so a reclaim destroys the database and every backup together), and **two unsynchronized checkouts of this repo exist on the Mac** — `Documents/oyecouture` (Codex, holding 2 unpushed commits `2aee56d` and `df7cbe3`) and `Downloads/share/oyecouture` (Claude). Newest local dump remains `oyecouture-20260825T090120Z.sql.gz` from 25 Aug.
+- **Next:** User checks the Hostinger panel for the VPS billing/power state. Restore or rebuild, then push the 2 stranded commits, then move backups off the box before anything else ships.
+- **Blockers:** Everything server-side is blocked until the VPS is reachable. Nothing can be deployed, verified, or backed up in the meantime.
+
 ## 2026-08-31T09:42:00+01:00 · Codex · Quantity scope deployed
 - **Did:** Pushed `a0232c8` plus its handoff record, deployed through the standard Hostinger script, rebuilt both production images, and recreated API/web.
 - **State:** Application images were built from release head `b81d37d`; all five containers are running, PostgreSQL is healthy, migration remains `16:false`, and live health returns 200. A forged quantity-2 bespoke request returned 400 `invalid_items`, and a direct count confirmed it created zero orders.

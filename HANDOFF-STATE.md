@@ -4,8 +4,22 @@
 
 ---
 
+## 🚨 STAGING SERVER IS DOWN (Claude, 2026-08-31) — unresolved
+
+`82.29.184.79` is **completely unreachable**: ICMP, 22, 80 and 443 all time out, and `traceroute` dies inside Hostinger's Manchester network (`man01`) rather than at the host. Outbound internet from the Mac is fine (control request to github.com returned 200). That pattern means the VPS is powered off, suspended or reclaimed — not a network blip and not a container crash.
+
+**The outage is hours old, not gradual.** Codex deployed `a0232c8` to this same server earlier today (31 Aug) and recorded live health returning 200 with all five containers running. So the box went from fully healthy to answering nothing on any port within the same day.
+
+**Most likely cause: the Hostinger term expired.** The 1-month term was paid on 2 Aug; today is 31 Aug — day 29 of ~30. The baton has been carrying a ⏰ warning about exactly this date since 2 Aug. Renewal is $19.49/mo (~₦26,900). A billing suspension explains the symptom precisely: an abrupt, total, all-port cutoff at the provider edge rather than at the host. This is a diagnosis from the outside only — it has not been confirmed in the Hostinger panel, and a hardware or hypervisor fault would look identical from here.
+
+⚠️ **Backups do not leave the box.** `deploy/backup.sh` writes to `/backups`, which is the `postgres-backups` Docker volume on the same VPS. If Hostinger reclaims the server, the database **and every backup are destroyed together**. There is no off-server copy. The most recent known-good dump pulled to the Mac is `oyecouture-20260825T090120Z.sql.gz` (20,531 bytes, 25 Aug).
+
+**First action for the user:** log in to Hostinger and check the VPS billing/power state. If it is suspended pending payment, pay and reboot. If a grace period is running, treat it as urgent — reclaim is unrecoverable. Nothing in the repo is lost either way (all code is on GitHub); what is at risk is the **database**: admin account, delivery zones, site settings, home content, and the catalogue edits made through the admin.
+
 ## Current status
 - **Phase:** 1 (MVP). First 40% milestone **paid**; build authorized.
+- ⚠️ **TWO CHECKOUTS OF THIS REPO EXIST ON THE MAC — they are not in sync.** Codex works in `/Users/chibuzoriwuagwu/Documents/oyecouture`; Claude has been working in `/Users/chibuzoriwuagwu/Downloads/share/oyecouture`. On 31 Aug the `Downloads/share` copy was **9 commits behind** `origin/main` and has been fast-forwarded to `5543292`. Full Go suite passes there, including the new `internal/tracking` package. **Whoever picks up the baton must `git fetch` and confirm which checkout they are in before touching anything** — this is how one agent silently reverts the other.
+- ⚠️ **2 commits exist only on this Mac, unpushed:** `2aee56d` (`feat(ui): strengthen detail page hierarchy`) and `df7cbe3` (`docs: record detail hierarchy pass`), sitting in the `Documents` checkout. They are not on `origin` and not deployed. A laptop failure loses them. Push them once the server situation is resolved.
 - **Milestone:** Storefront complete · ghost admin phase 1 complete · **staging is deployed and live** · the client's real catalogue is in.
 - **Last worked by:** Codex · 2026-08-31.
 - **Repo:** `/Users/chibuzoriwuagwu/Documents/oyecouture` · `main` · private GitHub repo `mikechibuzor/oyecouture`; push to `origin` only after approval.
