@@ -144,6 +144,9 @@ func (service *Service) Create(
 				return Order{}, ErrSizeRequired
 			}
 		} else {
+			if requested.Quantity != 1 {
+				return Order{}, ErrInvalidItem
+			}
 			if size != "" {
 				return Order{}, ErrSizeNotApplicable
 			}

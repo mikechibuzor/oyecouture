@@ -45,13 +45,24 @@ export default defineNuxtPlugin(() => {
       const validLines = Array.isArray(parsedCart)
         ? parsedCart.filter(isValidCartLine)
         : []
+      const normalizedLines = validLines.map((line) =>
+        line.hasSizes || line.quantity === 1
+          ? line
+          : { ...line, quantity: 1 },
+      )
+      const normalizedBespokeQuantity = validLines.some(
+        (line, lineIndex) => line.quantity !== normalizedLines[lineIndex]?.quantity,
+      )
 
-      lines.value = validLines
+      lines.value = normalizedLines
 
-      // Rewrite immediately when anything was rejected, so bad data does not
-      // sit in storage until the customer happens to change the bag.
-      if (!Array.isArray(parsedCart) || validLines.length !== parsedCart.length) {
-        localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(validLines))
+      // Rewrite rejected or obsolete quantities before they can reach checkout.
+      if (
+        !Array.isArray(parsedCart)
+        || validLines.length !== parsedCart.length
+        || normalizedBespokeQuantity
+      ) {
+        localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(normalizedLines))
       }
     }
   } catch {

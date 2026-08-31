@@ -196,6 +196,73 @@ func TestCreateRequiresDeliveryDetailsForBespokeOrder(t *testing.T) {
 	}
 }
 
+// TestCreateRejectsMultipleBespokeUnits protects the one-measurement-set-per-piece contract.
+func TestCreateRejectsMultipleBespokeUnits(t *testing.T) {
+	t.Parallel()
+
+	repository := &orderRepositoryStub{products: map[string]CatalogueProduct{
+		"gold-agbada": {
+			ID:        "product-1",
+			Slug:      "gold-agbada",
+			Name:      "Gold Agbada",
+			Section:   "trad",
+			Category:  "Agbada",
+			PriceKobo: 78000000,
+			HasSizes:  false,
+		},
+	}}
+	service := NewService(repository, &deliveryRatesStub{feeKobo: 350000, exists: true})
+	input := validCreateOrderInput()
+	input.Items[0].Quantity = 2
+
+	_, err := service.Create(context.Background(), input)
+	if !errors.Is(err, ErrInvalidItem) {
+		t.Fatalf("Create() error = %v, want ErrInvalidItem", err)
+	}
+	if repository.created != nil {
+		t.Fatal("Create() persisted a multi-quantity bespoke order")
+	}
+}
+
+// TestCreateAllowsMultipleReadyToWearUnits keeps quantity available for sized products.
+func TestCreateAllowsMultipleReadyToWearUnits(t *testing.T) {
+	t.Parallel()
+
+	repository := &orderRepositoryStub{products: map[string]CatalogueProduct{
+		"blue-linen-set": {
+			ID:        "product-2",
+			Slug:      "blue-linen-set",
+			Name:      "The Blue Linen Set",
+			Section:   "casuals",
+			Category:  "Two-Piece",
+			PriceKobo: 9800000,
+			HasSizes:  true,
+		},
+	}}
+	service := NewService(repository, &deliveryRatesStub{feeKobo: 350000, exists: true})
+	input := validCreateOrderInput()
+	input.Items = []RequestedItem{{Slug: "blue-linen-set", Size: "M", Quantity: 3}}
+
+	order, err := service.Create(context.Background(), input)
+	if err != nil {
+		t.Fatalf("Create() error = %v", err)
+	}
+	if order.Kind != KindReadyToWear || order.Items[0].Quantity != 3 {
+		t.Fatalf(
+			"kind/quantity = %q/%d, want ready-to-wear/3",
+			order.Kind,
+			order.Items[0].Quantity,
+		)
+	}
+	if order.SubtotalKobo != 29400000 || order.TotalKobo != 29750000 {
+		t.Fatalf(
+			"subtotal/total = %d/%d, want 29400000/29750000",
+			order.SubtotalKobo,
+			order.TotalKobo,
+		)
+	}
+}
+
 func validCreateOrderInput() CreateOrderInput {
 	return CreateOrderInput{
 		CustomerName: "Chibuzor Iwuagwu",

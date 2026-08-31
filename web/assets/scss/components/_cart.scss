@@ -214,6 +214,12 @@ $cart-drawer-width: 26.875rem;
   }
 }
 
+.cart-fixed-quantity {
+  margin: 0;
+  color: var(--color-taupe);
+  font-size: var(--text-xs);
+}
+
 .cart-line-price {
   margin: 0;
   font-size: var(--text-sm);

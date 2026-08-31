@@ -13,10 +13,17 @@ export const buildCartLineKey = (
   size: ProductSize | null,
 ): string => `${productSlug}::${size ?? ''}`
 
-// Keeps quantity inside sane bounds so a stored or fat-fingered value can never
-// produce a negative or absurd order.
-const clampQuantity = (quantity: number): number =>
-  Math.min(Math.max(Math.trunc(quantity), CART_MINIMUM_QUANTITY), CART_MAXIMUM_QUANTITY)
+// Keeps ready-to-wear quantities bounded while made-to-measure lines stay singular.
+const clampQuantity = (quantity: number, hasSizes: boolean): number => {
+  if (!hasSizes) {
+    return CART_MINIMUM_QUANTITY
+  }
+
+  return Math.min(
+    Math.max(Math.trunc(quantity), CART_MINIMUM_QUANTITY),
+    CART_MAXIMUM_QUANTITY,
+  )
+}
 
 // Guest bag. State lives in useState so server and client share one instance;
 // persistence to localStorage is handled by plugins/cart.client.ts.
@@ -52,6 +59,10 @@ export const useCart = () => {
     const existingLine = lines.value.find((line) => line.key === key)
 
     if (existingLine) {
+      if (!existingLine.hasSizes) {
+        return true
+      }
+
       setQuantity(key, existingLine.quantity + 1)
       return true
     }
@@ -83,7 +94,9 @@ export const useCart = () => {
     }
 
     lines.value = lines.value.map((line) =>
-      line.key === key ? { ...line, quantity: clampQuantity(quantity) } : line,
+      line.key === key
+        ? { ...line, quantity: clampQuantity(quantity, line.hasSizes) }
+        : line,
     )
   }
 

@@ -129,7 +129,12 @@ useModalFocus({
                 </p>
 
                 <div class="cart-line-footer">
-                  <div class="cart-quantity" role="group" :aria-label="CART_COPY.quantity">
+                  <div
+                    v-if="line.hasSizes"
+                    class="cart-quantity"
+                    role="group"
+                    :aria-label="CART_COPY.quantity"
+                  >
                     <button
                       type="button"
                       :aria-label="CART_COPY.decrease"
@@ -157,6 +162,9 @@ useModalFocus({
                       />
                     </button>
                   </div>
+                  <p v-else class="cart-fixed-quantity">
+                    {{ CART_COPY.madeToMeasureQuantity }}
+                  </p>
 
                   <p class="cart-line-price">
                     {{ formatProductPrice(line.priceKobo * line.quantity) }}

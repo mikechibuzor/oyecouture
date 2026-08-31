@@ -12,6 +12,7 @@ export const CART_COPY = {
   decrease: 'Decrease quantity',
   increase: 'Increase quantity',
   quantity: 'Quantity',
+  madeToMeasureQuantity: 'Made to measure · Qty 1',
   size: 'Size',
   subtotal: 'Subtotal',
   empty: 'Your bag is empty.',
