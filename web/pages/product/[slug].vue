@@ -79,43 +79,75 @@ const formattedPrice = computed(() =>
       <div class="product-detail-layout">
         <CatalogueProductGallery :product="product" />
 
-        <section class="product-detail-information">
-          <p class="product-category">{{ product.category }}</p>
-          <h1>{{ product.name }}</h1>
-          <p class="product-detail-price">{{ formattedPrice }}</p>
-          <p class="product-detail-description">{{ product.description }}</p>
+        <section class="product-detail-information" aria-labelledby="product-detail-title">
+          <header class="product-detail-summary">
+            <p class="product-category">{{ product.category }}</p>
+            <h1 id="product-detail-title">{{ product.name }}</h1>
+            <p class="product-detail-price">{{ formattedPrice }}</p>
+            <p class="product-detail-description">{{ product.description }}</p>
+          </header>
 
-          <CatalogueSizeSelector
-            v-if="product.hasSizes"
-            v-model="selectedSize"
-          />
+          <section class="product-detail-order" aria-labelledby="product-detail-order-heading">
+            <div class="product-detail-section-heading">
+              <p>{{ PRODUCT_COPY.productDetail.orderEyebrow }}</p>
+              <h2 id="product-detail-order-heading">
+                {{
+                  product.hasSizes
+                    ? PRODUCT_COPY.productDetail.readyToWearHeading
+                    : PRODUCT_COPY.productDetail.bespokeHeading
+                }}
+              </h2>
+              <span>
+                {{
+                  product.hasSizes
+                    ? PRODUCT_COPY.productDetail.readyToWearIntro
+                    : PRODUCT_COPY.productDetail.bespokeIntro
+                }}
+              </span>
+            </div>
 
-          <button class="product-detail-add-button" type="button" @click="addProductToBag">
-            <CatalogueAddToBagButtonContent />
-          </button>
+            <CatalogueSizeSelector
+              v-if="product.hasSizes"
+              v-model="selectedSize"
+            />
 
-          <CatalogueBespokeNote v-if="!product.hasSizes" />
+            <button class="product-detail-add-button" type="button" @click="addProductToBag">
+              <CatalogueAddToBagButtonContent />
+            </button>
 
-          <div class="product-detail-policies">
-            <UiDisclosure
-              v-for="policy in PRODUCT_POLICIES"
-              :key="policy.id"
-              :title="policy.title"
-            >
-              <p>{{ policy.intro }}</p>
+            <CatalogueBespokeNote v-if="!product.hasSizes" />
+          </section>
 
-              <p v-if="policy.linesHeading" class="product-policy-subheading">
-                {{ policy.linesHeading }}
-              </p>
+          <section class="product-detail-support" aria-labelledby="product-detail-support-heading">
+            <div class="product-detail-section-heading">
+              <p>{{ PRODUCT_COPY.productDetail.policiesEyebrow }}</p>
+              <h2 id="product-detail-support-heading">
+                {{ PRODUCT_COPY.productDetail.policiesHeading }}
+              </h2>
+              <span>{{ PRODUCT_COPY.productDetail.policiesIntro }}</span>
+            </div>
 
-              <p v-for="line in policy.lines" :key="line.text">
-                <strong v-if="line.label">{{ line.label }}</strong>
-                {{ line.text }}
-              </p>
+            <div class="product-detail-policies">
+              <UiDisclosure
+                v-for="policy in PRODUCT_POLICIES"
+                :key="policy.id"
+                :title="policy.title"
+              >
+                <p>{{ policy.intro }}</p>
 
-              <p v-if="policy.footnote">{{ policy.footnote }}</p>
-            </UiDisclosure>
-          </div>
+                <p v-if="policy.linesHeading" class="product-policy-subheading">
+                  {{ policy.linesHeading }}
+                </p>
+
+                <p v-for="line in policy.lines" :key="line.text">
+                  <strong v-if="line.label">{{ line.label }}</strong>
+                  {{ line.text }}
+                </p>
+
+                <p v-if="policy.footnote">{{ policy.footnote }}</p>
+              </UiDisclosure>
+            </div>
+          </section>
         </section>
       </div>
     </template>

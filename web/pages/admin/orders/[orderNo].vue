@@ -9,6 +9,7 @@ import {
   ORDER_STATUS_LABELS,
 } from '~/constants/admin'
 import type { AdminOrderDetail, OrderStatus } from '~/types/admin'
+import { OrderKind } from '~/types/order'
 import { FulfillmentStage } from '~/types/tracking'
 import type { AdminOrderTracking } from '~/types/tracking'
 import { formatOrderDate } from '~/utils/admin'
@@ -125,6 +126,11 @@ const measurementRows = computed(() => {
     { label: 'Notes', value: measurements.notes || '' },
   ].filter((row) => row.value !== '')
 })
+
+// Keeps tailoring details visible for bespoke work without adding an empty section to ready-to-wear.
+const shouldShowTailoring = computed(
+  () => order.value?.kind === OrderKind.Bespoke || measurementRows.value.length > 0,
+)
 
 // WhatsApp expects digits only; local Nigerian numbers are normalised to 234.
 const customerWhatsAppNumber = computed(() => {
@@ -332,219 +338,259 @@ onBeforeUnmount(() => clearTimeout(copiedTimer))
         </span>
       </header>
 
-      <div class="admin-detail-grid">
-        <section class="admin-detail-panel">
-          <h2>{{ ADMIN_COPY.customerDetails }}</h2>
-          <dl class="admin-detail-list">
-            <div>
-              <dt>Name</dt>
-              <dd>{{ order.customerName }}</dd>
-            </div>
-            <div>
-              <dt>Email</dt>
-              <dd>{{ order.email }}</dd>
-            </div>
-            <div>
-              <dt>Phone</dt>
-              <dd>{{ order.phone }}</dd>
-            </div>
-            <div v-if="order.address">
-              <dt>Address</dt>
-              <dd>{{ order.address }}</dd>
-            </div>
-            <div v-if="order.deliveryZone">
-              <dt>Delivery area</dt>
-              <dd>{{ order.deliveryZone }}</dd>
-            </div>
-          </dl>
-        </section>
+      <div class="admin-detail-sections">
+        <section class="admin-detail-section" aria-labelledby="order-overview-heading">
+          <header class="admin-section-heading">
+            <p>{{ ADMIN_COPY.orderOverviewEyebrow }}</p>
+            <h2 id="order-overview-heading">{{ ADMIN_COPY.orderOverviewHeading }}</h2>
+            <span>{{ ADMIN_COPY.orderOverviewIntro }}</span>
+          </header>
 
-        <section class="admin-detail-panel">
-          <h2>{{ ADMIN_COPY.statusActions }}</h2>
-          <div v-if="statusActions.length" class="admin-status-actions">
-            <button
-              v-for="action in statusActions"
-              :key="action.status"
-              type="button"
-              class="admin-inline-action"
-              :disabled="updatingStatus !== null"
-              @click="applyStatus(action.status)"
-            >
-              {{ updatingStatus === action.status ? ADMIN_COPY.statusUpdating : action.label }}
-            </button>
-          </div>
-          <p v-else class="admin-detail-muted">{{ ADMIN_COPY.noStatusActions }}</p>
-          <p v-if="statusError" class="admin-detail-error" role="alert">
-            {{ statusError }}
-          </p>
-        </section>
-
-        <section class="admin-detail-panel admin-detail-panel-wide admin-fulfillment-panel">
-          <h2>{{ ADMIN_COPY.fulfillment }}</h2>
-
-          <p v-if="isTrackingLoading" class="admin-detail-muted">
-            {{ ADMIN_COPY.fulfillmentLoading }}
-          </p>
-          <p v-else-if="trackingUnavailable" class="admin-detail-muted">
-            {{ ADMIN_COPY.fulfillmentUnavailable }}
-          </p>
-          <div v-else-if="trackingLoadFailed" class="admin-detail-error" role="alert">
-            <p>{{ ADMIN_COPY.fulfillmentLoadFailed }}</p>
-            <button type="button" class="admin-inline-action" @click="loadTracking">
-              {{ ADMIN_COPY.retry }}
-            </button>
-          </div>
-
-          <template v-else-if="tracking">
-            <ol class="admin-fulfillment-timeline">
-              <li v-for="event in tracking.events" :key="event.id">
-                <span class="admin-fulfillment-marker" aria-hidden="true" />
+          <div class="admin-detail-grid">
+            <section class="admin-detail-panel">
+              <h2>{{ ADMIN_COPY.customerDetails }}</h2>
+              <dl class="admin-detail-list">
                 <div>
-                  <div class="admin-fulfillment-event-head">
-                    <strong>{{ event.label }}</strong>
-                    <time :datetime="event.occurredAt">{{ formatOrderDate(event.occurredAt) }}</time>
-                  </div>
-                  <p v-if="event.publicNote">{{ event.publicNote }}</p>
-                  <small v-if="event.actorEmail">Updated by {{ event.actorEmail }}</small>
+                  <dt>Name</dt>
+                  <dd>{{ order.customerName }}</dd>
                 </div>
-              </li>
-            </ol>
+                <div>
+                  <dt>Email</dt>
+                  <dd>{{ order.email }}</dd>
+                </div>
+                <div>
+                  <dt>Phone</dt>
+                  <dd>{{ order.phone }}</dd>
+                </div>
+                <div v-if="order.address">
+                  <dt>Address</dt>
+                  <dd>{{ order.address }}</dd>
+                </div>
+                <div v-if="order.deliveryZone">
+                  <dt>Delivery area</dt>
+                  <dd>{{ order.deliveryZone }}</dd>
+                </div>
+              </dl>
+            </section>
 
-            <div v-if="tracking.trackingUrl" class="admin-fulfillment-link">
-              <span>
-                <small>{{ ADMIN_COPY.customerTrackingLink }}</small>
-                <strong>{{ tracking.trackingUrl }}</strong>
-              </span>
-              <button type="button" class="admin-inline-action" @click="copyTrackingLink">
-                <StorefrontIcon
-                  :icon-node="copiedTrackingLink ? Check : Copy"
-                  :size="14"
-                  :stroke-width="1.75"
-                />
-                {{ copiedTrackingLink ? ADMIN_COPY.copied : ADMIN_COPY.copyTrackingLink }}
+            <section class="admin-detail-panel">
+              <h2>{{ ADMIN_COPY.statusActions }}</h2>
+              <div v-if="statusActions.length" class="admin-status-actions">
+                <button
+                  v-for="action in statusActions"
+                  :key="action.status"
+                  type="button"
+                  class="admin-inline-action"
+                  :disabled="updatingStatus !== null"
+                  @click="applyStatus(action.status)"
+                >
+                  {{ updatingStatus === action.status ? ADMIN_COPY.statusUpdating : action.label }}
+                </button>
+              </div>
+              <p v-else class="admin-detail-muted">{{ ADMIN_COPY.noStatusActions }}</p>
+              <p v-if="statusError" class="admin-detail-error" role="alert">
+                {{ statusError }}
+              </p>
+            </section>
+          </div>
+        </section>
+
+        <section class="admin-detail-section" aria-labelledby="order-progress-heading">
+          <header class="admin-section-heading">
+            <p>{{ ADMIN_COPY.orderProgressEyebrow }}</p>
+            <h2 id="order-progress-heading">{{ ADMIN_COPY.orderProgressHeading }}</h2>
+            <span>{{ ADMIN_COPY.orderProgressIntro }}</span>
+          </header>
+
+          <section class="admin-detail-panel admin-fulfillment-panel">
+            <h2>{{ ADMIN_COPY.fulfillment }}</h2>
+
+            <p v-if="isTrackingLoading" class="admin-detail-muted">
+              {{ ADMIN_COPY.fulfillmentLoading }}
+            </p>
+            <p v-else-if="trackingUnavailable" class="admin-detail-muted">
+              {{ ADMIN_COPY.fulfillmentUnavailable }}
+            </p>
+            <div v-else-if="trackingLoadFailed" class="admin-detail-error" role="alert">
+              <p>{{ ADMIN_COPY.fulfillmentLoadFailed }}</p>
+              <button type="button" class="admin-inline-action" @click="loadTracking">
+                {{ ADMIN_COPY.retry }}
               </button>
             </div>
 
-            <form
-              v-if="nextFulfillmentStage"
-              class="admin-fulfillment-form"
-              @submit.prevent="advanceFulfillment"
-            >
-              <div class="admin-fulfillment-form-grid">
-                <label class="admin-field">
-                  <span>{{ ADMIN_COPY.estimatedDeliveryLabel }}</span>
-                  <input v-model="trackingForm.estimatedDeliveryDate" type="date">
-                </label>
+            <template v-else-if="tracking">
+              <ol class="admin-fulfillment-timeline">
+                <li v-for="event in tracking.events" :key="event.id">
+                  <span class="admin-fulfillment-marker" aria-hidden="true" />
+                  <div>
+                    <div class="admin-fulfillment-event-head">
+                      <strong>{{ event.label }}</strong>
+                      <time :datetime="event.occurredAt">{{ formatOrderDate(event.occurredAt) }}</time>
+                    </div>
+                    <p v-if="event.publicNote">{{ event.publicNote }}</p>
+                    <small v-if="event.actorEmail">Updated by {{ event.actorEmail }}</small>
+                  </div>
+                </li>
+              </ol>
 
-                <template v-if="isDispatchTransition">
-                  <label class="admin-field">
-                    <span>{{ ADMIN_COPY.carrierNameLabel }}</span>
-                    <input v-model.trim="trackingForm.carrierName" type="text" maxlength="200">
-                  </label>
-                  <label class="admin-field">
-                    <span>{{ ADMIN_COPY.carrierTrackingNumberLabel }}</span>
-                    <input
-                      v-model.trim="trackingForm.carrierTrackingNumber"
-                      type="text"
-                      maxlength="200"
-                    >
-                  </label>
-                  <label class="admin-field">
-                    <span>{{ ADMIN_COPY.carrierTrackingUrlLabel }}</span>
-                    <input v-model.trim="trackingForm.carrierTrackingUrl" type="url">
-                  </label>
-                </template>
-
-                <label class="admin-field admin-field-wide">
-                  <span>{{ ADMIN_COPY.fulfillmentNoteLabel }}</span>
-                  <textarea v-model.trim="trackingForm.publicNote" maxlength="500" rows="3" />
-                  <small>{{ ADMIN_COPY.fulfillmentNoteHint }}</small>
-                </label>
-              </div>
-
-              <p v-if="trackingError" class="admin-detail-error" role="alert">
-                {{ trackingError }}
-              </p>
-              <div class="admin-fulfillment-submit">
-                <button
-                  type="submit"
-                  class="admin-inline-action is-primary"
-                  :disabled="isAdvancingTracking"
-                >
-                  {{
-                    isAdvancingTracking
-                      ? ADMIN_COPY.advancingFulfillment
-                      : `${ADMIN_COPY.advanceFulfillment} ${nextFulfillmentLabel}`
-                  }}
+              <div v-if="tracking.trackingUrl" class="admin-fulfillment-link">
+                <span>
+                  <small>{{ ADMIN_COPY.customerTrackingLink }}</small>
+                  <strong>{{ tracking.trackingUrl }}</strong>
+                </span>
+                <button type="button" class="admin-inline-action" @click="copyTrackingLink">
+                  <StorefrontIcon
+                    :icon-node="copiedTrackingLink ? Check : Copy"
+                    :size="14"
+                    :stroke-width="1.75"
+                  />
+                  {{ copiedTrackingLink ? ADMIN_COPY.copied : ADMIN_COPY.copyTrackingLink }}
                 </button>
               </div>
-            </form>
-          </template>
+
+              <form
+                v-if="nextFulfillmentStage"
+                class="admin-fulfillment-form"
+                @submit.prevent="advanceFulfillment"
+              >
+                <div class="admin-fulfillment-form-grid">
+                  <label class="admin-field">
+                    <span>{{ ADMIN_COPY.estimatedDeliveryLabel }}</span>
+                    <input v-model="trackingForm.estimatedDeliveryDate" type="date">
+                  </label>
+
+                  <template v-if="isDispatchTransition">
+                    <label class="admin-field">
+                      <span>{{ ADMIN_COPY.carrierNameLabel }}</span>
+                      <input v-model.trim="trackingForm.carrierName" type="text" maxlength="200">
+                    </label>
+                    <label class="admin-field">
+                      <span>{{ ADMIN_COPY.carrierTrackingNumberLabel }}</span>
+                      <input
+                        v-model.trim="trackingForm.carrierTrackingNumber"
+                        type="text"
+                        maxlength="200"
+                      >
+                    </label>
+                    <label class="admin-field">
+                      <span>{{ ADMIN_COPY.carrierTrackingUrlLabel }}</span>
+                      <input v-model.trim="trackingForm.carrierTrackingUrl" type="url">
+                    </label>
+                  </template>
+
+                  <label class="admin-field admin-field-wide">
+                    <span>{{ ADMIN_COPY.fulfillmentNoteLabel }}</span>
+                    <textarea v-model.trim="trackingForm.publicNote" maxlength="500" rows="3" />
+                    <small>{{ ADMIN_COPY.fulfillmentNoteHint }}</small>
+                  </label>
+                </div>
+
+                <p v-if="trackingError" class="admin-detail-error" role="alert">
+                  {{ trackingError }}
+                </p>
+                <div class="admin-fulfillment-submit">
+                  <button
+                    type="submit"
+                    class="admin-inline-action is-primary"
+                    :disabled="isAdvancingTracking"
+                  >
+                    {{
+                      isAdvancingTracking
+                        ? ADMIN_COPY.advancingFulfillment
+                        : `${ADMIN_COPY.advanceFulfillment} ${nextFulfillmentLabel}`
+                    }}
+                  </button>
+                </div>
+              </form>
+            </template>
+          </section>
         </section>
 
-        <section class="admin-detail-panel admin-detail-panel-wide">
-          <h2>{{ ADMIN_COPY.orderItems }}</h2>
-          <div class="admin-detail-items">
-            <div v-for="item in order.items" :key="`${item.slug}-${item.name}-${item.size}`">
-              <span>
-                <strong>{{ item.name }}</strong>
-                <small>
-                  x{{ item.quantity }}<template v-if="item.size"> · {{ item.size }}</template>
-                </small>
-              </span>
-              <span>{{ formatProductPrice(item.lineKobo) }}</span>
-            </div>
+        <section class="admin-detail-section" aria-labelledby="order-commercial-heading">
+          <header class="admin-section-heading">
+            <p>{{ ADMIN_COPY.orderCommercialEyebrow }}</p>
+            <h2 id="order-commercial-heading">{{ ADMIN_COPY.orderCommercialHeading }}</h2>
+            <span>{{ ADMIN_COPY.orderCommercialIntro }}</span>
+          </header>
+
+          <div class="admin-detail-grid">
+            <section class="admin-detail-panel">
+              <h2>{{ ADMIN_COPY.orderItems }}</h2>
+              <div class="admin-detail-items">
+                <div v-for="item in order.items" :key="`${item.slug}-${item.name}-${item.size}`">
+                  <span>
+                    <strong>{{ item.name }}</strong>
+                    <small>
+                      x{{ item.quantity }}<template v-if="item.size"> · {{ item.size }}</template>
+                    </small>
+                  </span>
+                  <span>{{ formatProductPrice(item.lineKobo) }}</span>
+                </div>
+              </div>
+              <dl class="admin-detail-totals">
+                <div>
+                  <dt>{{ ADMIN_COPY.subtotal }}</dt>
+                  <dd>{{ formatProductPrice(order.subtotalKobo) }}</dd>
+                </div>
+                <div>
+                  <dt>{{ ADMIN_COPY.delivery }}</dt>
+                  <dd>{{ formatProductPrice(order.deliveryFeeKobo) }}</dd>
+                </div>
+                <div>
+                  <dt>{{ ADMIN_COPY.total }}</dt>
+                  <dd>{{ formatProductPrice(order.totalKobo) }}</dd>
+                </div>
+              </dl>
+            </section>
+
+            <section class="admin-detail-panel">
+              <h2>{{ ADMIN_COPY.paymentLink }}</h2>
+              <p class="admin-detail-link">{{ paymentLink }}</p>
+              <div class="admin-status-actions">
+                <button type="button" class="admin-inline-action" @click="copyPaymentLink">
+                  <StorefrontIcon
+                    :icon-node="copiedPaymentLink ? Check : Copy"
+                    :size="14"
+                    :stroke-width="1.75"
+                  />
+                  {{ copiedPaymentLink ? ADMIN_COPY.copied : ADMIN_COPY.copyPaymentLink }}
+                </button>
+                <a
+                  v-if="whatsAppReplyLink"
+                  class="admin-inline-action"
+                  :href="whatsAppReplyLink"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <StorefrontIcon :icon-node="MessageCircle" :size="14" :stroke-width="1.75" />
+                  {{ ADMIN_COPY.whatsappReply }}
+                </a>
+              </div>
+            </section>
           </div>
-          <dl class="admin-detail-totals">
-            <div>
-              <dt>{{ ADMIN_COPY.subtotal }}</dt>
-              <dd>{{ formatProductPrice(order.subtotalKobo) }}</dd>
-            </div>
-            <div>
-              <dt>{{ ADMIN_COPY.delivery }}</dt>
-              <dd>{{ formatProductPrice(order.deliveryFeeKobo) }}</dd>
-            </div>
-            <div>
-              <dt>{{ ADMIN_COPY.total }}</dt>
-              <dd>{{ formatProductPrice(order.totalKobo) }}</dd>
-            </div>
-          </dl>
         </section>
 
-        <section class="admin-detail-panel">
-          <h2>{{ ADMIN_COPY.measurements }}</h2>
-          <dl v-if="measurementRows.length" class="admin-detail-list is-compact">
-            <div v-for="row in measurementRows" :key="row.label">
-              <dt>{{ row.label }}</dt>
-              <dd>{{ row.value }}</dd>
-            </div>
-          </dl>
-          <p v-else class="admin-detail-muted">{{ ADMIN_COPY.noMeasurements }}</p>
-        </section>
+        <section
+          v-if="shouldShowTailoring"
+          class="admin-detail-section"
+          aria-labelledby="order-tailoring-heading"
+        >
+          <header class="admin-section-heading">
+            <p>{{ ADMIN_COPY.orderTailoringEyebrow }}</p>
+            <h2 id="order-tailoring-heading">{{ ADMIN_COPY.orderTailoringHeading }}</h2>
+            <span>{{ ADMIN_COPY.orderTailoringIntro }}</span>
+          </header>
 
-        <section class="admin-detail-panel">
-          <h2>{{ ADMIN_COPY.paymentLink }}</h2>
-          <p class="admin-detail-link">{{ paymentLink }}</p>
-          <div class="admin-status-actions">
-            <button type="button" class="admin-inline-action" @click="copyPaymentLink">
-              <StorefrontIcon
-                :icon-node="copiedPaymentLink ? Check : Copy"
-                :size="14"
-                :stroke-width="1.75"
-              />
-              {{ copiedPaymentLink ? ADMIN_COPY.copied : ADMIN_COPY.copyPaymentLink }}
-            </button>
-            <a
-              v-if="whatsAppReplyLink"
-              class="admin-inline-action"
-              :href="whatsAppReplyLink"
-              target="_blank"
-              rel="noreferrer"
-            >
-              <StorefrontIcon :icon-node="MessageCircle" :size="14" :stroke-width="1.75" />
-              {{ ADMIN_COPY.whatsappReply }}
-            </a>
-          </div>
+          <section class="admin-detail-panel">
+            <h2>{{ ADMIN_COPY.measurements }}</h2>
+            <dl v-if="measurementRows.length" class="admin-detail-list is-compact">
+              <div v-for="row in measurementRows" :key="row.label">
+                <dt>{{ row.label }}</dt>
+                <dd>{{ row.value }}</dd>
+              </div>
+            </dl>
+            <p v-else class="admin-detail-muted">{{ ADMIN_COPY.noMeasurements }}</p>
+          </section>
         </section>
       </div>
     </template>

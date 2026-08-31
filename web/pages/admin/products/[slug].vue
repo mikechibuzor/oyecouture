@@ -138,6 +138,7 @@ onMounted(() => {
         <div>
           <p class="admin-detail-eyebrow">{{ ADMIN_COPY.productsHeading }}</p>
           <h1>{{ ADMIN_COPY.productEditHeading }}</h1>
+          <p v-if="product" class="admin-page-subheading">{{ product.name }}</p>
         </div>
       </header>
 

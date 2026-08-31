@@ -95,7 +95,10 @@ onMounted(() => {
 
     <form v-else class="admin-settings-form admin-home-content-form" @submit.prevent="submit">
       <section class="admin-detail-panel">
-        <h2>{{ ADMIN_COPY.homeHeroPanel }}</h2>
+        <header class="admin-form-section-head">
+          <h2>{{ ADMIN_COPY.homeHeroPanel }}</h2>
+          <p>{{ ADMIN_COPY.homeHeroPanelIntro }}</p>
+        </header>
         <div class="admin-detail-grid">
           <label class="admin-field">
             <span>{{ ADMIN_COPY.homeHeroLeadLabel }}</span>
@@ -125,7 +128,10 @@ onMounted(() => {
       </section>
 
       <section class="admin-detail-panel">
-        <h2>{{ ADMIN_COPY.homeCategoriesPanel }}</h2>
+        <header class="admin-form-section-head">
+          <h2>{{ ADMIN_COPY.homeCategoriesPanel }}</h2>
+          <p>{{ ADMIN_COPY.homeCategoriesPanelIntro }}</p>
+        </header>
         <div class="admin-detail-grid">
           <label class="admin-field">
             <span>{{ ADMIN_COPY.homeCategoryEyebrowLabel }}</span>

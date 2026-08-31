@@ -100,26 +100,33 @@ onMounted(() => {
     </div>
 
     <form v-else class="admin-settings-form" @submit.prevent="submit">
-      <label class="admin-field admin-field-wide">
-        <span>{{ ADMIN_COPY.announcementLabel }}</span>
-        <input
-          v-model.trim="draft.announcement"
-          type="text"
-          maxlength="180"
-          autocomplete="off"
-        >
-        <small>{{ ADMIN_COPY.announcementHint }}</small>
-      </label>
+      <section class="admin-form-section" aria-labelledby="admin-settings-panel-heading">
+        <header class="admin-form-section-head">
+          <h2 id="admin-settings-panel-heading">{{ ADMIN_COPY.settingsPanelHeading }}</h2>
+          <p>{{ ADMIN_COPY.settingsPanelIntro }}</p>
+        </header>
 
-      <label class="admin-field admin-field-wide">
-        <span>{{ ADMIN_COPY.whatsappNumberLabel }}</span>
-        <input
-          v-model.trim="draft.whatsappNumber"
-          type="tel"
-          autocomplete="tel"
-        >
-        <small>{{ ADMIN_COPY.whatsappNumberHint }}</small>
-      </label>
+        <label class="admin-field admin-field-wide">
+          <span>{{ ADMIN_COPY.announcementLabel }}</span>
+          <input
+            v-model.trim="draft.announcement"
+            type="text"
+            maxlength="180"
+            autocomplete="off"
+          >
+          <small>{{ ADMIN_COPY.announcementHint }}</small>
+        </label>
+
+        <label class="admin-field admin-field-wide">
+          <span>{{ ADMIN_COPY.whatsappNumberLabel }}</span>
+          <input
+            v-model.trim="draft.whatsappNumber"
+            type="tel"
+            autocomplete="tel"
+          >
+          <small>{{ ADMIN_COPY.whatsappNumberHint }}</small>
+        </label>
+      </section>
 
       <p v-if="errorMessage" class="admin-detail-error" role="alert">
         {{ errorMessage }}
