@@ -7,8 +7,8 @@ One short entry per work session or meaningful chunk. Format:
 
 ## 2026-08-31T11:42:24+01:00 · Codex · Product and admin detail hierarchy refined
 - **Did:** Separated storefront product summary, order selection, and aftercare; grouped admin orders into overview, fulfilment, commercial, and conditional tailoring sections; segmented product, delivery, settings, and home-content editors with shared section cards and clearer action containment.
-- **State:** Implementation is complete locally and ready to commit. Node 22 strict typecheck, Nuxt production build, `git diff --check`, and authenticated local browser QA pass across ready-to-wear/bespoke product pages and order/product/delivery/settings/home-content detail views. The local fixture was read only and remains unchanged.
-- **Next:** Commit the visual hierarchy pass locally; push and deploy only after fresh explicit approval.
+- **State:** Implementation is committed locally as `2aee56d`. Node 22 strict typecheck, Nuxt production build, `git diff --check`, and authenticated local browser QA pass across ready-to-wear/bespoke product pages and order/product/delivery/settings/home-content detail views. The local fixture was read only and remains unchanged.
+- **Next:** Push and deploy only after fresh explicit approval.
 - **Blockers:** None. The workstation disk remains very low on free space, but clearing the generated Nuxt cache provided enough room for validation.
 
 ## 2026-08-31T09:42:00+01:00 · Codex · Quantity scope deployed
