@@ -44,17 +44,30 @@ echo "==> Starting stack"
 docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" up -d --remove-orphans
 
 echo "==> Waiting for the API to report healthy"
+# Pinned to loopback through the real hostname. Requesting http://localhost
+# instead looks correct but proves nothing: Caddy answers plain HTTP with a 308
+# to HTTPS, and curl counts an unfollowed redirect as success, so the check
+# exited 0 without ever reaching the API. Using the configured hostname keeps
+# TLS SNI matching the certificate Caddy holds.
+SITE_HOST_VALUE="$(grep -E '^SITE_HOST=' "$ENV_FILE" | cut -d= -f2-)"
+API_HEALTHY=0
 for attempt in $(seq 1 30); do
-  if docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" exec -T api /server --version >/dev/null 2>&1 \
-    || curl -fsS "http://localhost/api/healthz" >/dev/null 2>&1; then
-    echo "    API is responding"
+  # The body is asserted, not just the status: a 200 carrying a failed database
+  # check is exactly the rollout this gate exists to stop.
+  if curl -fsS --resolve "${SITE_HOST_VALUE}:443:127.0.0.1" \
+      "https://${SITE_HOST_VALUE}/api/healthz" 2>/dev/null | grep -q '"status":"ok"'; then
+    echo "    API is healthy"
+    API_HEALTHY=1
     break
-  fi
-  if [[ "$attempt" -eq 30 ]]; then
-    echo "warning: API did not respond in time; check: docker compose -f $COMPOSE_FILE logs api" >&2
   fi
   sleep 2
 done
+
+if [[ "$API_HEALTHY" -ne 1 ]]; then
+  echo "error: the API did not report healthy after 60s." >&2
+  echo "       Inspect with: docker compose -f $COMPOSE_FILE logs api" >&2
+  exit 1
+fi
 
 # Every build leaves cache and a superseded image behind. Left alone that grows
 # by roughly half a gigabyte per deploy and eventually fills the disk, which

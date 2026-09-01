@@ -120,18 +120,35 @@ jobs:
              echo "== containers =="
              $COMPOSE ps --format "{{.Name}}\t{{.Status}}"
 
+             # Pin the public hostname to loopback rather than requesting
+             # http://localhost: Caddy answers plain HTTP with a 308 to HTTPS,
+             # and curl treats a redirect it does not follow as success, so the
+             # obvious check exits 0 without ever reaching the API. Going
+             # through the real hostname keeps TLS SNI matching the certificate.
              echo "== health =="
-             curl -fsS http://localhost/api/healthz
-             echo
+             SITE_HOST=$(grep -E "^SITE_HOST=" .env.production | cut -d= -f2-)
+             HEALTH=$(curl -fsS --resolve "$SITE_HOST:443:127.0.0.1" "https://$SITE_HOST/api/healthz")
+             echo "$HEALTH"
+             case "$HEALTH" in
+               *'"status":"ok"'*) ;;
+               *) echo "error: API did not report healthy" >&2; exit 1 ;;
+             esac
 
              # A dirty migration means a schema change died half-applied. The
              # stack keeps serving in that state, so it has to be asserted
              # rather than eyeballed, or a broken schema ships silently.
+             # Two plain queries rather than one concatenated with quoted
+             # separators: the quoting does not survive nesting inside this
+             # remote command, and a mangled query errors out looking exactly
+             # like a healthy check that returned nothing.
              echo "== migrations =="
-             STATE=$($COMPOSE exec -T postgres psql -U "${POSTGRES_USER:-oye}" -d "${POSTGRES_DB:-oyecouture}" \
-               -tAc "select version || \":\" || dirty from schema_migrations;")
-             echo "$STATE"
-             case "$STATE" in
-               *:f) ;;
-               *) echo "error: migrations are dirty, schema may be half-applied" >&2; exit 1 ;;
-             esac'
+             PSQL="$COMPOSE exec -T postgres psql -U oye -d oyecouture -tAc"
+             VERSION=$($PSQL "select version from schema_migrations" | tr -d "[:space:]")
+             DIRTY=$($PSQL "select dirty from schema_migrations" | tr -d "[:space:]")
+             echo "version=$VERSION dirty=$DIRTY"
+             if [ -z "$VERSION" ]; then
+               echo "error: could not read migration state" >&2; exit 1
+             fi
+             if [ "$DIRTY" != "f" ]; then
+               echo "error: migrations are dirty, schema may be half-applied" >&2; exit 1
+             fi'
