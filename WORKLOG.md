@@ -5,6 +5,13 @@ One short entry per work session or meaningful chunk. Format:
 
 ---
 
+## 2026-09-01T10:30:00+01:00 · Claude · The 31 Aug "outage" was a routing fault, not a server fault
+
+- **Did:** Retracted the previous entry's outage claim after the developer reached the server from an MTN MiFi. Verified live: SSH/80/443 open, `/api/healthz` ok for API and database, home and admin 200, all five containers up, migration `16:false`, 27 active products, 36 orders, disk 14%, and **29 days of uptime**. Rewrote the false outage section in `HANDOFF-STATE.md`.
+- **State:** Nothing was ever wrong with the server. It served continuously throughout, and the client browsed the storefront normally. The developer's ISP could not route to `82.29.184.79`; packets reached Hostinger's Manchester edge and were dropped. A second ISP failed the same way, which made an IP block look plausible. The panel-reported reboot never actually restarted the guest, as the 29-day uptime proves. Server is on `5543292`, exactly in sync with `origin/main`; no application deploy is pending.
+- **Next:** Push the 2 laptop-only commits from the `Documents` checkout (`2aee56d`, `df7cbe3`) and these documentation commits. Then the still-unrun end-to-end order test on TEST keys, before any switch to live Paystack keys.
+- **Blockers:** None technical. **Methodology note for both agents: every `nc`/`curl`/`ping`/`traceroute` runs on the developer's Mac and inherits their connection, so a failed probe is evidence about the network path and never about the server. When probes fail while the provider panel reports a healthy guest, believe the panel and verify off-network before declaring an outage.**
+
 ## 2026-08-31T22:36:21+01:00 · Claude · Staging server unreachable; production-readiness inventory
 
 - **Did:** Ran a state check ahead of a production-readiness review. Found `82.29.184.79` completely unreachable (ICMP, 22, 80, 443 all timing out; `traceroute` terminating inside Hostinger's `man01` network; control request to github.com returning 200, so local connectivity is fine). Fast-forwarded the `Downloads/share` checkout from 9 commits behind to `origin/main` at `5543292` and ran the full Go suite, which passes including Codex's new `internal/tracking` package. Inventoried remaining production blockers: `sslip.io` hostname with no real domain, `sk_test_` Paystack, unwritten Legal/Terms copy, three parked navigation routes, mockup suit photography, unlicensed Gilmer font, ~5 test orders plus `OYE-1033` still in the staging database, and 22 unconfirmed placeholder prices.
