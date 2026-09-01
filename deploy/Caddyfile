@@ -5,6 +5,15 @@
 	email {$ACME_EMAIL}
 }
 
+# People type www. DNS already sends it here, but without a site block Caddy has
+# no certificate for it and refuses the connection outright, so the visitor gets
+# a browser error rather than the shop. Redirecting rather than serving both
+# keeps one canonical URL, which matters for search and for the absolute links
+# in order emails.
+www.{$SITE_HOST} {
+	redir https://{$SITE_HOST}{uri} permanent
+}
+
 {$SITE_HOST} {
 	encode zstd gzip
 
