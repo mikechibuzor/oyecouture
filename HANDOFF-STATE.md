@@ -4,30 +4,13 @@
 
 ---
 
-## 🚨 STAGING SERVER IS DOWN (Claude, 2026-08-31) — unresolved
+## ✅ THE 31 AUG "OUTAGE" WAS NEVER AN OUTAGE (Claude, 2026-09-01)
 
-`82.29.184.79` is **completely unreachable**: ICMP, 22, 80 and 443 all time out, and `traceroute` dies inside Hostinger's Manchester network (`man01`) rather than at the host. Outbound internet from the Mac is fine (control request to github.com returned 200). That pattern means the VPS is powered off, suspended or reclaimed — not a network blip and not a container crash.
+**Do not act on any earlier note in this file claiming the staging server was down.** It was not. On 1 Sep the server reported **29 days of uptime** — it never rebooted and never stopped serving. All five containers were up, migration state `16:false`, disk at 14%, and `/api/healthz` returned ok for both API and database. The client was browsing the storefront normally throughout.
 
-**The outage is hours old, not gradual.** Codex deployed `a0232c8` to this same server earlier today (31 Aug) and recorded live health returning 200 with all five containers running. So the box went from fully healthy to answering nothing on any port within the same day.
+**What actually happened:** the developer's ISP could not route to `82.29.184.79`. Packets reached Hostinger's Manchester edge and were dropped there. Switching to an MTN MiFi restored everything instantly. A second ISP had also failed, which is why an IP-level block looked plausible for a while.
 
-**NOT billing — checked and ruled out.** Claude first guessed an expired term; the Hostinger panel disproves it. `srv1875150.hstgr.cloud` shows status **Running** with expiration **2026-09-02**. The VM is powered on and paid for. Do not spend time on the billing theory again.
-
-**So the hypervisor is up and the guest OS is not answering.** Ports 22/80/443 and ICMP are all dead while Hostinger reports the VM running — that is a hung or wedged guest, a firewall change, or a network fault, not a suspension. The leading candidate is **resource exhaustion from today's deploy**: this is a 1 vCPU / 3.9 GB KVM 1, the Nuxt production build runs `vue-tsc`, and 2 GB of swap was added on 2 Aug specifically because that build is the heavy step. A build or rebuild that exhausts RAM and swap on a single core can leave the box alive to the hypervisor but unresponsive on every port. Codex did report a clean deploy with health 200 afterwards, so if this is the cause it bit after that check.
-
-⏰ **Separate live clock: expiration is 2026-09-02.** Two days. Monthly renewal is $19.49 (~₦26,900), which alone exceeds the entire ₦25k maintenance retainer; the 12-month term is ~$9,646/mo equivalent. Decide before it lapses — a lapse here would turn a recoverable outage into the unrecoverable one described below.
-
-⚠️ **Backups do not leave the box.** `deploy/backup.sh` writes to `/backups`, which is the `postgres-backups` Docker volume on the same VPS. If Hostinger reclaims the server, the database **and every backup are destroyed together**. There is no off-server copy. The most recent known-good dump pulled to the Mac is `oyecouture-20260825T090120Z.sql.gz` (20,531 bytes, 25 Aug).
-
-**First action for the user:** log in to Hostinger and check the VPS billing/power state. If it is suspended pending payment, pay and reboot. If a grace period is running, treat it as urgent — reclaim is unrecoverable. Nothing in the repo is lost either way (all code is on GitHub); what is at risk is the **database**: admin account, delivery zones, site settings, home content, and the catalogue edits made through the admin.
-
-## 🔑 PRODUCTION CONFIG — what is gathered, what is missing (Claude, 2026-08-31)
-
-**Gathered and staged on the user's Mac, NOT yet on any server:**
-- **Paystack live keys** are in `~/oyecouture-prod-keys.env`, mode `600`, outside the repo so they cannot be committed. Verified as `sk_live_`/`pk_live_` with clean formatting; **neither agent has seen the values and it must stay that way** — verify with `grep -c` patterns, never `cat`. Install by pasting into `.env.production` on the server directly, or `scp` once the box is reachable. ⚠️ Confirm with the user whether these belong to the **client's** Paystack account: live keys settle real money into whichever account owns them, and it must not be the developer's.
-- **`OWNER_NOTIFY_EMAIL` = `frontdeskoyecouture@gmail.com`** (client's front desk, supplied 31 Aug). This replaces the hardcoded fallback `iwuagwuchibuzor@gmail.com` in `api/internal/config/config.go:11` — if the variable is ever unset in production, order and contact notifications silently go to the developer's personal Gmail instead. Always set it explicitly.
-- ⚠️ **`EMAIL_FROM` cannot be that Gmail address.** `OWNER_NOTIFY_EMAIL` is where mail is *received*; `EMAIL_FROM` is the sender customers see and must sit on a domain verified with SendByte. It is still unknown and blocked on the domain decision.
-
-**Still missing before production:** the client's **domain** (blocks `SITE_HOST`, `WEB_BASE_URL`, `API_BASE_URL`, `EMAIL_FROM`, and the Paystack webhook URL — this is the critical path), the client's **WhatsApp business number** (production still carries the developer's own `2348094939264`), a fresh `POSTGRES_PASSWORD` via `openssl rand -hex 32`, and the three outstanding credential rotations (SendByte live key, Cloudinary secret, Nomba key).
+**The methodology error, so it is not repeated:** every `nc`, `curl`, `ping` and `traceroute` an agent runs executes **on the developer's Mac and inherits their connection**. A failed probe is evidence about the *path*, never about the server. A control request to github.com does not test the route to a specific host in a specific network. **When probes fail but the provider's panel reports the guest healthy, believe the panel and verify from a genuinely off-network vantage point before declaring an outage.** Hours were lost here, and a VPS reboot and renewal were performed against a diagnosis that was simply wrong. The renewal was worth doing anyway — expiry was 2026-09-02.
 
 ## Current status
 - **Phase:** 1 (MVP). First 40% milestone **paid**; build authorized.
