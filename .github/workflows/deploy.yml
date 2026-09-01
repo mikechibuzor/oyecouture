@@ -1,0 +1,137 @@
+name: Deploy
+
+# Deploys to the server on every push to main. This exists because deployment
+# used to depend on someone remembering to run deploy.sh from a machine that
+# could reach the box, and both halves of that failed in practice: work sat
+# pushed-but-undeployed for days, and the developer's ISP cannot route to
+# Hostinger at all, so deploys were hostage to which network the laptop was on.
+# GitHub's runners have neither problem.
+on:
+  push:
+    branches: [main]
+    # Documentation-only commits are constant here (the baton and worklog change
+    # on every hand-off) and rebuild nothing the site actually serves. Skipping
+    # them avoids several minutes of image building on a 1 vCPU box for no
+    # behavioural change. A commit touching both code and docs still deploys.
+    paths-ignore:
+      - '**.md'
+      - '.gitignore'
+  # Lets a deploy be triggered by hand — for re-running a failed rollout, or
+  # shipping a docs-only change that the filter above skipped.
+  workflow_dispatch:
+
+# One deploy at a time. Two overlapping runs would race on the same working copy
+# and Docker daemon. Queueing rather than cancelling means a commit that lands
+# mid-deploy still ships, instead of being silently dropped.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  # Nothing reaches the server until the code builds and passes. The server has
+  # one core and builds both images on it, so a failure caught here costs
+  # seconds; the same failure caught there costs a broken rollout.
+  verify:
+    name: Test and build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25'
+          cache-dependency-path: api/go.sum
+
+      - name: Go tests
+        working-directory: api
+        run: go test ./...
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install web dependencies
+        working-directory: web
+        run: npm ci
+
+      - name: Typecheck
+        working-directory: web
+        run: npm run typecheck
+
+      # Mirrors the image build exactly. `npm run build` passes --dotenv ../.env,
+      # which is gitignored and absent both here and inside the image, so the
+      # Dockerfile calls nuxt directly and so must this.
+      - name: Build storefront
+        working-directory: web
+        run: npx nuxt build
+
+  deploy:
+    name: Deploy to server
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure SSH
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          # Pinning the host key rather than disabling the check: a runner that
+          # accepts any host key would hand the deploy credential to whatever
+          # answers on that address.
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Pull and deploy
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/deploy_key -o BatchMode=yes -o ConnectTimeout=30 \
+            "$DEPLOY_USER@$DEPLOY_HOST" \
+            'set -euo pipefail
+             cd ~/oyecouture
+             # --ff-only so a diverged server working copy fails loudly here
+             # rather than producing a surprise merge commit on the box.
+             git pull --ff-only
+             ./deploy/deploy.sh'
+
+      - name: Verify the deployment
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/deploy_key -o BatchMode=yes -o ConnectTimeout=30 \
+            "$DEPLOY_USER@$DEPLOY_HOST" \
+            'set -euo pipefail
+             cd ~/oyecouture
+             COMPOSE="docker compose -f compose.prod.yaml --env-file .env.production"
+
+             echo "== deployed commit =="
+             git log --oneline -1
+
+             echo "== containers =="
+             $COMPOSE ps --format "{{.Name}}\t{{.Status}}"
+
+             echo "== health =="
+             curl -fsS http://localhost/api/healthz
+             echo
+
+             # A dirty migration means a schema change died half-applied. The
+             # stack keeps serving in that state, so it has to be asserted
+             # rather than eyeballed, or a broken schema ships silently.
+             echo "== migrations =="
+             STATE=$($COMPOSE exec -T postgres psql -U "${POSTGRES_USER:-oye}" -d "${POSTGRES_DB:-oyecouture}" \
+               -tAc "select version || \":\" || dirty from schema_migrations;")
+             echo "$STATE"
+             case "$STATE" in
+               *:f) ;;
+               *) echo "error: migrations are dirty, schema may be half-applied" >&2; exit 1 ;;
+             esac'
