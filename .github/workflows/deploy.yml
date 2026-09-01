@@ -6,18 +6,24 @@ name: Deploy
 # pushed-but-undeployed for days, and the developer's ISP cannot route to
 # Hostinger at all, so deploys were hostage to which network the laptop was on.
 # GitHub's runners have neither problem.
+# PARKED, and deliberately not on `push`. Actions cannot run on this account at
+# all: a stored card failed its authorization check, and GitHub blocks Actions
+# behind that flag even though the 2,000 free minutes are untouched and nothing
+# is owed. Every push produced an instant `startup_failure`, so the trigger is
+# reduced to manual to stop the noise. `deploy/autodeploy.sh` on the server does
+# the real deploying meanwhile.
+#
+# To bring this back once billing is resolved: fix the payment method, run this
+# once by hand to confirm it works, then restore the push trigger:
+#
+#   push:
+#     branches: [main]
+#     paths-ignore: ['**.md', '.gitignore']
+#
+# The paths-ignore matters — handoff docs change on every chunk of work here and
+# rebuild nothing, so a plain push trigger rebuilds both images many times a day
+# for no behavioural change.
 on:
-  push:
-    branches: [main]
-    # Documentation-only commits are constant here (the baton and worklog change
-    # on every hand-off) and rebuild nothing the site actually serves. Skipping
-    # them avoids several minutes of image building on a 1 vCPU box for no
-    # behavioural change. A commit touching both code and docs still deploys.
-    paths-ignore:
-      - '**.md'
-      - '.gitignore'
-  # Lets a deploy be triggered by hand — for re-running a failed rollout, or
-  # shipping a docs-only change that the filter above skipped.
   workflow_dispatch:
 
 # One deploy at a time. Two overlapping runs would race on the same working copy
