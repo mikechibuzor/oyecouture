@@ -25,6 +25,20 @@
 
 **`deploy.sh`'s health gate never worked, now fixed.** It called `curl -fsS http://localhost/api/healthz`; Caddy answers plain HTTP with a 308 to HTTPS, and curl counts an unfollowed redirect as success — so the gate exited 0 without ever reaching the API, on every deploy this project has ever done. It now pins `SITE_HOST` to loopback so TLS SNI matches the certificate, asserts `"status":"ok"` in the body, and **fails the deploy** rather than warning. A passing gate now means something.
 
+## ✅ LIVE ON THE REAL DOMAIN, AND THE MONEY PATH IS PROVEN (Claude, 2026-09-01)
+
+**https://oyecouturebespoke.com** is live with a Let's Encrypt certificate (CN matches, valid to 30 Nov), `www` 301s to the apex, and HTTP 308s to HTTPS. DNS A record points at `82.29.184.79`; MX and SPF were left untouched so client email still works.
+
+**The end-to-end order chain has now been exercised for the first time, with real money.** Order `OYE-1001`, ₦100, live Paystack keys. The evidence that matters: `order_fulfillment_events` shows `payment_confirmed` at 14:07:17 with `created_by_admin_id IS NULL` — nothing but the signature-verified webhook writes that row. Payment attempt `success`; `order_confirmation` and `payment_receipt` both `sent` on the first attempt one second later; no API errors. **Do not treat the payment path as untested any more.**
+
+**Production config now live:** `SITE_HOST=oyecouturebespoke.com`, `PAYSTACK_SECRET_KEY`/`PAYSTACK_PUBLIC_KEY` are **`sk_live_`/`pk_live_`**, `OWNER_NOTIFY_EMAIL=frontdeskoyecouture@gmail.com`. `WEB_BASE_URL` derives from `SITE_HOST` in compose, so it followed automatically. Previous config is backed up on the server as `.env.production.bak.<timestamp>`. ⚠️ **Real cards now charge real money.** Paystack test cards no longer work — live-mode signatures do not match test ones.
+
+**Database purged of development data (2026-09-01):** 36 test orders and their 114 cascaded child rows deleted, `order_number_seq` reset so the first real order was `OYE-1001`. Products, images, delivery zones and the admin account were preserved. Backup before the purge: `~/oyecouture-preorderpurge-20260901T135333Z.sql.gz` on the developer's Mac, gzip-verified with all 36 orders.
+
+⚠️ **`adire-linen-set` is at ₦100 for testing and MUST be restored to ₦105,000.** It is live on a public production site at a price anyone finding it could exploit.
+
+⚠️ **Caddyfile changes need the caddy container recreated.** `compose.prod.yaml` bind-mounts the single file `./deploy/Caddyfile`, so a `git pull` replacing it leaves the running container on the old inode and the change silently does nothing. `deploy.sh` does not handle this. After changing the Caddyfile: `docker compose -f compose.prod.yaml --env-file .env.production up -d --force-recreate caddy`. This cost a debugging cycle when `www` stayed broken after a successful deploy.
+
 ## Current status
 - **Phase:** 1 (MVP). First 40% milestone **paid**; build authorized.
 - ⚠️ **TWO CHECKOUTS OF THIS REPO EXIST ON THE MAC — they are not in sync.** Codex works in `/Users/chibuzoriwuagwu/Documents/oyecouture`; Claude has been working in `/Users/chibuzoriwuagwu/Downloads/share/oyecouture`. On 31 Aug the `Downloads/share` copy was **9 commits behind** `origin/main` and has been fast-forwarded to `5543292`. Full Go suite passes there, including the new `internal/tracking` package. **Whoever picks up the baton must `git fetch` and confirm which checkout they are in before touching anything** — this is how one agent silently reverts the other.
