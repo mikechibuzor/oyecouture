@@ -393,48 +393,60 @@ onBeforeUnmount(() => {
             class="admin-product-form"
             @submit.prevent="saveSelectedZone"
           >
-            <div class="admin-detail-grid">
-              <label class="admin-field">
-                <span>{{ ADMIN_COPY.deliveryNewNameLabel }}</span>
-                <input
-                  v-model.trim="selectedDraft.name"
-                  type="text"
-                  required
-                  autocomplete="off"
-                  :readonly="deliveryEditorMode === 'edit'"
-                >
-              </label>
+            <section class="admin-form-section" aria-labelledby="admin-delivery-details-heading">
+              <header class="admin-form-section-head">
+                <h2 id="admin-delivery-details-heading">{{ ADMIN_COPY.deliveryDetailsHeading }}</h2>
+                <p>{{ ADMIN_COPY.deliveryDetailsIntro }}</p>
+              </header>
 
-              <label class="admin-field">
-                <span>{{ ADMIN_COPY.deliveryNewFeeLabel }}</span>
-                <input
-                  v-model.number="selectedDraft.feeNaira"
-                  type="number"
-                  min="0"
-                  step="1"
-                  required
-                >
-              </label>
+              <div class="admin-detail-grid">
+                <label class="admin-field">
+                  <span>{{ ADMIN_COPY.deliveryNewNameLabel }}</span>
+                  <input
+                    v-model.trim="selectedDraft.name"
+                    type="text"
+                    required
+                    autocomplete="off"
+                    :readonly="deliveryEditorMode === 'edit'"
+                  >
+                </label>
 
-              <div class="admin-detail-panel">
-                <h2>Checkout visibility</h2>
-                <p class="admin-detail-muted">
-                  Hidden areas remain in admin but stop appearing on checkout and bespoke confirmation.
-                </p>
+                <label class="admin-field">
+                  <span>{{ ADMIN_COPY.deliveryNewFeeLabel }}</span>
+                  <input
+                    v-model.number="selectedDraft.feeNaira"
+                    type="number"
+                    min="0"
+                    step="1"
+                    required
+                  >
+                </label>
+              </div>
+            </section>
+
+            <section class="admin-form-section" aria-labelledby="admin-delivery-visibility-heading">
+              <header class="admin-form-section-head">
+                <h2 id="admin-delivery-visibility-heading">
+                  {{ ADMIN_COPY.deliveryVisibilityHeading }}
+                </h2>
+                <p>{{ ADMIN_COPY.deliveryVisibilityIntro }}</p>
+              </header>
+
+              <div class="admin-delivery-visibility-grid">
                 <label class="admin-delivery-toggle">
                   <input v-model="selectedDraft.active" type="checkbox">
                   <span>{{ ADMIN_COPY.deliveryActiveLabel }}</span>
                 </label>
-              </div>
 
-              <div class="admin-detail-panel">
-                <h2>Preview</h2>
-                <p class="admin-detail-value">{{ formatDraftFee(selectedDraft) }}</p>
-                <span class="admin-status" :data-status="zoneStatusTone(selectedDraft)">
-                  {{ zoneStatusLabel(selectedDraft) }}
-                </span>
+                <div class="admin-delivery-preview">
+                  <p>{{ ADMIN_COPY.deliveryPreviewHeading }}</p>
+                  <strong>{{ formatDraftFee(selectedDraft) }}</strong>
+                  <span class="admin-status" :data-status="zoneStatusTone(selectedDraft)">
+                    {{ zoneStatusLabel(selectedDraft) }}
+                  </span>
+                </div>
               </div>
-            </div>
+            </section>
 
             <p v-if="editorErrorMessage" class="admin-detail-error" role="alert">
               {{ editorErrorMessage }}
