@@ -12,6 +12,19 @@
 
 **The methodology error, so it is not repeated:** every `nc`, `curl`, `ping` and `traceroute` an agent runs executes **on the developer's Mac and inherits their connection**. A failed probe is evidence about the *path*, never about the server. A control request to github.com does not test the route to a specific host in a specific network. **When probes fail but the provider's panel reports the guest healthy, believe the panel and verify from a genuinely off-network vantage point before declaring an outage.** Hours were lost here, and a VPS reboot and renewal were performed against a diagnosis that was simply wrong. The renewal was worth doing anyway — expiry was 2026-09-02.
 
+## 🤖 DEPLOYS ARE NOW AUTOMATIC (Claude, 2026-09-01)
+
+**Do not deploy by hand any more, and do not wait for someone to.** `~/autodeploy.sh` runs on the server from cron every 5 minutes: it fetches `origin/main`, fast-forwards, and runs `deploy/deploy.sh` when anything the site is built from has changed. **Push to `origin/main` and it ships within 5 minutes.** Log: `~/autodeploy.log`. Canonical source is `deploy/autodeploy.sh` in the repo.
+
+- **Docs-only commits update the repo without rebuilding.** Handoff docs change on every chunk of work here and rebuild nothing, so a plain trigger would rebuild both images many times a day for no behavioural change.
+- **`flock` guard**: a build can outlast the 5 minute interval, so an overlapping tick is skipped rather than queued.
+- **`--ff-only`**: a diverged server working copy stops with a readable error instead of silently creating a merge commit on the box.
+- ⚠️ **Cron runs the COPY at `~/autodeploy.sh`, never the repo's.** The script pulls, and bash reads scripts incrementally, so running it from inside the repo would let git rewrite the file mid-execution. **If `deploy/autodeploy.sh` changes, re-copy it:** `cp ~/oyecouture/deploy/autodeploy.sh ~/autodeploy.sh && chmod +x ~/autodeploy.sh`.
+
+**GitHub Actions is blocked and it is not our code.** `.github/workflows/deploy.yml` is complete and correct (tests gate the deploy, health and migrations are asserted) but is parked on `workflow_dispatch` only. Actions cannot run **anywhere on this account**: a stored card failed its authorization check, and GitHub gates Actions behind that flag even though the 2,000 free minutes are untouched and nothing is owed. A six-line echo workflow failed identically, and all 15 of the user's repos have zero successful runs ever. Fix is in GitHub billing → Payment information. Once resolved, restore the `push` trigger documented in the workflow header. All four secrets (`DEPLOY_SSH_KEY`, `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_KNOWN_HOSTS`) are already set, and the CI key is authorized on the server and tested.
+
+**`deploy.sh`'s health gate never worked, now fixed.** It called `curl -fsS http://localhost/api/healthz`; Caddy answers plain HTTP with a 308 to HTTPS, and curl counts an unfollowed redirect as success — so the gate exited 0 without ever reaching the API, on every deploy this project has ever done. It now pins `SITE_HOST` to loopback so TLS SNI matches the certificate, asserts `"status":"ok"` in the body, and **fails the deploy** rather than warning. A passing gate now means something.
+
 ## Current status
 - **Phase:** 1 (MVP). First 40% milestone **paid**; build authorized.
 - ⚠️ **TWO CHECKOUTS OF THIS REPO EXIST ON THE MAC — they are not in sync.** Codex works in `/Users/chibuzoriwuagwu/Documents/oyecouture`; Claude has been working in `/Users/chibuzoriwuagwu/Downloads/share/oyecouture`. On 31 Aug the `Downloads/share` copy was **9 commits behind** `origin/main` and has been fast-forwarded to `5543292`. Full Go suite passes there, including the new `internal/tracking` package. **Whoever picks up the baton must `git fetch` and confirm which checkout they are in before touching anything** — this is how one agent silently reverts the other.
