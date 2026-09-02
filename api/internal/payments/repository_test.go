@@ -43,11 +43,20 @@ func TestVerificationMatchesOrder(t *testing.T) {
 			wantErr: ErrPaymentAmountMismatch,
 		},
 		{
-			name: "overpayment is rejected rather than silently accepted",
+			// Overpayment must fulfil the order. Paystack passes the transaction
+			// fee to the customer on some channels, so the amount charged is
+			// routinely a little over the order total. Rejecting that took real
+			// money for order OYE-1002 on 2026-09-02 and left it unpaid.
+			name: "overpayment is accepted, because a passed-on fee is not a mismatch",
 			mutate: func(_ *Attempt, _ *Order, verification *Verification) {
-				verification.AmountKobo = total + 100
+				verification.AmountKobo = total + 153
 			},
-			wantErr: ErrPaymentAmountMismatch,
+		},
+		{
+			name: "a large overpayment is still accepted, it is the customer's loss not the shop's",
+			mutate: func(_ *Attempt, _ *Order, verification *Verification) {
+				verification.AmountKobo = total * 2
+			},
 		},
 		{
 			name: "zero payment is rejected",
@@ -57,9 +66,18 @@ func TestVerificationMatchesOrder(t *testing.T) {
 			wantErr: ErrPaymentAmountMismatch,
 		},
 		{
-			name: "an attempt recorded for the wrong amount is rejected",
+			// The money received still covers both the attempt and the order, so
+			// the customer has paid for what they bought.
+			name: "an attempt recorded below what was actually paid still fulfils",
 			mutate: func(attempt *Attempt, _ *Order, _ *Verification) {
 				attempt.AmountKobo = total - 500
+			},
+		},
+		{
+			name: "paying less than the attempt we created is rejected",
+			mutate: func(attempt *Attempt, _ *Order, verification *Verification) {
+				attempt.AmountKobo = total
+				verification.AmountKobo = total - 1
 			},
 			wantErr: ErrPaymentAmountMismatch,
 		},

@@ -308,14 +308,23 @@ func (repository *PostgresRepository) ConfirmSuccessfulPayment(
 }
 
 // verificationMatchesOrder is the guard that stops an order being marked paid
-// for the wrong money. The provider's amount must equal both the attempt we
-// created and the order total, so neither a tampered attempt nor a repriced
-// order can slip through, and the currency must be the one we charge in.
+// for the wrong money. The risk it exists to stop is asymmetric, and so is the
+// check: paying LESS than the order total must never fulfil an order, while
+// paying more is the customer's loss, not the shop's, and must not block them.
+//
+// This deliberately no longer demands exact equality. It used to, and on
+// 2026-09-02 that silently swallowed a real payment: order OYE-1002 was ₦100,
+// Paystack charged ₦101.53 because this account passes the transaction fee to
+// the customer on the bank_transfer channel, and the webhook was rejected as a
+// mismatch. Worse, mismatches are classed as terminal, so the webhook was
+// answered 200 and Paystack never retried. The money was taken and the order
+// sat at awaiting_payment. Any channel that adds a fee would have done the same
+// to every order.
 //
 // It is a pure function so it can be tested without a database: it is the last
 // check standing between a partial payment and a fulfilled order.
 func verificationMatchesOrder(attempt Attempt, order Order, verification Verification) error {
-	if attempt.AmountKobo != verification.AmountKobo || order.TotalKobo != verification.AmountKobo {
+	if verification.AmountKobo < attempt.AmountKobo || verification.AmountKobo < order.TotalKobo {
 		return ErrPaymentAmountMismatch
 	}
 	if attempt.Currency != verification.Currency || verification.Currency != CurrencyNGN {
