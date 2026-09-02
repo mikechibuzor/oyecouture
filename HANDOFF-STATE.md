@@ -85,6 +85,26 @@ The atelier **is** Oyecouture, so customer-facing copy names the brand rather th
 
 ⚠️ **This work was committed from a throwaway clone at `scratchpad/oye`, because the sandbox revoked access to `/Users/chibuzoriwuagwu/Downloads/share/oyecouture` mid-edit.** That checkout still holds a **half-applied earlier attempt** of the same change and will conflict on pull. Fix it with `git checkout -- api/` there, then `git pull`. The pushed commit is the good one.
 
+## 👥 ROLES AND TEAM MANAGEMENT ARE LIVE (Claude, 2026-09-02, through `a8845e3`)
+
+**`owner`** is the super admin (team, settings, delivery, prices); **`staff`** runs orders and fulfilment. The `role` column existed since migration `000006` but **nothing had ever enforced it** — `RequireOwner` now gates every team route, and the sidebar hides Team from staff as a convenience, not as the control.
+
+**Self-service password change (`PATCH /admin/password`)** is what makes the rest mean anything. Until now every account the developer seeded kept a password the developer knew, so "Ayomide did X" could always have been either of them. Changing it requires the current password, so a stolen session cannot quietly take an account over.
+
+**Migration `000019` adds `active`.** Revoke, do not delete: deleting an admin strips their name from every fulfilment event that references them, which is the opposite of what an audit trail is for. Both sign-in **and** the per-request session lookup check `active`, and revoking deletes their live sessions, so it bites immediately.
+
+⚠️ **Lockout guards, each with a test.** An owner cannot demote, deactivate or delete **themselves**, and the **last active owner** cannot be demoted, deactivated or deleted. Any of these, allowed, ends with nobody able to manage the team except through a shell on the server. Do not relax them.
+
+⚠️ **Ayomide (`oluolagunjuayomide@gmail.com`) is currently an `owner`**, inherited from the CLI hardcoding that role. If he should run orders only, change him to `staff` on the Team page.
+
+## 🐛 TWO BUGS THIS SHIPPED, BOTH NOW GUARDED
+
+**A Go constant and a database CHECK that had to agree, with nothing checking they did.** `order_out_for_delivery` was added as an email type but `outbound_emails_type_valid` was never widened, so enqueuing one violated the constraint and **rolled back the entire fulfilment transaction** — moving an order to out for delivery failed with an opaque `internal_error`. Migration `000020` widens it, and `TestEmailTypesAreAllowedByTheDatabase` in the migrations package reads the embedded SQL and fails by name when a type is missing. **Any new `email.Type*` constant needs a migration.**
+
+**A `default:` branch that moved orders backwards.** `out_for_delivery` fell through `legacyOrderStatus` to `in_progress`, so a dispatched order would have regressed on the orders list. It maps to `shipped`.
+
+**How both reached production:** the deploy was verified with health checks, containers and migration state — none of which exercise a new code path. The user found it by using the feature. Health confirms the box is up; it says nothing about whether the thing you just built works.
+
 ## Current status
 - **Phase:** 1 (MVP). First 40% milestone **paid**; build authorized.
 - ⚠️ **TWO CHECKOUTS OF THIS REPO EXIST ON THE MAC — they are not in sync.** Codex works in `/Users/chibuzoriwuagwu/Documents/oyecouture`; Claude has been working in `/Users/chibuzoriwuagwu/Downloads/share/oyecouture`. On 31 Aug the `Downloads/share` copy was **9 commits behind** `origin/main` and has been fast-forwarded to `5543292`. Full Go suite passes there, including the new `internal/tracking` package. **Whoever picks up the baton must `git fetch` and confirm which checkout they are in before touching anything** — this is how one agent silently reverts the other.
