@@ -8,6 +8,7 @@ import {
   Settings,
   Shirt,
   Truck,
+  Users,
   X,
 } from 'lucide'
 import { ADMIN_COPY, ADMIN_NAVIGATION } from '~/constants/admin'
@@ -18,7 +19,7 @@ interface AdminSideNavProps {
   session: AdminSession
 }
 
-defineProps<AdminSideNavProps>()
+const props = defineProps<AdminSideNavProps>()
 
 const emit = defineEmits<{ signOut: [] }>()
 
@@ -34,17 +35,20 @@ const NAV_ICONS: Readonly<Record<string, IconNode>> = {
   'home-content': House,
   delivery: Truck,
   settings: Settings,
+  team: Users,
 }
 
 // Staff never see owner-only destinations. The API refuses those routes for
 // them anyway, so this is about not offering a door that will not open.
-const { session } = useAdminSession()
-
+//
+// Read from the prop rather than useAdminSession(): the session is already
+// passed in and is non-null here, and destructuring the composable shadowed it
+// with a nullable ref, which broke the footer that renders the signed-in email.
 const visibleNavigation = computed(() =>
   ADMIN_NAVIGATION.map((group) => ({
     ...group,
     items: group.items.filter(
-      (item) => !item.ownerOnly || session.value?.role === AdminRole.Owner,
+      (item) => !item.ownerOnly || props.session.role === AdminRole.Owner,
     ),
   })).filter((group) => group.items.length > 0),
 )
