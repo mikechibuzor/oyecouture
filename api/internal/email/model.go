@@ -73,6 +73,13 @@ type FulfillmentPayload struct {
 	CarrierTrackingURL    string    `json:"carrierTrackingUrl,omitempty"`
 	EstimatedDeliveryDate string    `json:"estimatedDeliveryDate,omitempty"`
 	OccurredAt            time.Time `json:"occurredAt"`
+	// The order reproduced, so a dispatch or delivery email shows what is in the
+	// parcel and what was paid, the way the client's design does.
+	Items           []Item `json:"items,omitempty"`
+	SubtotalKobo    int64  `json:"subtotalKobo,omitempty"`
+	DeliveryFeeKobo int64  `json:"deliveryFeeKobo,omitempty"`
+	TotalKobo       int64  `json:"totalKobo,omitempty"`
+	OrderURL        string `json:"orderUrl,omitempty"`
 }
 
 type Order struct {

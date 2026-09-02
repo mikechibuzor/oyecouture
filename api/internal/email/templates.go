@@ -51,8 +51,10 @@ type emailItemView struct {
 
 type fulfillmentEmailView struct {
 	CustomerName          string
+	FirstName             string
 	OrderNo               string
 	StageLabel            string
+	Eyebrow               string
 	Heading               string
 	Intro                 string
 	PublicNote            string
@@ -61,6 +63,38 @@ type fulfillmentEmailView struct {
 	CarrierTrackingNumber string
 	CarrierTrackingURL    string
 	EstimatedDeliveryDate string
+	Items                 []emailItemView
+	Subtotal              string
+	DeliveryFee           string
+	Total                 string
+	Progress              []progressStepView
+}
+
+// progressStepView drives the four-step bar in the client's design. The API
+// tracks eight internal stages; a customer is shown these four, so workshop
+// states like quality check stay private rather than reading as delay.
+type progressStepView struct {
+	Label string
+	Done  bool
+}
+
+// progressFor maps an internal stage onto the customer-facing four.
+func progressFor(emailType string) []progressStepView {
+	reached := 2
+	switch emailType {
+	case TypeOrderDispatched:
+		reached = 3
+	case TypeOrderDelivered:
+		reached = 4
+	}
+
+	labels := []string{"Confirmed", "In production", "Shipped", "Delivered"}
+	steps := make([]progressStepView, 0, len(labels))
+	for index, label := range labels {
+		steps = append(steps, progressStepView{Label: label, Done: index < reached})
+	}
+
+	return steps
 }
 
 // renderFulfillmentEmail creates branded HTML and plain-text milestone updates.
@@ -68,8 +102,19 @@ func renderFulfillmentEmail(
 	emailType string,
 	payload FulfillmentPayload,
 ) (string, string, error) {
+	items := make([]emailItemView, 0, len(payload.Items))
+	for _, item := range payload.Items {
+		items = append(items, emailItemView{
+			Name:     item.Name,
+			Size:     item.Size,
+			Quantity: item.Quantity,
+			Line:     formatNaira(item.LineKobo),
+		})
+	}
+
 	view := fulfillmentEmailView{
 		CustomerName:          payload.CustomerName,
+		FirstName:             firstName(payload.CustomerName),
 		OrderNo:               payload.OrderNo,
 		StageLabel:            payload.StageLabel,
 		PublicNote:            payload.PublicNote,
@@ -78,12 +123,26 @@ func renderFulfillmentEmail(
 		CarrierTrackingNumber: payload.CarrierTrackingNumber,
 		CarrierTrackingURL:    payload.CarrierTrackingURL,
 		EstimatedDeliveryDate: payload.EstimatedDeliveryDate,
+		Items:                 items,
+		Subtotal:              formatNaira(payload.SubtotalKobo),
+		DeliveryFee:           formatNaira(payload.DeliveryFeeKobo),
+		Total:                 formatNaira(payload.TotalKobo),
+		Progress:              progressFor(emailType),
 	}
+
+	htmlTemplate := fulfillmentUpdateHTML
 
 	switch emailType {
 	case TypeOrderDispatched:
-		view.Heading = "Your order is on its way."
-		view.Intro = "Your Oyecouture order has been dispatched. Follow its progress using the secure link below."
+		// Design 02, Shipped, has its own layout: progress bar, a tracking
+		// panel and the order reproduced. It gets its own template rather than
+		// bending the generic one with conditionals.
+		// The heading lives in that template, not here: it interpolates the
+		// customer's name, and building markup around untrusted input in Go
+		// would mean marking it template.HTML and losing the escaping.
+		htmlTemplate = orderDispatchedHTML
+		view.Eyebrow = "On its way"
+		view.Intro = "Everything has been pressed, checked and packed by hand. Your parcel is now with the courier."
 	case TypeOrderDelivered:
 		view.Heading = "Your order has arrived."
 		view.Intro = "Your Oyecouture order has been marked as delivered. We hope it feels every bit as considered as it was made."
@@ -92,7 +151,7 @@ func renderFulfillmentEmail(
 		view.Intro = "Work has begun on your Oyecouture order. We will keep you updated as it moves toward dispatch."
 	}
 
-	parsedTemplate, err := template.New("fulfillment").Parse(fulfillmentUpdateHTML)
+	parsedTemplate, err := template.New("fulfillment").Parse(htmlTemplate)
 	if err != nil {
 		return "", "", err
 	}
@@ -298,6 +357,14 @@ const emailBaseStyles = `
   .fineprint { color: #9a9188; font-size: 12px; line-height: 1.65; }
   /* Uppercase on the label only: letter-spacing a currency figure reads badly. */
   .totallabel { color: #24211f; font-weight: 700; letter-spacing: 1.6px; text-transform: uppercase; }
+  /* Design 02: four-step progress bar. A table, not flex, because Outlook does
+     not lay flex out and the steps would stack into a column. */
+  .progress { width: 100%; margin-top: 30px; border-collapse: separate; border-spacing: 8px 0; }
+  .progress td { padding: 0; vertical-align: top; }
+  .progress .bar { display: block; height: 3px; background: #ded5c8; }
+  .progress .bar.done { background: #a98a3d; }
+  .progress .step { display: block; margin-top: 9px; color: #b3aaa1; font-size: 11px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase; }
+  .progress .step.done { color: #24211f; }
   @media only screen and (max-width: 600px) {
     .shell { padding: 18px 8px; }
     .header, .section, .footer { padding-left: 22px; padding-right: 22px; }
@@ -484,6 +551,94 @@ const paymentReceiptHTML = `<!doctype html>
         </table>
       </div>
       <div class="footer"><strong>Oyecouture Bespoke</strong><br>If you need help, reply to this email with your order number and payment reference.</div>
+    </div>
+  </div>
+</body>
+</html>`
+
+// orderDispatchedHTML follows the client's approved "02 Shipped" design: the
+// four-step progress bar, a tracking panel, the order reproduced, and a link to
+// follow the parcel.
+const orderDispatchedHTML = `<!doctype html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>` + emailBaseStyles + `</style></head>
+<body>
+  <div class="preheader">Your pieces left us today. Tracking details inside.</div>
+  <div class="shell">
+    <div class="card">
+      <div class="announce">Complimentary tailoring consultation &middot; Worldwide delivery</div>
+
+      <div class="brandhead">
+        <div class="brandtext">Oyecouture<span>Bespoke</span></div>
+      </div>
+
+      <div class="section">
+        <p class="eyebrow">{{.Eyebrow}}</p>
+        <h1>{{.FirstName}}, your order<br>has left us.</h1>
+        <p style="margin-top:18px">{{.Intro}}</p>
+
+        <table class="progress" role="presentation">
+          <tr>
+            {{range .Progress}}<td width="25%"><span class="bar{{if .Done}} done{{end}}"></span></td>{{end}}
+          </tr>
+          <tr>
+            {{range .Progress}}<td width="25%"><span class="step{{if .Done}} done{{end}}">{{.Label}}</span></td>{{end}}
+          </tr>
+        </table>
+
+        {{if or .CarrierName .CarrierTrackingNumber .EstimatedDeliveryDate}}
+        <table class="detailbox" role="presentation">
+          <tr><td colspan="2" class="label" style="padding-bottom:4px">Tracking</td></tr>
+          {{if .CarrierName}}<tr><td class="dkey">Courier</td><td class="dval">{{.CarrierName}}</td></tr>{{end}}
+          {{if .CarrierTrackingNumber}}<tr><td class="dkey">Tracking number</td><td class="dval">{{.CarrierTrackingNumber}}</td></tr>{{end}}
+          {{if .EstimatedDeliveryDate}}<tr><td class="dkey">Estimated arrival</td><td class="dval">{{.EstimatedDeliveryDate}}</td></tr>{{end}}
+        </table>
+        {{end}}
+
+        {{if .PublicNote}}<div class="note" style="margin-top:24px">{{.PublicNote}}</div>{{end}}
+      </div>
+
+      {{if .Items}}
+      <div class="section">
+        <p class="label">Your pieces</p>
+        <table class="items" role="presentation">
+          {{range .Items}}
+          <tr>
+            <td>{{.Name}}<span class="muted">{{if .Size}}Size {{.Size}} &middot; {{end}}Qty {{.Quantity}}</span></td>
+            <td class="money">{{.Line}}</td>
+          </tr>
+          {{end}}
+        </table>
+
+        <table class="row" role="presentation" style="margin-top:18px">
+          <tr><td>Subtotal</td><td class="value">{{.Subtotal}}</td></tr>
+          <tr><td>Tailoring consultation</td><td class="value">Complimentary</td></tr>
+          <tr><td>Delivery</td><td class="value">{{.DeliveryFee}}</td></tr>
+          <tr class="grand-total"><td class="total totallabel">Total paid</td><td class="value total">{{.Total}}</td></tr>
+        </table>
+      </div>
+      {{end}}
+
+      <!-- Outside the items block on purpose. Following the parcel is the whole
+           point of this email, so the link must not depend on the order
+           reproducing. Our own tracking page is preferred over the courier's:
+           it always exists, and it is the link we control. -->
+      {{if or .TrackingURL .CarrierTrackingURL}}
+      <div class="section" style="text-align:center">
+        <a class="action" href="{{if .TrackingURL}}{{.TrackingURL}}{{else}}{{.CarrierTrackingURL}}{{end}}">Track your parcel</a>
+      </div>
+      {{end}}
+
+      <div class="section" style="border-bottom:0">
+        <p>Thank you for your patience while it was made.</p>
+        <p class="signoff">Oyecouture Bespoke</p>
+      </div>
+
+      <div class="footer">
+        <p style="margin-bottom:14px">Questions about this order? Reply to this email and a stylist will answer personally.</p>
+        <p style="margin-bottom:14px">Ready-to-wear pieces may be exchanged within 7 days of delivery in original condition. Made-to-measure and bespoke commissions are cut to your measurements and are final sale, though we will adjust the fit at no charge.</p>
+        <p class="fineprint">Oyecouture Bespoke &middot; 6 Force Road, Tafawa Balewa Square (TBS), Lagos, Nigeria<br>You received this email because you placed order {{.OrderNo}}.</p>
+      </div>
     </div>
   </div>
 </body>

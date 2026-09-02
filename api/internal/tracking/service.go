@@ -176,6 +176,22 @@ func (service *Service) Transition(
 	return service.Admin(requestContext, state.OrderNo)
 }
 
+// emailItems converts tracking items for the email package, carrying the line
+// totals the dispatch and delivery designs show.
+func emailItems(items []Item) []email.Item {
+	converted := make([]email.Item, 0, len(items))
+	for _, item := range items {
+		converted = append(converted, email.Item{
+			Name:     item.Name,
+			Size:     item.Size,
+			Quantity: item.Quantity,
+			LineKobo: item.LineKobo,
+		})
+	}
+
+	return converted
+}
+
 // notification builds only the milestone emails approved for the MVP.
 func (service *Service) notification(
 	state AdminState,
@@ -211,6 +227,10 @@ func (service *Service) notification(
 		CarrierTrackingNumber: command.CarrierTrackingNumber,
 		CarrierTrackingURL:    command.CarrierTrackingURL,
 		OccurredAt:            command.OccurredAt,
+		SubtotalKobo:          state.subtotalKobo,
+		DeliveryFeeKobo:       state.deliveryFeeKobo,
+		TotalKobo:             state.totalKobo,
+		Items:                 emailItems(state.items),
 	}
 	if command.EstimatedDeliveryDate != nil {
 		payload.EstimatedDeliveryDate = command.EstimatedDeliveryDate.Format("2 Jan 2006")

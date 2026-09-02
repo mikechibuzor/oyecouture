@@ -37,6 +37,12 @@ type Item struct {
 	Name     string `json:"name"`
 	Size     string `json:"size,omitempty"`
 	Quantity int    `json:"quantity"`
+	// json:"-" is load-bearing, not tidiness. This same Item is what the public
+	// tracking page serialises, and that page is reachable with only a bearer
+	// token: it must expose names, sizes and quantities and nothing priced.
+	// The dispatch and delivery emails need the figures, so they travel here
+	// but never leave through PublicState.
+	LineKobo int64 `json:"-"`
 }
 
 // Shipment contains optional courier metadata entered at dispatch.
@@ -63,6 +69,13 @@ type AdminState struct {
 	customerName  string
 	customerEmail string
 	trackingToken string
+	// Carried for the dispatch and delivery emails, which reproduce the order
+	// the way the confirmation email does. Unexported so they cannot reach the
+	// admin JSON by accident, and PublicState never sees them at all.
+	items           []Item
+	subtotalKobo    int64
+	deliveryFeeKobo int64
+	totalKobo       int64
 }
 
 // PublicState omits contact, address, measurements, payment, and admin identity.

@@ -29,7 +29,8 @@ func (repository *PostgresRepository) Admin(
 		SELECT id, order_no, kind, fulfillment_stage, fulfillment_version,
 			estimated_delivery_date, COALESCE(carrier_name, ''),
 			COALESCE(carrier_tracking_number, ''), COALESCE(carrier_tracking_url, ''),
-			COALESCE(tracking_token, ''), customer_name, email
+			COALESCE(tracking_token, ''), customer_name, email,
+			subtotal_kobo, delivery_fee_kobo, total_kobo
 		FROM orders
 		WHERE order_no = $1
 	`
@@ -42,6 +43,7 @@ func (repository *PostgresRepository) Admin(
 		&estimatedDeliveryDate, &state.Shipment.CarrierName,
 		&state.Shipment.CarrierTrackingNumber, &state.Shipment.CarrierTrackingURL,
 		&state.trackingToken, &state.customerName, &state.customerEmail,
+		&state.subtotalKobo, &state.deliveryFeeKobo, &state.totalKobo,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -62,6 +64,13 @@ func (repository *PostgresRepository) Admin(
 		return AdminState{}, err
 	}
 	state.Events = events
+
+	// Needed by the dispatch and delivery emails, which reproduce the order.
+	items, err := repository.items(requestContext, state.orderID)
+	if err != nil {
+		return AdminState{}, err
+	}
+	state.items = items
 
 	return state, nil
 }
@@ -238,7 +247,8 @@ func (repository *PostgresRepository) items(
 	orderID string,
 ) ([]Item, error) {
 	const query = `
-		SELECT name_snapshot, COALESCE(size, ''), quantity
+		SELECT name_snapshot, COALESCE(size, ''), quantity,
+			price_kobo_snapshot * quantity
 		FROM order_items
 		WHERE order_id = $1
 		ORDER BY id
@@ -252,7 +262,7 @@ func (repository *PostgresRepository) items(
 	items := []Item{}
 	for rows.Next() {
 		var item Item
-		if err := rows.Scan(&item.Name, &item.Size, &item.Quantity); err != nil {
+		if err := rows.Scan(&item.Name, &item.Size, &item.Quantity, &item.LineKobo); err != nil {
 			return nil, fmt.Errorf("scan tracking item: %w", err)
 		}
 		items = append(items, item)
