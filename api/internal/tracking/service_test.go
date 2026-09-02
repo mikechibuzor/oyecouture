@@ -138,3 +138,33 @@ func (repository *repositoryStub) Transition(
 	}
 	return nil
 }
+
+// TestOutForDeliveryIsOptionalAfterDispatch pins the stage's shape. It exists
+// for a Lagos order handed to Oyecouture's own rider; a courier parcel must be
+// able to go straight from dispatched to delivered, or an international order
+// would sit forever in a stage nobody can observe.
+func TestOutForDeliveryIsOptionalAfterDispatch(t *testing.T) {
+	t.Parallel()
+
+	for _, kind := range []string{KindBespoke, KindReadyToWear} {
+		afterDispatch := nextStages(kind, StageDispatched)
+		if !containsStage(afterDispatch, StageOutForDelivery) {
+			t.Fatalf("%s: dispatched cannot reach out for delivery", kind)
+		}
+		if !containsStage(afterDispatch, StageDelivered) {
+			t.Fatalf("%s: dispatched must still reach delivered directly", kind)
+		}
+
+		afterOutForDelivery := nextStages(kind, StageOutForDelivery)
+		if !containsStage(afterOutForDelivery, StageDelivered) {
+			t.Fatalf("%s: out for delivery cannot reach delivered", kind)
+		}
+		if containsStage(afterOutForDelivery, StageDispatched) {
+			t.Fatalf("%s: out for delivery must not move backwards", kind)
+		}
+	}
+
+	if StageLabel(StageOutForDelivery) != "Out for delivery" {
+		t.Fatalf("unexpected label %q", StageLabel(StageOutForDelivery))
+	}
+}

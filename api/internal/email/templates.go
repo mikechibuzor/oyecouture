@@ -71,6 +71,9 @@ type fulfillmentEmailView struct {
 	SignedForBy           string
 	SignedAt              string
 	DeliveryLocation      string
+	RiderName             string
+	RiderContact          string
+	DeliveryWindow        string
 }
 
 // progressStepView drives the four-step bar in the client's design. The API
@@ -85,7 +88,10 @@ type progressStepView struct {
 func progressFor(emailType string) []progressStepView {
 	reached := 2
 	switch emailType {
-	case TypeOrderDispatched:
+	case TypeOrderDispatched, TypeOutForDelivery:
+		// Out for delivery is still the shipped step: the parcel has not
+		// arrived, so lighting the delivered marker would contradict the
+		// message beside it.
 		reached = 3
 	case TypeOrderDelivered:
 		reached = 4
@@ -134,6 +140,9 @@ func renderFulfillmentEmail(
 		SignedForBy:           payload.SignedForBy,
 		SignedAt:              payload.SignedAt,
 		DeliveryLocation:      payload.DeliveryLocation,
+		RiderName:             payload.RiderName,
+		RiderContact:          payload.RiderContact,
+		DeliveryWindow:        payload.DeliveryWindow,
 	}
 
 	htmlTemplate := fulfillmentUpdateHTML
@@ -149,6 +158,11 @@ func renderFulfillmentEmail(
 		htmlTemplate = orderDispatchedHTML
 		view.Eyebrow = "On its way"
 		view.Intro = "Everything has been pressed, checked and packed by hand. Your parcel is now with the courier."
+	case TypeOutForDelivery:
+		// Design 03, Out for delivery: the rider panel in place of tracking.
+		htmlTemplate = outForDeliveryHTML
+		view.Eyebrow = "Arriving today"
+		view.Intro = "Your order is on the road and should reach you today. Please keep your phone nearby, the rider will call on arrival. If today is inconvenient, reply and we will arrange another slot at no cost."
 	case TypeOrderDelivered:
 		// Design 04, Delivered. Same shape as Shipped, with the handover record
 		// in place of the tracking panel. The heading interpolates the name in
@@ -726,6 +740,70 @@ const orderDeliveredHTML = `<!doctype html>
       <div class="footer">
         <p style="margin-bottom:14px">Questions about this order? Reply to this email and a stylist will answer personally.</p>
         <p style="margin-bottom:14px">Ready-to-wear pieces may be exchanged within 7 days of delivery in original condition. Made-to-measure and bespoke commissions are cut to your measurements and are final sale, though we will adjust the fit at no charge.</p>
+        <p class="fineprint">Oyecouture Bespoke &middot; 6 Force Road, Tafawa Balewa Square (TBS), Lagos, Nigeria<br>You received this email because you placed order {{.OrderNo}}.</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>`
+
+// outForDeliveryHTML follows the client's approved "03 Out for delivery"
+// design: the rider carrying the parcel, their number, and the window to expect
+// them. Distinct from dispatch, which names a courier and a tracking number;
+// this step is Oyecouture's own rider on a Lagos road, and the customer needs a
+// person to expect rather than a parcel to track.
+const outForDeliveryHTML = `<!doctype html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>` + emailBaseStyles + `</style></head>
+<body>
+  <div class="preheader">Your parcel is with the rider and arrives today.</div>
+  <div class="shell">
+    <div class="card">
+      <div class="announce">Complimentary tailoring consultation &middot; Worldwide delivery</div>
+
+      <div class="brandhead">
+        <div class="brandtext">Oyecouture<span>Bespoke</span></div>
+      </div>
+
+      <div class="section">
+        <p class="eyebrow">{{.Eyebrow}}</p>
+        <h1>{{.FirstName}}, your parcel<br>is out for delivery.</h1>
+        <p style="margin-top:18px">{{.Intro}}</p>
+
+        <table class="progress" role="presentation">
+          <tr>
+            {{range .Progress}}<td width="25%"><span class="bar{{if .Done}} done{{end}}"></span></td>{{end}}
+          </tr>
+          <tr>
+            {{range .Progress}}<td width="25%"><span class="step{{if .Done}} done{{end}}">{{.Label}}</span></td>{{end}}
+          </tr>
+        </table>
+
+        {{if or .RiderName .RiderContact .DeliveryWindow}}
+        <table class="detailbox" role="presentation">
+          <tr><td colspan="2" class="label" style="padding-bottom:4px">Today's delivery</td></tr>
+          {{if .RiderName}}<tr><td class="dkey">Rider</td><td class="dval">{{.RiderName}}</td></tr>{{end}}
+          {{if .RiderContact}}<tr><td class="dkey">Contact</td><td class="dval">{{.RiderContact}}</td></tr>{{end}}
+          {{if .DeliveryWindow}}<tr><td class="dkey">Window</td><td class="dval">{{.DeliveryWindow}}</td></tr>{{end}}
+        </table>
+        {{end}}
+
+        {{if .PublicNote}}<p class="note" style="margin-top:26px">{{.PublicNote}}</p>{{end}}
+
+        {{if .TrackingURL}}
+        <div style="text-align:center;margin-top:30px">
+          <a class="action" href="{{.TrackingURL}}">Follow the delivery</a>
+        </div>
+        {{end}}
+      </div>
+
+      <div class="section" style="border-bottom:0">
+        <p>We hope it is everything you pictured.</p>
+        <p class="signoff">Oyecouture Bespoke</p>
+      </div>
+
+      <div class="footer">
+        <p style="margin-bottom:14px">Questions about this order? Reply to this email and a stylist will answer personally.</p>
         <p class="fineprint">Oyecouture Bespoke &middot; 6 Force Road, Tafawa Balewa Square (TBS), Lagos, Nigeria<br>You received this email because you placed order {{.OrderNo}}.</p>
       </div>
     </div>

@@ -249,6 +249,10 @@ export const ADMIN_COPY = {
   signedForByLabel: 'Signed for by',
   signedAtLabel: 'Date and time received',
   deliveryLocationLabel: 'Delivered to',
+  riderNameLabel: 'Rider',
+  riderContactLabel: 'Rider contact number',
+  deliveryWindowLabel: 'Delivery window',
+  riderHint: 'Shown on the out-for-delivery email so the customer knows who to expect.',
   deliveryHandoverHint:
     'Optional. Shown on the delivery email as the record of who received the parcel.',
   advanceFulfillment: 'Move to',

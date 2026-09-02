@@ -5,6 +5,7 @@ import {
   FULFILLMENT_STAGE_LABELS,
   TRACKING_COPY,
 } from '~/constants/tracking'
+import { FulfillmentStage } from '~/types/tracking'
 import type { FulfillmentEvent } from '~/types/tracking'
 import { formatOrderDate } from '~/utils/admin'
 
@@ -32,7 +33,15 @@ const stages = computed(() => {
   }
 
   const path = FULFILLMENT_PATHS[tracking.value.kind]
-  const currentIndex = path.indexOf(tracking.value.currentStage)
+  // Out for delivery is an optional local-rider step that is deliberately not
+  // on the customer timeline, so it is read as dispatched. Without this,
+  // indexOf returns -1 and every step renders incomplete, showing a paid and
+  // shipped order as though nothing had happened to it yet.
+  const timelineStage =
+    tracking.value.currentStage === FulfillmentStage.OutForDelivery
+      ? FulfillmentStage.Dispatched
+      : tracking.value.currentStage
+  const currentIndex = path.indexOf(timelineStage)
   const eventsByStage = new Map(
     tracking.value.events.map((event) => [event.stage, event] as const),
   )

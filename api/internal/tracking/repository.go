@@ -182,7 +182,10 @@ func (repository *PostgresRepository) Transition(
 			carrier_tracking_url = CASE WHEN $2 = 'dispatched' THEN NULLIF($8, '') ELSE carrier_tracking_url END,
 			delivery_signed_for_by = CASE WHEN $2 = 'delivered' THEN NULLIF($9, '') ELSE delivery_signed_for_by END,
 			delivery_signed_at = CASE WHEN $2 = 'delivered' THEN $10 ELSE delivery_signed_at END,
-			delivery_location = CASE WHEN $2 = 'delivered' THEN NULLIF($11, '') ELSE delivery_location END
+			delivery_location = CASE WHEN $2 = 'delivered' THEN NULLIF($11, '') ELSE delivery_location END,
+			rider_name = CASE WHEN $2 = 'out_for_delivery' THEN NULLIF($12, '') ELSE rider_name END,
+			rider_contact = CASE WHEN $2 = 'out_for_delivery' THEN NULLIF($13, '') ELSE rider_contact END,
+			delivery_window = CASE WHEN $2 = 'out_for_delivery' THEN NULLIF($14, '') ELSE delivery_window END
 		WHERE id = $1
 	`
 	if _, err := transaction.Exec(
@@ -190,6 +193,7 @@ func (repository *PostgresRepository) Transition(
 		command.TrackingToken, command.EstimatedDeliveryDate, command.CarrierName,
 		command.CarrierTrackingNumber, command.CarrierTrackingURL,
 		command.SignedForBy, command.SignedAt, command.DeliveryLocation,
+		command.RiderName, command.RiderContact, command.DeliveryWindow,
 	); err != nil {
 		return fmt.Errorf("update order fulfillment: %w", err)
 	}

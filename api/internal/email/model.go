@@ -13,6 +13,7 @@ const (
 	TypePaymentReceipt    = "payment_receipt"
 	TypeFulfillmentUpdate = "fulfillment_update"
 	TypeOrderDispatched   = "order_dispatched"
+	TypeOutForDelivery    = "order_out_for_delivery"
 	TypeOrderDelivered    = "order_delivered"
 
 	StatusPending    = "pending"
@@ -84,6 +85,10 @@ type FulfillmentPayload struct {
 	SignedForBy      string `json:"signedForBy,omitempty"`
 	SignedAt         string `json:"signedAt,omitempty"`
 	DeliveryLocation string `json:"deliveryLocation,omitempty"`
+	// The rider carrying a local delivery, for the out-for-delivery design.
+	RiderName      string `json:"riderName,omitempty"`
+	RiderContact   string `json:"riderContact,omitempty"`
+	DeliveryWindow string `json:"deliveryWindow,omitempty"`
 }
 
 type Order struct {

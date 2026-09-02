@@ -8,6 +8,8 @@ export enum FulfillmentStage {
   QualityCheck = 'quality_check',
   ReadyForDispatch = 'ready_for_dispatch',
   Dispatched = 'dispatched',
+  // Optional, and only for a local delivery by Oyecouture's own rider.
+  OutForDelivery = 'out_for_delivery',
   Delivered = 'delivered',
 }
 
@@ -51,6 +53,10 @@ export interface FulfillmentTransitionInput {
   readonly signedForBy: string
   readonly signedAt: string
   readonly deliveryLocation: string
+  // Rider details, accepted only on the out-for-delivery transition.
+  readonly riderName: string
+  readonly riderContact: string
+  readonly deliveryWindow: string
 }
 
 export interface TrackingItem {

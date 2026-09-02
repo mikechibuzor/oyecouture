@@ -14,7 +14,10 @@ const (
 	StageQualityCheck         Stage = "quality_check"
 	StageReadyForDispatch     Stage = "ready_for_dispatch"
 	StageDispatched           Stage = "dispatched"
-	StageDelivered            Stage = "delivered"
+	// Optional, and only meaningful for a local delivery by Oyecouture's own
+	// rider. A courier parcel goes straight from dispatched to delivered.
+	StageOutForDelivery Stage = "out_for_delivery"
+	StageDelivered      Stage = "delivered"
 )
 
 const (
@@ -108,4 +111,9 @@ type TransitionInput struct {
 	SignedForBy      string `json:"signedForBy"`
 	SignedAt         string `json:"signedAt"`
 	DeliveryLocation string `json:"deliveryLocation"`
+	// Captured when handing an order to Oyecouture's own rider. Accepted only
+	// on the out-for-delivery transition.
+	RiderName      string `json:"riderName"`
+	RiderContact   string `json:"riderContact"`
+	DeliveryWindow string `json:"deliveryWindow"`
 }

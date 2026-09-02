@@ -48,6 +48,9 @@ const trackingForm = reactive({
   signedForBy: '',
   signedAt: '',
   deliveryLocation: '',
+  riderName: '',
+  riderContact: '',
+  deliveryWindow: '',
 })
 
 let copiedTimer: ReturnType<typeof setTimeout> | undefined
@@ -81,6 +84,12 @@ const isDispatchTransition = computed(
 // any other transition, so the fields appear only for that step.
 const isDeliveryTransition = computed(
   () => nextFulfillmentStage.value === FulfillmentStage.Delivered,
+)
+
+// Rider details apply only to a local delivery, and the API rejects them on any
+// other transition.
+const isOutForDeliveryTransition = computed(
+  () => nextFulfillmentStage.value === FulfillmentStage.OutForDelivery,
 )
 
 // The pay link is shareable even before payment provider credentials are added.
@@ -263,6 +272,9 @@ const advanceFulfillment = async (): Promise<void> => {
       signedForBy: isDeliveryTransition.value ? trackingForm.signedForBy : '',
       signedAt: isDeliveryTransition.value ? trackingForm.signedAt : '',
       deliveryLocation: isDeliveryTransition.value ? trackingForm.deliveryLocation : '',
+      riderName: isOutForDeliveryTransition.value ? trackingForm.riderName : '',
+      riderContact: isOutForDeliveryTransition.value ? trackingForm.riderContact : '',
+      deliveryWindow: isOutForDeliveryTransition.value ? trackingForm.deliveryWindow : '',
     })
     order.value = await fetchOrder(orderNo.value)
     syncTrackingForm(tracking.value)
@@ -487,6 +499,28 @@ onBeforeUnmount(() => clearTimeout(copiedTimer))
                     <label class="admin-field">
                       <span>{{ ADMIN_COPY.carrierTrackingUrlLabel }}</span>
                       <input v-model.trim="trackingForm.carrierTrackingUrl" type="url">
+                    </label>
+                  </template>
+
+                  <!-- Only when handing to a rider. -->
+                  <template v-if="isOutForDeliveryTransition">
+                    <label class="admin-field">
+                      <span>{{ ADMIN_COPY.riderNameLabel }}</span>
+                      <input v-model.trim="trackingForm.riderName" type="text" maxlength="120">
+                    </label>
+                    <label class="admin-field">
+                      <span>{{ ADMIN_COPY.riderContactLabel }}</span>
+                      <input v-model.trim="trackingForm.riderContact" type="tel" maxlength="60">
+                    </label>
+                    <label class="admin-field admin-field-wide">
+                      <span>{{ ADMIN_COPY.deliveryWindowLabel }}</span>
+                      <input
+                        v-model.trim="trackingForm.deliveryWindow"
+                        type="text"
+                        maxlength="120"
+                        placeholder="Between 10:00 and 16:00"
+                      >
+                      <small>{{ ADMIN_COPY.riderHint }}</small>
                     </label>
                   </template>
 

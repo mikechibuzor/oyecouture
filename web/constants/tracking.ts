@@ -9,6 +9,7 @@ export const FULFILLMENT_STAGE_LABELS: Readonly<Record<FulfillmentStage, string>
   [FulfillmentStage.QualityCheck]: 'Quality check',
   [FulfillmentStage.ReadyForDispatch]: 'Ready for dispatch',
   [FulfillmentStage.Dispatched]: 'Dispatched',
+  [FulfillmentStage.OutForDelivery]: 'Out for delivery',
   [FulfillmentStage.Delivered]: 'Delivered',
 }
 

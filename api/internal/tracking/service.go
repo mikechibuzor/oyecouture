@@ -23,6 +23,9 @@ const (
 	// is refused with a clear error rather than a database violation.
 	maximumSignedForByLength      = 120
 	maximumDeliveryLocationLength = 240
+	maximumRiderNameLength        = 120
+	maximumRiderContactLength     = 60
+	maximumDeliveryWindowLength   = 120
 	// A handover happens at a time of day, not just on a date, so the delivered
 	// panel needs minutes. Accepts what a datetime-local input submits.
 	dateTimeFormat = "2006-01-02T15:04"
@@ -56,6 +59,9 @@ type TransitionCommand struct {
 	SignedForBy           string
 	SignedAt              *time.Time
 	DeliveryLocation      string
+	RiderName             string
+	RiderContact          string
+	DeliveryWindow        string
 	TrackingToken         string
 	ActorAdminID          string
 	LegacyOrderStatus     string
@@ -168,6 +174,22 @@ func (service *Service) Transition(
 		return AdminState{}, ErrInvalidInput
 	}
 
+	// Rider details belong to the out-for-delivery step and nothing else, for
+	// the same reason: an order should not name the rider carrying it before
+	// anyone has been handed it.
+	riderName := strings.TrimSpace(input.RiderName)
+	riderContact := strings.TrimSpace(input.RiderContact)
+	deliveryWindow := strings.TrimSpace(input.DeliveryWindow)
+	if input.Stage != StageOutForDelivery &&
+		(riderName != "" || riderContact != "" || deliveryWindow != "") {
+		return AdminState{}, ErrInvalidInput
+	}
+	if len(riderName) > maximumRiderNameLength ||
+		len(riderContact) > maximumRiderContactLength ||
+		len(deliveryWindow) > maximumDeliveryWindowLength {
+		return AdminState{}, ErrInvalidInput
+	}
+
 	trackingToken := state.trackingToken
 	if input.Stage == StageDispatched && trackingToken == "" {
 		trackingToken, err = newTrackingToken()
@@ -187,6 +209,9 @@ func (service *Service) Transition(
 		SignedForBy:           signedForBy,
 		SignedAt:              signedAt,
 		DeliveryLocation:      deliveryLocation,
+		RiderName:             riderName,
+		RiderContact:          riderContact,
+		DeliveryWindow:        deliveryWindow,
 		CarrierName:           carrierName,
 		CarrierTrackingNumber: carrierTrackingNumber,
 		CarrierTrackingURL:    carrierTrackingURL,
@@ -238,6 +263,9 @@ func (service *Service) notification(
 	case StageInProduction:
 		emailType = email.TypeFulfillmentUpdate
 		subject = "Your Oyecouture piece is in production - " + state.OrderNo
+	case StageOutForDelivery:
+		emailType = email.TypeOutForDelivery
+		subject = "Your Oyecouture order is out for delivery today - " + state.OrderNo
 	case StageDispatched:
 		emailType = email.TypeOrderDispatched
 		subject = "Your Oyecouture order is on its way - " + state.OrderNo
@@ -264,6 +292,9 @@ func (service *Service) notification(
 		Items:                 emailItems(state.items),
 		SignedForBy:           command.SignedForBy,
 		DeliveryLocation:      command.DeliveryLocation,
+		RiderName:             command.RiderName,
+		RiderContact:          command.RiderContact,
+		DeliveryWindow:        command.DeliveryWindow,
 	}
 	if command.SignedAt != nil {
 		payload.SignedAt = command.SignedAt.Format("2 January 2006, 15:04")
@@ -328,6 +359,8 @@ func StageLabel(stage Stage) string {
 		return "Ready for dispatch"
 	case StageDispatched:
 		return "Dispatched"
+	case StageOutForDelivery:
+		return "Out for delivery"
 	case StageDelivered:
 		return "Delivered"
 	default:
@@ -363,6 +396,11 @@ func nextStages(kind string, current Stage) []Stage {
 	case StageReadyForDispatch:
 		return []Stage{StageDispatched}
 	case StageDispatched:
+		// Two legal moves, because out-for-delivery only applies to a local
+		// rider. A courier parcel would otherwise have to pass through a stage
+		// Oyecouture has no way to observe.
+		return []Stage{StageOutForDelivery, StageDelivered}
+	case StageOutForDelivery:
 		return []Stage{StageDelivered}
 	default:
 		return []Stage{}
