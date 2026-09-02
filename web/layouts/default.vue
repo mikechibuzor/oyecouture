@@ -13,7 +13,16 @@ const bespokeBandProps = computed(() =>
   route.path === StorefrontRoute.About ? ABOUT_BESPOKE_BAND : {},
 )
 
-const showsBespokeBand = computed(() => !route.path.startsWith('/track/'))
+// The confirmation and receipt pages carry their own logo and order header, the
+// way a receipt does. Leaving the shared nav above them put a second Oyecouture
+// logo directly over the first, and a shop menu on a page whose job is finished.
+const showsStorefrontChrome = computed(
+  () => !/^\/pay\/[^/]+\/(callback|receipt)$/.test(route.path),
+)
+
+const showsBespokeBand = computed(
+  () => !route.path.startsWith('/track/') && showsStorefrontChrome.value,
+)
 
 // Routes implemented header actions to their owning storefront surfaces.
 const handleStorefrontAction = (storefrontActionId: StorefrontActionId): void => {
@@ -40,8 +49,8 @@ const closeSearchOverlay = (): void => {
 
 <template>
   <div class="storefront-shell">
-    <StorefrontAnnouncementBar />
-    <StorefrontNavBar @action="handleStorefrontAction" />
+    <StorefrontAnnouncementBar v-if="showsStorefrontChrome" />
+    <StorefrontNavBar v-if="showsStorefrontChrome" @action="handleStorefrontAction" />
     <main class="storefront-main">
       <slot />
     </main>

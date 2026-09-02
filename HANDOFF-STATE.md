@@ -39,6 +39,26 @@
 
 ⚠️ **Caddyfile changes need the caddy container recreated.** `compose.prod.yaml` bind-mounts the single file `./deploy/Caddyfile`, so a `git pull` replacing it leaves the running container on the old inode and the change silently does nothing. `deploy.sh` does not handle this. After changing the Caddyfile: `docker compose -f compose.prod.yaml --env-file .env.production up -d --force-recreate caddy`. This cost a debugging cycle when `www` stayed broken after a successful deploy.
 
+## 💸 A REAL PAYMENT WAS SILENTLY SWALLOWED (Claude, 2026-09-02) — fixed, recovered
+
+**Order `OYE-1002` was paid and sat at `awaiting_payment`.** Paystack charged ₦101.53 for a ₦100 order because the account was passing the transaction fee to the customer on the `bank_transfer` channel. `verificationMatchesOrder` demanded the charged amount **equal** the order total, so the webhook was rejected as `payment amount mismatch` — and mismatches are classed **terminal**, so it was answered `200 OK` and Paystack never retried. Money taken, order unpaid, no alert. **Every bank-transfer order would have failed this way**; card happened to match exactly, which is why `OYE-1001` passed and hid it.
+
+**Fixed in `3d81f2d`.** The risk is asymmetric and the guard now is too: paying **less** than the order total never fulfils; paying **more** does. Underpayment tests all kept, fee-overpayment cases added. Recovered by re-calling `POST /payments/{payToken}/verify` — the real path, not a hand-edited row — so `OYE-1002` is `paid`/`payment_confirmed` with both emails sent and a system-attributed fulfilment event.
+
+The client has since switched fee-passing back off, but **do not revert this guard**: exact equality is wrong regardless, and any future fee-bearing channel would reproduce the bug.
+
+⚠️ **Still open — async channels break the confirmation page.** Bank transfer and USSD settle *after* Paystack redirects back. `OYE-1002` redirected at 10:02:1x and the transfer completed 10:03:04, so the page said "Payment is not complete yet" and offered **Try again**, which leads to a dead checkout link ("We could not start this transaction"). The customer sees failure for a payment that succeeds moments later. The page needs to poll rather than declare failure on first check.
+
+## ✍️ COPY RULE: it is "Oyecouture", never "the atelier" (user, 2026-09-02)
+
+The atelier **is** Oyecouture, so customer-facing copy names the brand rather than calling it "the atelier" or "our atelier". Applied across `CONFIRMATION_COPY` and `CONFIRMATION_STEPS`. **Apply this to the four email templates when they are built** — the client's own mockups use "atelier" throughout and that wording must not be copied across verbatim.
+
+## 📋 QUEUED, in the user's stated order (2026-09-02)
+
+1. **Finish the client's storefront feedback** (favicon ✅, section search ✅, confirmation page ✅, spacing between product name and price on the catalogue cards — *still to do*, the user says it is too wide).
+2. **Super admin, roles and permissions.** A super admin can create admins, grant permissions, see all admins, revoke roles, and delete admins. `admin_users.role` already exists with `CHECK (role IN ('owner','staff'))` but **nothing enforces it on any route**. Prerequisite worth doing first: **an admin can change their own password** — there is no such route today, so any account the developer creates keeps a password the developer knows, which defeats the point of the whole feature. See the handover-trust note below.
+3. **Payment escalation / refund flow the customer can start.** Prompted by `OYE-1002`, where money left the customer's account and the order stayed unpaid with no way for them to say so. Needs a customer-initiated "I paid but this says otherwise" path, an admin queue for it, and a refund route. Until it exists, a repeat of that incident is silent.
+
 ## Current status
 - **Phase:** 1 (MVP). First 40% milestone **paid**; build authorized.
 - ⚠️ **TWO CHECKOUTS OF THIS REPO EXIST ON THE MAC — they are not in sync.** Codex works in `/Users/chibuzoriwuagwu/Documents/oyecouture`; Claude has been working in `/Users/chibuzoriwuagwu/Downloads/share/oyecouture`. On 31 Aug the `Downloads/share` copy was **9 commits behind** `origin/main` and has been fast-forwarded to `5543292`. Full Go suite passes there, including the new `internal/tracking` package. **Whoever picks up the baton must `git fetch` and confirm which checkout they are in before touching anything** — this is how one agent silently reverts the other.

@@ -23,7 +23,10 @@ const order = ref<PaymentOrder | null>(null)
 const paymentChannel = ref('')
 
 useSeoMeta({
-  title: `${PAYMENT_COPY.verifying} | Oyecouture Bespoke`,
+  // Reactive, so the tab stops saying "Confirming payment..." once it is
+  // confirmed. Passing a getter is what makes useSeoMeta re-evaluate it.
+  title: () =>
+    `${isPaid.value ? PAYMENT_COPY.verified : PAYMENT_COPY.verifying} | Oyecouture Bespoke`,
   // A confirmation page carries a customer's address and order value, so it
   // must never reach an index even though the token makes it unguessable.
   robots: 'noindex, nofollow',

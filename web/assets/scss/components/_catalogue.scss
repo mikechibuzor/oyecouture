@@ -354,7 +354,9 @@ $catalogue-content-width: 92.5rem;
 }
 
 .product-price {
-  margin-top: var(--space-sm);
+  // No top margin: the title above reserves two lines via min-height so prices
+  // stay on one line across a row, and most names use only one of them. Adding
+  // margin on top of that reserved space read as a gap rather than separation.
   font-size: 0.9375rem;
   font-weight: var(--font-weight-regular);
   letter-spacing: var(--tracking-snug);

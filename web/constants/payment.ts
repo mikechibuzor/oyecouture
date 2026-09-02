@@ -35,7 +35,7 @@ export const CONFIRMATION_COPY = {
   eyebrow: 'Payment confirmed',
   greeting: (firstName: string): string => `Thank you, ${firstName}`,
   intro:
-    'Your order is confirmed and now with our atelier. Below is everything that was paid for, along with where each piece goes next.',
+    'Your order is confirmed and now with Oyecouture. Below is everything that was paid for, along with where each piece goes next.',
   orderReference: 'Order reference',
   orderDate: 'Order date',
   paymentMethod: 'Payment method',
@@ -56,10 +56,10 @@ export const CONFIRMATION_COPY = {
   contact: 'Contact',
   estimatedDelivery: 'Estimated delivery',
   downloadReceipt: 'Download receipt',
-  contactAtelier: 'Contact the atelier',
+  contactAtelier: 'Contact Oyecouture',
   footerNote:
     'Every piece is finished by hand, so small variations in cloth and stitch are part of the work.',
-  footerQuestion: 'Questions about sizing or delivery? The atelier answers within a day.',
+  footerQuestion: 'Questions about sizing or delivery? Oyecouture answers within a day.',
 } as const
 
 // Receipt copy. Wording follows the client's approved email template so the
@@ -106,7 +106,7 @@ export const CONFIRMATION_STEPS = [
     body: 'A stylist calls you within 24 hours to take measurements and confirm your cloth selection.',
   },
   {
-    title: 'In the atelier',
+    title: 'With Oyecouture',
     body: 'Cutting and hand-finishing takes 10 to 14 days, with one fitting before the final press.',
   },
   {
