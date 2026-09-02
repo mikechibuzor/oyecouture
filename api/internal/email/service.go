@@ -116,11 +116,17 @@ func (service *Service) SendPaidOrderEmails(requestContext context.Context, orde
 		return nil
 	}
 
+	// One email, not two. This used to send a confirmation and a receipt a
+	// second apart, which arrived as near-duplicates. The client's approved
+	// design has a single "Payment received" message, and the rewritten
+	// confirmation already carries everything the receipt did: order details,
+	// the pieces, subtotal, delivery, total and the delivery address. A
+	// printable receipt also lives on the confirmation page the email links to.
+	//
+	// TypePaymentReceipt and its template are deliberately left in place rather
+	// than deleted, so reinstating it is a one-line change.
 	if err := service.send(requestContext, order, TypeOrderConfirmation); err != nil {
 		log.Printf("send order confirmation email: %v", err)
-	}
-	if err := service.send(requestContext, order, TypePaymentReceipt); err != nil {
-		log.Printf("send payment receipt email: %v", err)
 	}
 
 	return nil

@@ -76,8 +76,14 @@ type FulfillmentPayload struct {
 }
 
 type Order struct {
-	ID              string
-	OrderNo         string
+	ID      string
+	OrderNo string
+	// PayToken and the payment reference together rebuild the customer's own
+	// confirmation URL, which is what the design's "View your order" button
+	// points at. Without the reference that page cannot verify and shows a
+	// failure to someone who has already paid, so both are required.
+	PayToken        string
+	OrderDate       string
 	CustomerName    string
 	Email           string
 	Phone           string

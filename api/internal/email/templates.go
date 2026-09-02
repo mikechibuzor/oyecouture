@@ -4,12 +4,28 @@ import (
 	"bytes"
 	"fmt"
 	"html/template"
+	"net/url"
 	"strings"
 )
+
+// firstName keeps the greeting personal: "Thank you, Adeola" reads as a person
+// writing where the full legal name reads as a system generating. Falls back to
+// the whole string so a single-word name is still greeted rather than dropped.
+func firstName(fullName string) string {
+	trimmed := strings.TrimSpace(fullName)
+	if first, _, found := strings.Cut(trimmed, " "); found && first != "" {
+		return first
+	}
+
+	return trimmed
+}
 
 type emailView struct {
 	LogoURL         string
 	CustomerName    string
+	FirstName       string
+	OrderURL        string
+	OrderDate       string
 	OrderNo         string
 	Status          string
 	PaymentProvider string
@@ -127,9 +143,22 @@ func newEmailView(siteURL string, order Order) emailView {
 		})
 	}
 
+	base := strings.TrimRight(siteURL, "/")
+
+	// The customer's own confirmation page, reference included so it can verify
+	// rather than reporting a failure to someone who has already paid.
+	orderURL := ""
+	if order.PayToken != "" && order.Payment.Reference != "" {
+		orderURL = base + "/pay/" + order.PayToken + "/callback?reference=" +
+			url.QueryEscape(order.Payment.Reference)
+	}
+
 	return emailView{
-		LogoURL:         strings.TrimRight(siteURL, "/") + "/images/brand/oyecouture-logo.png",
+		LogoURL:         base + "/images/brand/oyecouture-logo.png",
 		CustomerName:    order.CustomerName,
+		FirstName:       firstName(order.CustomerName),
+		OrderURL:        orderURL,
+		OrderDate:       order.OrderDate,
 		OrderNo:         order.OrderNo,
 		Status:          "Paid",
 		PaymentProvider: displayProvider(order.Payment.Provider),
@@ -250,11 +279,32 @@ const emailBaseStyles = `
   .action { display: inline-block; padding: 14px 22px; background: #24211f; color: #e0cf9c !important; font-size: 12px; font-weight: 700; letter-spacing: 2.5px; text-decoration: none; text-transform: uppercase; }
   .footer { padding: 26px 38px 34px; color: #8d847c; font-size: 13px; line-height: 1.7; }
   .footer strong { color: #24211f; letter-spacing: 2px; text-transform: uppercase; }
+  /* Design 01: dark announcement strip, centred mark, gold rule beneath. */
+  .announce { padding: 13px 20px; background: #1c1a18; color: #d9c489; font-size: 11px; font-weight: 700; letter-spacing: 3px; text-align: center; text-transform: uppercase; }
+  .brandhead { padding: 30px 38px 26px; background: #faf7f2; border-bottom: 2px solid #a98a3d; text-align: center; }
+  .brandtext { color: #24211f; font-size: 26px; font-weight: 700; letter-spacing: 7px; text-transform: uppercase; }
+  .brandtext span { display: block; margin-top: 7px; color: #a98a3d; font-size: 11px; font-weight: 600; letter-spacing: 9px; }
+  .detailbox { width: 100%; margin-top: 26px; border-collapse: collapse; background: #f7f3ee; border: 1px solid #e8dfd3; }
+  .detailbox td { padding: 11px 18px; font-size: 13px; }
+  .detailbox tr:first-child td { padding-top: 18px; }
+  .detailbox tr:last-child td { padding-bottom: 18px; }
+  .dkey { color: #8d847c; letter-spacing: 1.4px; text-transform: uppercase; }
+  .dval { color: #24211f; font-weight: 700; text-align: right; }
+  .deliverbox { width: 100%; margin-top: 26px; border-collapse: collapse; background: #f7f3ee; border: 1px solid #e8dfd3; }
+  .deliverbox td { padding: 6px 18px; font-size: 14px; line-height: 1.6; }
+  .deliverbox tr:first-child td { padding-top: 18px; }
+  .deliverbox tr:last-child td { padding-bottom: 18px; }
+  .signoff { margin-top: 12px; color: #24211f; font-size: 13px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; }
+  .fineprint { color: #9a9188; font-size: 12px; line-height: 1.65; }
+  /* Uppercase on the label only: letter-spacing a currency figure reads badly. */
+  .totallabel { color: #24211f; font-weight: 700; letter-spacing: 1.6px; text-transform: uppercase; }
   @media only screen and (max-width: 600px) {
     .shell { padding: 18px 8px; }
     .header, .section, .footer { padding-left: 22px; padding-right: 22px; }
     h1 { font-size: 25px; }
     .summary td { display: block; width: auto; }
+    .announce { font-size: 10px; letter-spacing: 2px; }
+    .brandhead { padding-left: 22px; padding-right: 22px; }
   }
 `
 
@@ -305,61 +355,83 @@ const fulfillmentUpdateHTML = `<!doctype html>
 </body>
 </html>`
 
+// orderConfirmationHTML follows the client's approved "01 Payment received"
+// design. Table-based and inline-friendly because email clients are not
+// browsers: flex and grid are unreliable in Outlook, so structure comes from
+// tables and the shared styles above.
 const orderConfirmationHTML = `<!doctype html>
 <html>
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>` + emailBaseStyles + `</style></head>
 <body>
-  <div class="preheader">Your Oyecouture order {{.OrderNo}} is confirmed and payment has been received.</div>
+  <div class="preheader">We have your payment and your pieces are entering the workroom.</div>
   <div class="shell">
     <div class="card">
-      <div class="topline"></div>
-      <div class="header">
-        <div class="brand">Oyecouture<span>Bespoke</span></div>
-        <div class="eyebrow">Order confirmed</div>
-        <h1>Thank you, {{.CustomerName}}.</h1>
-        <table class="summary">
-          <tr>
-            <td>Order<strong>{{.OrderNo}}</strong></td>
-            <td>Status<br><span class="badge">{{.Status}}</span></td>
-            <td>Total<strong>{{.Total}}</strong></td>
-          </tr>
+      <div class="announce">Complimentary tailoring consultation &middot; Worldwide delivery</div>
+
+      <!-- Set as type, not an image. Mail clients block remote images by
+           default, so a hosted logo means most recipients open an email with
+           no brand on it at all. -->
+      <div class="brandhead">
+        <div class="brandtext">Oyecouture<span>Bespoke</span></div>
+      </div>
+
+      <div class="section">
+        <p class="eyebrow">Payment received</p>
+        <h1>Thank you, {{.FirstName}}.<br>Your order is confirmed.</h1>
+        <p style="margin-top:18px">Your payment has come through and your commission is now with our cutters. We will write again the moment your pieces leave us, and if anything needs clarifying before then, simply reply to this email.</p>
+
+        <table class="detailbox" role="presentation">
+          <tr><td colspan="2" class="label" style="padding-bottom:4px">Order details</td></tr>
+          <tr><td class="dkey">Order reference</td><td class="dval">{{.OrderNo}}</td></tr>
+          <tr><td class="dkey">Order date</td><td class="dval">{{.OrderDate}}</td></tr>
+          <tr><td class="dkey">Payment</td><td class="dval">{{.PaymentProvider}} &middot; Verified</td></tr>
         </table>
       </div>
+
       <div class="section">
-        <p>Your Oyecouture order has been confirmed and your payment has been received. We will prepare your pieces with care and keep you updated as fulfilment begins.</p>
-      </div>
-      <div class="section">
-        <div class="label">Items</div>
-        <table class="items">
-          <tr><th>Piece</th><th style="text-align:right;">Amount</th></tr>
+        <p class="label">Your pieces</p>
+        <table class="items" role="presentation">
           {{range .Items}}
           <tr>
-            <td>{{.Name}}<span class="muted">{{if .Size}}Size {{.Size}} · {{end}}Qty {{.Quantity}}</span></td>
+            <td>{{.Name}}<span class="muted">{{if .Size}}Size {{.Size}} &middot; {{end}}Qty {{.Quantity}}</span></td>
             <td class="money">{{.Line}}</td>
           </tr>
           {{end}}
         </table>
-      </div>
-      <div class="section alt">
-        <div class="label">Delivery details</div>
-        <p>{{.CustomerName}}<br>{{.Phone}}<br>{{.Email}}<br>{{.Address}}<br>{{.DeliveryZone}}</p>
-      </div>
-      <div class="section">
-        <table class="row">
+
+        <table class="row" role="presentation" style="margin-top:18px">
           <tr><td>Subtotal</td><td class="value">{{.Subtotal}}</td></tr>
+          <tr><td>Tailoring consultation</td><td class="value">Complimentary</td></tr>
           <tr><td>Delivery</td><td class="value">{{.DeliveryFee}}</td></tr>
-          <tr class="grand-total"><td>Total</td><td class="value total">{{.Total}}</td></tr>
+          <tr class="grand-total"><td class="total totallabel">Total paid</td><td class="value total">{{.Total}}</td></tr>
         </table>
+
+        <table class="deliverbox" role="presentation">
+          <tr><td class="label" style="padding-bottom:10px">Delivering to</td></tr>
+          <tr><td style="color:#24211f">{{.CustomerName}}<br>{{.Address}}{{if .DeliveryZone}}<br>{{.DeliveryZone}}{{end}}{{if .Phone}}<br>{{.Phone}}{{end}}</td></tr>
+        </table>
+
+        {{if .OrderURL}}
+        <div style="text-align:center;margin-top:30px">
+          <a class="action" href="{{.OrderURL}}">View your order</a>
+        </div>
+        {{end}}
       </div>
-      <div class="section">
-        <div class="note">Your order is now in our fulfilment queue. If anything needs your attention, the Oyecouture team will contact you using the details above.</div>
+
+      <div class="section" style="border-bottom:0">
+        <p>We are glad to be dressing you.</p>
+        <p class="signoff">Oyecouture Bespoke</p>
       </div>
-      <div class="footer"><strong>Oyecouture Bespoke</strong><br>This confirmation was sent after secure payment verification.</div>
+
+      <div class="footer">
+        <p style="margin-bottom:14px">Questions about this order? Reply to this email and a stylist will answer personally.</p>
+        <p style="margin-bottom:14px">Ready-to-wear pieces may be exchanged within 7 days of delivery in original condition. Made-to-measure and bespoke commissions are cut to your measurements and are final sale, though we will adjust the fit at no charge.</p>
+        <p class="fineprint">Oyecouture Bespoke &middot; 6 Force Road, Tafawa Balewa Square (TBS), Lagos, Nigeria<br>You received this email because you placed order {{.OrderNo}}.</p>
+      </div>
     </div>
   </div>
 </body>
 </html>`
-
 const paymentReceiptHTML = `<!doctype html>
 <html>
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>` + emailBaseStyles + `</style></head>

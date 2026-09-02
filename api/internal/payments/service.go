@@ -240,6 +240,8 @@ func (service *Service) sendPaidOrderEmails(
 	emailOrder := email.Order{
 		ID:              order.ID,
 		OrderNo:         order.OrderNo,
+		PayToken:        order.PayToken,
+		OrderDate:       order.CreatedAt.Format("2 January 2006"),
 		CustomerName:    order.CustomerName,
 		Email:           order.Email,
 		Phone:           order.Phone,

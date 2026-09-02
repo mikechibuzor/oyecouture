@@ -7,7 +7,11 @@ import (
 	"testing"
 )
 
-func TestSendPaidOrderEmailsSendsConfirmationAndReceipt(t *testing.T) {
+// TestSendPaidOrderEmailsSendsOneConfirmation pins the single-email decision.
+// This used to send a confirmation and a receipt a second apart, which reached
+// the customer as near-duplicates; the client's approved design has one
+// "Payment received" message carrying everything both used to.
+func TestSendPaidOrderEmailsSendsOneConfirmation(t *testing.T) {
 	t.Parallel()
 
 	repository := &repositoryStub{reserved: true}
@@ -19,25 +23,27 @@ func TestSendPaidOrderEmailsSendsConfirmationAndReceipt(t *testing.T) {
 		t.Fatalf("SendPaidOrderEmails() error = %v", err)
 	}
 
-	if provider.sentCount != 2 {
-		t.Fatalf("sent emails = %d, want 2", provider.sentCount)
+	if provider.sentCount != 1 {
+		t.Fatalf("sent emails = %d, want 1", provider.sentCount)
 	}
-	if repository.sentCount != 2 {
-		t.Fatalf("marked sent emails = %d, want 2", repository.sentCount)
-	}
-	if provider.messages[0].IdempotencyKey == provider.messages[1].IdempotencyKey {
-		t.Fatal("confirmation and receipt used the same idempotency key")
+	if repository.sentCount != 1 {
+		t.Fatalf("marked sent emails = %d, want 1", repository.sentCount)
 	}
 	if provider.messages[0].HTML == "" || provider.messages[0].Text == "" {
 		t.Fatal("confirmation email did not include html and text bodies")
 	}
-	if strings.Contains(provider.messages[0].HTML, "<img") ||
-		strings.Contains(provider.messages[1].HTML, "<img") {
+	// Mail clients block remote images by default, so a hosted logo means most
+	// recipients open an email carrying no brand at all. It is set as type.
+	if strings.Contains(provider.messages[0].HTML, "<img") {
 		t.Fatal("paid order emails should not rely on externally hosted logo images")
 	}
-	if !strings.Contains(provider.messages[0].HTML, "Oyecouture") ||
-		!strings.Contains(provider.messages[1].HTML, "Oyecouture") {
+	if !strings.Contains(provider.messages[0].HTML, "Oyecouture") {
 		t.Fatal("paid order emails should include the Oyecouture brand wordmark")
+	}
+	// The design's "View your order" button. Without the reference the
+	// confirmation page cannot verify and reports failure to someone who paid.
+	if !strings.Contains(provider.messages[0].HTML, "/callback?reference=") {
+		t.Fatal("confirmation email should link to the customer's own order page")
 	}
 }
 
@@ -95,6 +101,8 @@ func testOrder() Order {
 	return Order{
 		ID:              "order-id",
 		OrderNo:         "OYE-1001",
+		PayToken:        "paytoken123",
+		OrderDate:       "1 September 2026",
 		CustomerName:    "Ada",
 		Email:           "ada@example.com",
 		Phone:           "07000000000",
