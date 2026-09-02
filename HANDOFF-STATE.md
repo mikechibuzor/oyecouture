@@ -35,7 +35,7 @@
 
 **Database purged of development data (2026-09-01):** 36 test orders and their 114 cascaded child rows deleted, `order_number_seq` reset so the first real order was `OYE-1001`. Products, images, delivery zones and the admin account were preserved. Backup before the purge: `~/oyecouture-preorderpurge-20260901T135333Z.sql.gz` on the developer's Mac, gzip-verified with all 36 orders.
 
-⚠️ **`adire-linen-set` is at ₦100 for testing and MUST be restored to ₦105,000.** It is live on a public production site at a price anyone finding it could exploit.
+ℹ️ **`adire-linen-set` sits at ₦100 deliberately — do not "fix" it.** The user chose on 2026-09-02 to keep it there as a live payment fixture, having been told it is publicly buyable at that price. Its real price is ₦105,000 and it must be restored before the client promotes the site, but until then it is the only cheap way to exercise the real card path end to end. Treat a ₦100 order on this product as a test, not a sale.
 
 ⚠️ **Caddyfile changes need the caddy container recreated.** `compose.prod.yaml` bind-mounts the single file `./deploy/Caddyfile`, so a `git pull` replacing it leaves the running container on the old inode and the change silently does nothing. `deploy.sh` does not handle this. After changing the Caddyfile: `docker compose -f compose.prod.yaml --env-file .env.production up -d --force-recreate caddy`. This cost a debugging cycle when `www` stayed broken after a successful deploy.
 

@@ -10,6 +10,19 @@ export default defineNuxtConfig({
     viewTransition: true,
   },
   css: ['~/assets/scss/main.scss'],
+  app: {
+    head: {
+      link: [
+        // SVG first: one file stays crisp at every size a browser asks for.
+        // The PNG is the fallback for browsers that ignore SVG icons, and
+        // apple-touch-icon is what iOS uses when the shop is saved to a home
+        // screen, where it would otherwise render a screenshot of the page.
+        { rel: 'icon', type: 'image/svg+xml', href: '/images/brand/oyecouture-icon-gold.svg' },
+        { rel: 'icon', type: 'image/png', href: '/images/brand/oyecouture-icon-gold.png' },
+        { rel: 'apple-touch-icon', href: '/images/brand/oyecouture-icon-gold.png' },
+      ],
+    },
+  },
   runtimeConfig: {
     // Server-only: SSR reaches the API container directly inside the network.
     // Overridden in production by NUXT_API_INTERNAL_BASE.

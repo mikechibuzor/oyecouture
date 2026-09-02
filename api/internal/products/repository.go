@@ -549,9 +549,15 @@ func buildListQuery(filter ListFilter) (string, []any) {
 	if filter.Query != "" {
 		queryArguments = append(queryArguments, buildSearchPattern(filter.Query))
 		searchParameter := fmt.Sprintf("$%d", len(queryArguments))
+		// Section is searched as well as category because the storefront's own
+		// Top Searches offer both kinds of term side by side: Kaftans and
+		// Blazers are categories, while Suits and Casuals are sections. Without
+		// section here the two section chips returned nothing at all, which is
+		// what the client reported after launch.
 		queryConditions = append(queryConditions, fmt.Sprintf(`(
     product.name ILIKE %[1]s ESCAPE '\'
     OR product.category ILIKE %[1]s ESCAPE '\'
+    OR product.section ILIKE %[1]s ESCAPE '\'
     OR product.description ILIKE %[1]s ESCAPE '\'
 )`, searchParameter))
 	}
@@ -582,10 +588,13 @@ func buildAdminListQuery(filter AdminListFilter) (string, string, []any) {
 	if filter.Query != "" {
 		queryArguments = append(queryArguments, buildSearchPattern(filter.Query))
 		searchParameter := fmt.Sprintf("$%d", len(queryArguments))
+		// Matches the storefront search, so the owner looking for "casuals" in
+		// the admin gets the same results a customer would.
 		queryConditions = append(queryConditions, fmt.Sprintf(`(
     product.name ILIKE %[1]s ESCAPE '\'
     OR product.slug ILIKE %[1]s ESCAPE '\'
     OR product.category ILIKE %[1]s ESCAPE '\'
+    OR product.section ILIKE %[1]s ESCAPE '\'
     OR product.description ILIKE %[1]s ESCAPE '\'
 )`, searchParameter))
 	}

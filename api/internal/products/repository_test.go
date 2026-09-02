@@ -114,3 +114,33 @@ func TestBuildAdminListQueryUsesParameterizedFilters(t *testing.T) {
 		t.Fatalf("unexpected query arguments: %#v", queryArguments)
 	}
 }
+
+// TestSearchCoversSectionAsWellAsCategory pins the fix for the storefront's own
+// Top Searches. Those chips mix the two taxonomies: Kaftans and Blazers are
+// categories, Suits and Casuals are sections. Searching only category meant the
+// section chips returned nothing, which is what the client hit after launch.
+func TestSearchCoversSectionAsWellAsCategory(t *testing.T) {
+	t.Parallel()
+
+	searchedColumns := []string{
+		"product.name ILIKE",
+		"product.category ILIKE",
+		"product.section ILIKE",
+		"product.description ILIKE",
+	}
+
+	storefrontQuery, _ := buildListQuery(ListFilter{Query: "Casuals"})
+	for _, column := range searchedColumns {
+		if !strings.Contains(storefrontQuery, column) {
+			t.Fatalf("storefront search does not cover %q", column)
+		}
+	}
+
+	// The owner searching the admin should find what a customer would find.
+	adminQuery, _, _ := buildAdminListQuery(AdminListFilter{Query: "Casuals", Limit: 10})
+	for _, column := range append(searchedColumns, "product.slug ILIKE") {
+		if !strings.Contains(adminQuery, column) {
+			t.Fatalf("admin search does not cover %q", column)
+		}
+	}
+}
