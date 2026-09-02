@@ -76,6 +76,10 @@ type AdminState struct {
 	subtotalKobo    int64
 	deliveryFeeKobo int64
 	totalKobo       int64
+	// Handover record, for the delivered email.
+	signedForBy      string
+	signedAt         *time.Time
+	deliveryLocation string
 }
 
 // PublicState omits contact, address, measurements, payment, and admin identity.
@@ -99,4 +103,9 @@ type TransitionInput struct {
 	CarrierName           string `json:"carrierName"`
 	CarrierTrackingNumber string `json:"carrierTrackingNumber"`
 	CarrierTrackingURL    string `json:"carrierTrackingUrl"`
+	// Captured when marking an order delivered: who took the parcel, when, and
+	// where. Accepted only on that transition.
+	SignedForBy      string `json:"signedForBy"`
+	SignedAt         string `json:"signedAt"`
+	DeliveryLocation string `json:"deliveryLocation"`
 }

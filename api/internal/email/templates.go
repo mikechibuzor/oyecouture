@@ -68,6 +68,9 @@ type fulfillmentEmailView struct {
 	DeliveryFee           string
 	Total                 string
 	Progress              []progressStepView
+	SignedForBy           string
+	SignedAt              string
+	DeliveryLocation      string
 }
 
 // progressStepView drives the four-step bar in the client's design. The API
@@ -128,6 +131,9 @@ func renderFulfillmentEmail(
 		DeliveryFee:           formatNaira(payload.DeliveryFeeKobo),
 		Total:                 formatNaira(payload.TotalKobo),
 		Progress:              progressFor(emailType),
+		SignedForBy:           payload.SignedForBy,
+		SignedAt:              payload.SignedAt,
+		DeliveryLocation:      payload.DeliveryLocation,
 	}
 
 	htmlTemplate := fulfillmentUpdateHTML
@@ -144,8 +150,12 @@ func renderFulfillmentEmail(
 		view.Eyebrow = "On its way"
 		view.Intro = "Everything has been pressed, checked and packed by hand. Your parcel is now with the courier."
 	case TypeOrderDelivered:
-		view.Heading = "Your order has arrived."
-		view.Intro = "Your Oyecouture order has been marked as delivered. We hope it feels every bit as considered as it was made."
+		// Design 04, Delivered. Same shape as Shipped, with the handover record
+		// in place of the tracking panel. The heading interpolates the name in
+		// the template so it stays escaped.
+		htmlTemplate = orderDeliveredHTML
+		view.Eyebrow = "Delivered"
+		view.Intro = "Your parcel was signed for today. Wear it once, then tell us how it sits. Fit adjustments within the first thirty days are always on us, with Oyecouture or through your local tailor with our notes."
 	default:
 		view.Heading = "Your piece is in production."
 		view.Intro = "Work has begun on your Oyecouture order. We will keep you updated as it moves toward dispatch."
@@ -631,6 +641,85 @@ const orderDispatchedHTML = `<!doctype html>
 
       <div class="section" style="border-bottom:0">
         <p>Thank you for your patience while it was made.</p>
+        <p class="signoff">Oyecouture Bespoke</p>
+      </div>
+
+      <div class="footer">
+        <p style="margin-bottom:14px">Questions about this order? Reply to this email and a stylist will answer personally.</p>
+        <p style="margin-bottom:14px">Ready-to-wear pieces may be exchanged within 7 days of delivery in original condition. Made-to-measure and bespoke commissions are cut to your measurements and are final sale, though we will adjust the fit at no charge.</p>
+        <p class="fineprint">Oyecouture Bespoke &middot; 6 Force Road, Tafawa Balewa Square (TBS), Lagos, Nigeria<br>You received this email because you placed order {{.OrderNo}}.</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>`
+
+// orderDeliveredHTML follows the client's approved "04 Delivered" design: the
+// completed progress bar, the handover record, and the order reproduced. The
+// design's "Leave a review" panel is deliberately absent - there is no review
+// system for it to reach, and a button that goes nowhere is worse than none.
+const orderDeliveredHTML = `<!doctype html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>` + emailBaseStyles + `</style></head>
+<body>
+  <div class="preheader">Your pieces have arrived. A note on fit adjustments.</div>
+  <div class="shell">
+    <div class="card">
+      <div class="announce">Complimentary tailoring consultation &middot; Worldwide delivery</div>
+
+      <div class="brandhead">
+        <div class="brandtext">Oyecouture<span>Bespoke</span></div>
+      </div>
+
+      <div class="section">
+        <p class="eyebrow">{{.Eyebrow}}</p>
+        <h1>{{.FirstName}}, your order<br>has arrived.</h1>
+        <p style="margin-top:18px">{{.Intro}}</p>
+
+        <table class="progress" role="presentation">
+          <tr>
+            {{range .Progress}}<td width="25%"><span class="bar{{if .Done}} done{{end}}"></span></td>{{end}}
+          </tr>
+          <tr>
+            {{range .Progress}}<td width="25%"><span class="step{{if .Done}} done{{end}}">{{.Label}}</span></td>{{end}}
+          </tr>
+        </table>
+
+        {{if or .SignedForBy .SignedAt .DeliveryLocation}}
+        <table class="detailbox" role="presentation">
+          <tr><td colspan="2" class="label" style="padding-bottom:4px">Delivered</td></tr>
+          {{if .SignedForBy}}<tr><td class="dkey">Signed for by</td><td class="dval">{{.SignedForBy}}</td></tr>{{end}}
+          {{if .SignedAt}}<tr><td class="dkey">Date</td><td class="dval">{{.SignedAt}}</td></tr>{{end}}
+          {{if .DeliveryLocation}}<tr><td class="dkey">Location</td><td class="dval">{{.DeliveryLocation}}</td></tr>{{end}}
+        </table>
+        {{end}}
+
+        {{if .PublicNote}}<p class="note" style="margin-top:26px">{{.PublicNote}}</p>{{end}}
+      </div>
+
+      {{if .Items}}
+      <div class="section">
+        <p class="label">Your pieces</p>
+        <table class="items" role="presentation">
+          {{range .Items}}
+          <tr>
+            <td>{{.Name}}<span class="muted">{{if .Size}}Size {{.Size}} &middot; {{end}}Qty {{.Quantity}}</span></td>
+            <td class="money">{{.Line}}</td>
+          </tr>
+          {{end}}
+        </table>
+
+        <table class="row" role="presentation" style="margin-top:18px">
+          <tr><td>Subtotal</td><td class="value">{{.Subtotal}}</td></tr>
+          <tr><td>Tailoring consultation</td><td class="value">Complimentary</td></tr>
+          <tr><td>Delivery</td><td class="value">{{.DeliveryFee}}</td></tr>
+          <tr class="grand-total"><td class="total totallabel">Total paid</td><td class="value total">{{.Total}}</td></tr>
+        </table>
+      </div>
+      {{end}}
+
+      <div class="section" style="border-bottom:0">
+        <p>Thank you for wearing Oyecouture.</p>
         <p class="signoff">Oyecouture Bespoke</p>
       </div>
 

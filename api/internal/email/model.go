@@ -80,6 +80,10 @@ type FulfillmentPayload struct {
 	DeliveryFeeKobo int64  `json:"deliveryFeeKobo,omitempty"`
 	TotalKobo       int64  `json:"totalKobo,omitempty"`
 	OrderURL        string `json:"orderUrl,omitempty"`
+	// The handover, for the delivered design: who signed, when, and where.
+	SignedForBy      string `json:"signedForBy,omitempty"`
+	SignedAt         string `json:"signedAt,omitempty"`
+	DeliveryLocation string `json:"deliveryLocation,omitempty"`
 }
 
 type Order struct {

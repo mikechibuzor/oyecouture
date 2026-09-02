@@ -45,6 +45,9 @@ const trackingForm = reactive({
   carrierName: '',
   carrierTrackingNumber: '',
   carrierTrackingUrl: '',
+  signedForBy: '',
+  signedAt: '',
+  deliveryLocation: '',
 })
 
 let copiedTimer: ReturnType<typeof setTimeout> | undefined
@@ -72,6 +75,12 @@ const nextFulfillmentLabel = computed(() =>
 
 const isDispatchTransition = computed(
   () => nextFulfillmentStage.value === FulfillmentStage.Dispatched,
+)
+
+// Handover details are only meaningful at delivery, and the API rejects them on
+// any other transition, so the fields appear only for that step.
+const isDeliveryTransition = computed(
+  () => nextFulfillmentStage.value === FulfillmentStage.Delivered,
 )
 
 // The pay link is shareable even before payment provider credentials are added.
@@ -251,6 +260,9 @@ const advanceFulfillment = async (): Promise<void> => {
         ? trackingForm.carrierTrackingNumber
         : '',
       carrierTrackingUrl: isDispatchTransition.value ? trackingForm.carrierTrackingUrl : '',
+      signedForBy: isDeliveryTransition.value ? trackingForm.signedForBy : '',
+      signedAt: isDeliveryTransition.value ? trackingForm.signedAt : '',
+      deliveryLocation: isDeliveryTransition.value ? trackingForm.deliveryLocation : '',
     })
     order.value = await fetchOrder(orderNo.value)
     syncTrackingForm(tracking.value)
@@ -475,6 +487,29 @@ onBeforeUnmount(() => clearTimeout(copiedTimer))
                     <label class="admin-field">
                       <span>{{ ADMIN_COPY.carrierTrackingUrlLabel }}</span>
                       <input v-model.trim="trackingForm.carrierTrackingUrl" type="url">
+                    </label>
+                  </template>
+
+                  <!-- Only at delivery: the API rejects these on any other
+                       transition, so an order cannot carry a signature before
+                       it has been handed to anyone. -->
+                  <template v-if="isDeliveryTransition">
+                    <label class="admin-field">
+                      <span>{{ ADMIN_COPY.signedForByLabel }}</span>
+                      <input v-model.trim="trackingForm.signedForBy" type="text" maxlength="120">
+                    </label>
+                    <label class="admin-field">
+                      <span>{{ ADMIN_COPY.signedAtLabel }}</span>
+                      <input v-model="trackingForm.signedAt" type="datetime-local">
+                    </label>
+                    <label class="admin-field admin-field-wide">
+                      <span>{{ ADMIN_COPY.deliveryLocationLabel }}</span>
+                      <input
+                        v-model.trim="trackingForm.deliveryLocation"
+                        type="text"
+                        maxlength="240"
+                      >
+                      <small>{{ ADMIN_COPY.deliveryHandoverHint }}</small>
                     </label>
                   </template>
 

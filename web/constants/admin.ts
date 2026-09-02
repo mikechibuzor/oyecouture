@@ -246,6 +246,11 @@ export const ADMIN_COPY = {
   carrierNameLabel: 'Courier name',
   carrierTrackingNumberLabel: 'Courier tracking number',
   carrierTrackingUrlLabel: 'Courier tracking link',
+  signedForByLabel: 'Signed for by',
+  signedAtLabel: 'Date and time received',
+  deliveryLocationLabel: 'Delivered to',
+  deliveryHandoverHint:
+    'Optional. Shown on the delivery email as the record of who received the parcel.',
   advanceFulfillment: 'Move to',
   advancingFulfillment: 'Updating…',
   fulfillmentUpdatedNotice: 'Order progress updated',

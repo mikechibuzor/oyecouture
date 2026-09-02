@@ -19,6 +19,13 @@ const (
 	maximumPublicNoteLength   = 500
 	maximumCarrierFieldLength = 200
 	dateFormat                = "2006-01-02"
+	// Mirrors the CHECK constraints in migration 000017, so an over-long value
+	// is refused with a clear error rather than a database violation.
+	maximumSignedForByLength      = 120
+	maximumDeliveryLocationLength = 240
+	// A handover happens at a time of day, not just on a date, so the delivered
+	// panel needs minutes. Accepts what a datetime-local input submits.
+	dateTimeFormat = "2006-01-02T15:04"
 )
 
 var (
@@ -46,6 +53,9 @@ type TransitionCommand struct {
 	CarrierName           string
 	CarrierTrackingNumber string
 	CarrierTrackingURL    string
+	SignedForBy           string
+	SignedAt              *time.Time
+	DeliveryLocation      string
 	TrackingToken         string
 	ActorAdminID          string
 	LegacyOrderStatus     string
@@ -140,6 +150,24 @@ func (service *Service) Transition(
 		return AdminState{}, ErrInvalidInput
 	}
 
+	// Handover details belong to delivery and nothing else. Accepting them on
+	// any other transition would let an order carry a signature before it had
+	// been handed to anyone.
+	signedForBy := strings.TrimSpace(input.SignedForBy)
+	deliveryLocation := strings.TrimSpace(input.DeliveryLocation)
+	signedAt, err := parseOptionalTime(input.SignedAt)
+	if err != nil {
+		return AdminState{}, ErrInvalidInput
+	}
+	if input.Stage != StageDelivered &&
+		(signedForBy != "" || deliveryLocation != "" || signedAt != nil) {
+		return AdminState{}, ErrInvalidInput
+	}
+	if len(signedForBy) > maximumSignedForByLength ||
+		len(deliveryLocation) > maximumDeliveryLocationLength {
+		return AdminState{}, ErrInvalidInput
+	}
+
 	trackingToken := state.trackingToken
 	if input.Stage == StageDispatched && trackingToken == "" {
 		trackingToken, err = newTrackingToken()
@@ -156,6 +184,9 @@ func (service *Service) Transition(
 		ExpectedVersion:       input.ExpectedVersion,
 		PublicNote:            publicNote,
 		EstimatedDeliveryDate: estimatedDeliveryDate,
+		SignedForBy:           signedForBy,
+		SignedAt:              signedAt,
+		DeliveryLocation:      deliveryLocation,
 		CarrierName:           carrierName,
 		CarrierTrackingNumber: carrierTrackingNumber,
 		CarrierTrackingURL:    carrierTrackingURL,
@@ -231,6 +262,11 @@ func (service *Service) notification(
 		DeliveryFeeKobo:       state.deliveryFeeKobo,
 		TotalKobo:             state.totalKobo,
 		Items:                 emailItems(state.items),
+		SignedForBy:           command.SignedForBy,
+		DeliveryLocation:      command.DeliveryLocation,
+	}
+	if command.SignedAt != nil {
+		payload.SignedAt = command.SignedAt.Format("2 January 2006, 15:04")
 	}
 	if command.EstimatedDeliveryDate != nil {
 		payload.EstimatedDeliveryDate = command.EstimatedDeliveryDate.Format("2 Jan 2006")
@@ -352,6 +388,21 @@ func parseOptionalDate(value string) (*time.Time, error) {
 		return nil, nil
 	}
 	parsed, err := time.Parse(dateFormat, value)
+	if err != nil {
+		return nil, err
+	}
+
+	return &parsed, nil
+}
+
+// parseOptionalTime reads the handover moment. Parsed in the server's location
+// rather than UTC: the admin is typing the local time the parcel changed hands.
+func parseOptionalTime(value string) (*time.Time, error) {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return nil, nil
+	}
+	parsed, err := time.ParseInLocation(dateTimeFormat, value, time.Local)
 	if err != nil {
 		return nil, err
 	}

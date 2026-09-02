@@ -179,13 +179,17 @@ func (repository *PostgresRepository) Transition(
 			estimated_delivery_date = COALESCE($5, estimated_delivery_date),
 			carrier_name = CASE WHEN $2 = 'dispatched' THEN NULLIF($6, '') ELSE carrier_name END,
 			carrier_tracking_number = CASE WHEN $2 = 'dispatched' THEN NULLIF($7, '') ELSE carrier_tracking_number END,
-			carrier_tracking_url = CASE WHEN $2 = 'dispatched' THEN NULLIF($8, '') ELSE carrier_tracking_url END
+			carrier_tracking_url = CASE WHEN $2 = 'dispatched' THEN NULLIF($8, '') ELSE carrier_tracking_url END,
+			delivery_signed_for_by = CASE WHEN $2 = 'delivered' THEN NULLIF($9, '') ELSE delivery_signed_for_by END,
+			delivery_signed_at = CASE WHEN $2 = 'delivered' THEN $10 ELSE delivery_signed_at END,
+			delivery_location = CASE WHEN $2 = 'delivered' THEN NULLIF($11, '') ELSE delivery_location END
 		WHERE id = $1
 	`
 	if _, err := transaction.Exec(
 		requestContext, updateOrder, orderID, string(command.NextStage), command.LegacyOrderStatus,
 		command.TrackingToken, command.EstimatedDeliveryDate, command.CarrierName,
 		command.CarrierTrackingNumber, command.CarrierTrackingURL,
+		command.SignedForBy, command.SignedAt, command.DeliveryLocation,
 	); err != nil {
 		return fmt.Errorf("update order fulfillment: %w", err)
 	}

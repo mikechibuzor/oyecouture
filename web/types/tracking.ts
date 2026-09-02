@@ -47,6 +47,10 @@ export interface FulfillmentTransitionInput {
   readonly carrierName: string
   readonly carrierTrackingNumber: string
   readonly carrierTrackingUrl: string
+  // Handover record, accepted by the API only on the delivered transition.
+  readonly signedForBy: string
+  readonly signedAt: string
+  readonly deliveryLocation: string
 }
 
 export interface TrackingItem {
