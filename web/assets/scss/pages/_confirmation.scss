@@ -1,0 +1,431 @@
+// The post-payment confirmation page, built from the client's approved design.
+// Two columns on desktop: the order narrative on the left, money and delivery
+// on the right, because the summary is what a customer screenshots.
+
+.confirmation {
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: var(--space-xl) var(--space-lg) var(--space-4xl);
+}
+
+// Verifying and failure states keep the older plain treatment.
+.confirmation-pending {
+  padding: var(--space-4xl) 0;
+  text-align: center;
+
+  h1 {
+    margin: var(--space-xs) 0 var(--space-sm);
+  }
+}
+
+.confirmation-pending-body {
+  margin: 0 auto var(--space-xl);
+  max-width: 40ch;
+  color: var(--color-body-copy);
+}
+
+.confirmation-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  padding-bottom: var(--space-lg);
+  border-bottom: 1px solid var(--color-border-warm);
+}
+
+.confirmation-order-no {
+  margin: 0;
+  color: var(--color-taupe);
+  font-size: 0.75rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.confirmation-hero {
+  padding: var(--space-3xl) 0 var(--space-2xl);
+  text-align: center;
+
+  h1 {
+    margin: var(--space-xs) 0 var(--space-md);
+    text-wrap: balance;
+  }
+}
+
+.confirmation-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 4.5rem;
+  height: 4.5rem;
+  margin-bottom: var(--space-lg);
+  border-radius: 50%;
+  background: var(--color-ink);
+  color: var(--color-gold);
+
+  svg {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+}
+
+.confirmation-eyebrow {
+  margin: 0;
+  color: var(--color-gold);
+  font-size: 0.75rem;
+  font-weight: var(--font-weight-medium);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.confirmation-intro {
+  margin: 0 auto;
+  max-width: 52ch;
+  color: var(--color-body-copy);
+}
+
+// The four facts a customer checks first, in one scannable band.
+.confirmation-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 1px;
+  margin: 0 0 var(--space-2xl);
+  border: 1px solid var(--color-border-warm);
+  background: var(--color-border-warm);
+
+  > div {
+    padding: var(--space-md) var(--space-lg);
+    background: var(--color-cream-2);
+  }
+
+  dt {
+    margin-bottom: var(--space-2xs);
+    color: var(--color-taupe);
+    font-size: 0.6875rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  dd {
+    margin: 0;
+    color: var(--color-ink);
+    // Amounts and dates sit in a row, so digits must not shuffle width.
+    font-variant-numeric: tabular-nums;
+  }
+
+  .is-strong {
+    font-weight: var(--font-weight-semibold);
+  }
+}
+
+.confirmation-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+  gap: var(--space-xl);
+  align-items: start;
+}
+
+.confirmation-main,
+.confirmation-aside {
+  display: grid;
+  gap: var(--space-lg);
+}
+
+.confirmation-card {
+  padding: var(--space-lg);
+  border: 1px solid var(--color-border-warm);
+
+  h2 {
+    margin: 0 0 var(--space-md);
+    font-size: 0.8125rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+}
+
+.confirmation-card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-md);
+
+  h2 {
+    margin: 0;
+  }
+
+  p {
+    margin: 0;
+    color: var(--color-taupe);
+    font-size: 0.875rem;
+  }
+}
+
+.confirmation-pieces {
+  margin: var(--space-md) 0 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-md);
+    padding: var(--space-md) 0;
+    border-top: 1px solid var(--color-border-soft);
+  }
+
+  p {
+    margin: 0;
+  }
+}
+
+.confirmation-piece-name {
+  color: var(--color-ink);
+  font-weight: var(--font-weight-medium);
+}
+
+.confirmation-piece-meta {
+  margin-top: var(--space-3xs);
+  color: var(--color-taupe);
+  font-size: 0.875rem;
+}
+
+.confirmation-piece-price {
+  color: var(--color-ink);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+// A vertical timeline. The connecting line is drawn on the item rather than the
+// marker so it spans the full height of variable-length step copy.
+.confirmation-steps {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  li {
+    position: relative;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: var(--space-md);
+    padding-bottom: var(--space-lg);
+
+    &:not(:last-child)::before {
+      content: '';
+      position: absolute;
+      top: 1.35rem;
+      bottom: 0;
+      left: 0.53rem;
+      width: 1px;
+      background: var(--color-border-warm);
+    }
+
+    &:last-child {
+      padding-bottom: 0;
+    }
+  }
+
+  p {
+    margin: 0;
+  }
+}
+
+.confirmation-step-marker {
+  position: relative;
+  z-index: 1;
+  width: 1.125rem;
+  height: 1.125rem;
+  margin-top: 0.2rem;
+  border: 1px solid var(--color-border-warm);
+  border-radius: 50%;
+  background: var(--color-canvas);
+}
+
+// Done is filled and ticked; current is an open gold ring; the rest stay empty.
+.confirmation-steps .is-done .confirmation-step-marker {
+  border-color: var(--color-ink);
+  background: var(--color-ink);
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--color-gold);
+    clip-path: polygon(
+      21% 50%, 33% 38%, 44% 49%, 68% 25%, 80% 37%, 44% 73%
+    );
+  }
+}
+
+.confirmation-steps .is-current .confirmation-step-marker {
+  border-width: 2px;
+  border-color: var(--color-gold);
+}
+
+.confirmation-step-title {
+  color: var(--color-ink);
+  font-weight: var(--font-weight-medium);
+}
+
+.confirmation-step-body {
+  margin-top: var(--space-3xs);
+  color: var(--color-body-copy);
+  font-size: 0.9375rem;
+}
+
+// The one dark surface on the page, so the amount paid is what the eye lands on.
+.confirmation-summary {
+  padding: var(--space-lg);
+  background: var(--color-ink);
+  color: var(--color-white);
+
+  h2 {
+    margin: 0 0 var(--space-md);
+    color: var(--color-gold);
+    font-size: 0.8125rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  dl {
+    margin: 0;
+    display: grid;
+    gap: var(--space-xs);
+  }
+
+  dl > div {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-md);
+  }
+
+  dt {
+    color: var(--color-taupe-light);
+  }
+
+  dd {
+    margin: 0;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.confirmation-summary-total {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-md);
+  margin-top: var(--space-lg);
+  padding-top: var(--space-md);
+  border-top: 1px solid rgb(255 255 255 / 0.18);
+
+  p {
+    margin: 0;
+    font-size: 0.6875rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+}
+
+.confirmation-summary-amount {
+  color: var(--color-gold);
+  font-size: 1.5rem;
+  font-weight: var(--font-weight-semibold);
+  font-variant-numeric: tabular-nums;
+  // The uppercase treatment above is for the label, not the figure.
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+}
+
+.confirmation-summary-note {
+  margin: var(--space-md) 0 0;
+  color: var(--color-taupe-light);
+  font-size: 0.8125rem;
+}
+
+.confirmation-delivery {
+  display: grid;
+  gap: var(--space-md);
+
+  p {
+    margin: 0;
+  }
+}
+
+.confirmation-label {
+  margin-bottom: var(--space-3xs) !important;
+  color: var(--color-taupe);
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.confirmation-actions {
+  display: grid;
+  gap: var(--space-xs);
+}
+
+.confirmation-button {
+  display: block;
+  padding: var(--space-md) var(--space-lg);
+  font-size: 0.8125rem;
+  letter-spacing: 0.14em;
+  text-align: center;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: background var(--duration-quick) var(--ease-standard),
+    color var(--duration-quick) var(--ease-standard);
+
+  &.is-primary {
+    border: 1px solid var(--color-ink);
+    background: var(--color-ink);
+    color: var(--color-gold);
+  }
+
+  &.is-secondary {
+    border: 1px solid var(--color-ink);
+    color: var(--color-ink);
+  }
+
+  &.is-quiet {
+    color: var(--color-taupe);
+  }
+
+  &.is-primary:hover {
+    background: var(--color-ink-soft);
+  }
+
+  &.is-secondary:hover {
+    background: var(--color-ink);
+    color: var(--color-gold);
+  }
+
+  &.is-quiet:hover {
+    color: var(--color-ink);
+  }
+}
+
+.confirmation-footer {
+  margin-top: var(--space-3xl);
+  padding-top: var(--space-xl);
+  border-top: 1px solid var(--color-border-warm);
+  text-align: center;
+
+  p {
+    margin: 0 auto var(--space-2xs);
+    max-width: 60ch;
+    color: var(--color-taupe);
+    font-size: 0.875rem;
+  }
+}
+
+@media (max-width: 60rem) {
+  .confirmation-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  // Money and delivery come first on a phone: the customer is checking what
+  // they were charged, not reading the atelier timeline.
+  .confirmation-aside {
+    order: -1;
+  }
+}

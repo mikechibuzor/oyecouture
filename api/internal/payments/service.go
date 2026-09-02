@@ -192,6 +192,7 @@ func (service *Service) Verify(
 		Status:    verification.Status,
 		Paid:      true,
 		Message:   "Payment confirmed.",
+		Channel:   verification.Channel,
 	}, nil
 }
 

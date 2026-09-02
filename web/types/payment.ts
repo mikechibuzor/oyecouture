@@ -10,6 +10,12 @@ export interface PaymentOrder {
   readonly status: string
   readonly kind: string
   readonly customerName: string
+  readonly email: string
+  readonly phone: string
+  readonly address: string
+  readonly deliveryZone: string
+  readonly subtotalKobo: number
+  readonly deliveryFeeKobo: number
   readonly totalKobo: number
   readonly items: readonly PaymentOrderItem[]
   readonly createdAt: string
@@ -36,5 +42,7 @@ export interface VerifyPaymentResponse {
     readonly status: string
     readonly paid: boolean
     readonly message: string
+    // How they paid: card, bank_transfer, ussd. Absent until payment succeeds.
+    readonly channel?: string
   }
 }

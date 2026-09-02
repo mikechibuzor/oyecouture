@@ -19,3 +19,88 @@ export const PAYMENT_COPY = {
   retry: 'Try again',
   continueShopping: 'Continue shopping',
 } as const
+
+// Copy for the post-payment confirmation page, per the client's approved design.
+export const CONFIRMATION_COPY = {
+  eyebrow: 'Payment confirmed',
+  greeting: (firstName: string): string => `Thank you, ${firstName}`,
+  intro:
+    'Your order is confirmed and now with our atelier. Below is everything that was paid for, along with where each piece goes next.',
+  orderReference: 'Order reference',
+  orderDate: 'Order date',
+  paymentMethod: 'Payment method',
+  amountPaid: 'Amount paid',
+  yourPieces: 'Your pieces',
+  itemCount: (count: number): string => `${count} ${count === 1 ? 'item' : 'items'}`,
+  whatHappensNext: 'What happens next',
+  paymentSummary: 'Payment summary',
+  subtotal: 'Subtotal',
+  tailoring: 'Tailoring & finishing',
+  tailoringValue: 'Included',
+  delivery: 'Delivery',
+  deliveryComplimentary: 'Complimentary',
+  chargeNote: 'Charged once. Your card details are never stored by Oyecouture.',
+  deliveryDetails: 'Delivery details',
+  recipient: 'Recipient',
+  address: 'Address',
+  contact: 'Contact',
+  estimatedDelivery: 'Estimated delivery',
+  downloadReceipt: 'Download receipt',
+  contactAtelier: 'Contact the atelier',
+  footerNote:
+    'Every piece is finished by hand, so small variations in cloth and stitch are part of the work.',
+  footerQuestion: 'Questions about sizing or delivery? The atelier answers within a day.',
+} as const
+
+// Receipt copy. Wording follows the client's approved email template so the
+// printed receipt and the emailed confirmation read as the same document.
+export const RECEIPT_COPY = {
+  title: 'Receipt',
+  banner: 'Complimentary tailoring consultation · Worldwide delivery',
+  eyebrow: 'Payment received',
+  heading: 'Receipt',
+  printAction: 'Print or save as PDF',
+  // Said plainly because the browser's own dialog is the thing that saves the
+  // file, and a customer who expects a download otherwise thinks it failed.
+  printHint: 'Choose "Save as PDF" as the destination in the print dialog to keep a copy.',
+  back: 'Back to your order',
+  orderDetails: 'Order details',
+  orderReference: 'Order reference',
+  orderDate: 'Order date',
+  payment: 'Payment',
+  yourPieces: 'Your pieces',
+  subtotal: 'Subtotal',
+  tailoring: 'Tailoring consultation',
+  complimentary: 'Complimentary',
+  delivery: 'Delivery',
+  totalPaid: 'Total paid',
+  deliveringTo: 'Delivering to',
+  signOff: 'We are glad to be dressing you.',
+  brandName: 'Oyecouture Bespoke',
+  returnsNote:
+    'Ready-to-wear pieces may be exchanged within 7 days of delivery in original condition. Made-to-measure and bespoke commissions are cut to your measurements and are final sale, though we will adjust the fit at no charge.',
+  address: 'Oyecouture Bespoke · 6 Force Road, Tafawa Balewa Square (TBS), Lagos, Nigeria',
+  receiptFor: (orderNo: string): string => `Receipt for order ${orderNo}.`,
+} as const
+
+// The customer-facing journey. The API tracks eight internal stages; these four
+// are what a customer is told, so workshop states like quality check stay
+// private rather than reading as delay.
+export const CONFIRMATION_STEPS = [
+  {
+    title: 'Payment confirmed',
+    body: 'Your payment cleared successfully and a receipt has been sent to your email.',
+  },
+  {
+    title: 'Measurements & fabric',
+    body: 'A stylist calls you within 24 hours to take measurements and confirm your cloth selection.',
+  },
+  {
+    title: 'In the atelier',
+    body: 'Cutting and hand-finishing takes 10 to 14 days, with one fitting before the final press.',
+  },
+  {
+    title: 'Delivered to you',
+    body: 'Boxed and dispatched with tracking. Signature required on arrival.',
+  },
+] as const

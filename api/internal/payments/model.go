@@ -39,13 +39,18 @@ type Order struct {
 	Status          string    `json:"status"`
 	Kind            string    `json:"kind"`
 	CustomerName    string    `json:"customerName"`
-	Email           string    `json:"-"`
-	Phone           string    `json:"-"`
-	Address         string    `json:"-"`
-	DeliveryZone    string    `json:"-"`
-	SubtotalKobo    int64     `json:"-"`
+	// Contact and delivery details are returned so the confirmation page can
+	// show the customer what they just bought and where it is going, which is
+	// the whole point of that page. The pay token in the URL is the access
+	// secret, so anyone the link is forwarded to sees these too. Nothing here
+	// is a credential, and none of it is exposed anywhere the token is absent.
+	Email           string    `json:"email"`
+	Phone           string    `json:"phone"`
+	Address         string    `json:"address"`
+	DeliveryZone    string    `json:"deliveryZone"`
+	SubtotalKobo    int64     `json:"subtotalKobo"`
 	TotalKobo       int64     `json:"totalKobo"`
-	DeliveryFeeKobo int64     `json:"-"`
+	DeliveryFeeKobo int64     `json:"deliveryFeeKobo"`
 	PaymentProvider string    `json:"-"`
 	PaymentRef      string    `json:"-"`
 	Items           []Item    `json:"items"`
@@ -95,6 +100,9 @@ type Verification struct {
 	Currency        string
 	PaidAt          *time.Time
 	GatewayResponse string
+	// Channel is how the customer paid: card, bank_transfer, ussd. Carried
+	// through for display only, never for any money decision.
+	Channel         string
 	ProviderPayload []byte
 }
 
@@ -110,4 +118,6 @@ type VerifyResult struct {
 	Status    string `json:"status"`
 	Paid      bool   `json:"paid"`
 	Message   string `json:"message"`
+	// Channel drives the "Paystack · Card" line on the confirmation page.
+	Channel string `json:"channel,omitempty"`
 }

@@ -83,6 +83,11 @@ type verifyResponse struct {
 		Currency        string     `json:"currency"`
 		PaidAt          *time.Time `json:"paid_at"`
 		GatewayResponse string     `json:"gateway_response"`
+		// How they actually paid: card, bank_transfer, ussd. Read from the live
+		// verify response rather than stored, because the only thing that needs
+		// it is the confirmation page, which verifies as it loads. The full
+		// response is persisted in ProviderPayload if it is ever needed later.
+		Channel string `json:"channel"`
 	} `json:"data"`
 }
 
@@ -161,6 +166,7 @@ func (paystack *Paystack) Verify(
 		Currency:        response.Data.Currency,
 		PaidAt:          response.Data.PaidAt,
 		GatewayResponse: response.Data.GatewayResponse,
+		Channel:         response.Data.Channel,
 		ProviderPayload: responseBody,
 	}, nil
 }

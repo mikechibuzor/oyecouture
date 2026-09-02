@@ -1,0 +1,306 @@
+// Printable receipt, laid out from the client's approved email template so the
+// printed copy and the emailed confirmation read as the same document.
+
+.receipt-page {
+  max-width: 44rem;
+  margin: 0 auto;
+  padding: var(--space-xl) var(--space-lg) var(--space-4xl);
+}
+
+.receipt-status {
+  padding: var(--space-4xl) 0;
+  color: var(--color-body-copy);
+  text-align: center;
+}
+
+.receipt-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  align-items: center;
+  justify-content: space-between;
+}
+
+.receipt-print {
+  padding: var(--space-md) var(--space-xl);
+  border: 1px solid var(--color-ink);
+  background: var(--color-ink);
+  color: var(--color-gold);
+  font-family: inherit;
+  font-size: 0.8125rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background var(--duration-quick) var(--ease-standard);
+
+  &:hover {
+    background: var(--color-ink-soft);
+  }
+}
+
+.receipt-back {
+  color: var(--color-taupe);
+  font-size: 0.8125rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-decoration: none;
+
+  &:hover {
+    color: var(--color-ink);
+  }
+}
+
+.receipt-hint {
+  margin: var(--space-sm) 0 var(--space-xl);
+  color: var(--color-taupe);
+  font-size: 0.875rem;
+}
+
+.receipt {
+  border: 1px solid var(--color-border-warm);
+  background: var(--color-canvas);
+}
+
+.receipt-banner {
+  padding: var(--space-sm) var(--space-lg);
+  background: var(--color-ink);
+  color: var(--color-gold);
+  font-size: 0.6875rem;
+  letter-spacing: 0.16em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.receipt-brand {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-xl) var(--space-lg);
+  border-bottom: 1px solid var(--color-gold);
+  background: var(--color-cream-2);
+}
+
+.receipt-body {
+  padding: var(--space-xl) var(--space-lg);
+
+  h1 {
+    margin: var(--space-2xs) 0 var(--space-xl);
+    font-size: 1.75rem;
+  }
+
+  h2 {
+    margin: 0 0 var(--space-sm);
+    color: var(--color-gold);
+    font-size: 0.6875rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+}
+
+.receipt-eyebrow {
+  margin: 0;
+  color: var(--color-gold);
+  font-size: 0.6875rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.receipt-details {
+  padding: var(--space-lg);
+  margin-bottom: var(--space-xl);
+  border: 1px solid var(--color-border-warm);
+  background: var(--color-cream-2);
+
+  dl {
+    display: grid;
+    gap: var(--space-xs);
+    margin: 0;
+  }
+
+  dl > div {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-md);
+  }
+
+  dt {
+    color: var(--color-taupe);
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  dd {
+    margin: 0;
+    color: var(--color-ink);
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.receipt-pieces {
+  ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  li {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-md);
+    padding: var(--space-md) 0;
+  }
+
+  p {
+    margin: 0;
+  }
+}
+
+.receipt-piece-name {
+  color: var(--color-ink);
+}
+
+.receipt-piece-meta {
+  margin-top: var(--space-3xs) !important;
+  color: var(--color-taupe);
+  font-size: 0.875rem;
+}
+
+.receipt-piece-price {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.receipt-totals {
+  display: grid;
+  gap: var(--space-xs);
+  margin: 0 0 var(--space-xl);
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--color-border-warm);
+
+  > div {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-md);
+  }
+
+  dt {
+    color: var(--color-body-copy);
+  }
+
+  dd {
+    margin: 0;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.receipt-total {
+  margin-top: var(--space-2xs);
+  padding-top: var(--space-sm);
+  border-top: 1px solid var(--color-border-warm);
+
+  dt {
+    color: var(--color-ink) !important;
+    font-size: 0.875rem;
+    font-weight: var(--font-weight-medium);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  dd {
+    color: var(--color-ink);
+    font-size: 1.25rem;
+    font-weight: var(--font-weight-semibold);
+  }
+}
+
+.receipt-delivering {
+  padding: var(--space-lg);
+  margin-bottom: var(--space-xl);
+  border: 1px solid var(--color-border-warm);
+  background: var(--color-cream-2);
+
+  p {
+    margin: 0 0 var(--space-3xs);
+    color: var(--color-ink);
+  }
+}
+
+.receipt-signoff {
+  margin: 0 0 var(--space-xs);
+  color: var(--color-body-copy);
+}
+
+.receipt-brandmark {
+  margin: 0;
+  color: var(--color-ink);
+  font-size: 0.8125rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.receipt-footer {
+  padding: var(--space-lg);
+  border-top: 1px solid var(--color-border-warm);
+  background: var(--color-cream-2);
+
+  p {
+    margin: 0 0 var(--space-xs);
+    color: var(--color-taupe);
+    font-size: 0.8125rem;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+}
+
+// What the customer actually keeps. The page chrome, the controls and the site
+// header/footer are all removed so the sheet holds only the receipt, and the
+// border is dropped because a printed page already has edges.
+@media print {
+  @page {
+    margin: 14mm;
+  }
+
+  .receipt-controls,
+  .receipt-hint,
+  .site-header,
+  .site-footer,
+  .announcement-bar {
+    display: none !important;
+  }
+
+  .receipt-page {
+    max-width: none;
+    padding: 0;
+  }
+
+  .receipt {
+    border: 0;
+  }
+
+  // Dark bands cost ink and many browsers drop backgrounds when printing, which
+  // would otherwise leave gold text on white and unreadable.
+  .receipt-banner {
+    background: transparent;
+    color: var(--color-ink);
+    border-bottom: 1px solid var(--color-ink);
+  }
+
+  .receipt-brand,
+  .receipt-details,
+  .receipt-delivering,
+  .receipt-footer {
+    background: transparent;
+  }
+
+  // Keep a piece and its price on one page rather than splitting a line item.
+  .receipt-pieces li,
+  .receipt-totals,
+  .receipt-delivering {
+    break-inside: avoid;
+  }
+}
