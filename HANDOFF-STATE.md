@@ -59,7 +59,21 @@ The atelier **is** Oyecouture, so customer-facing copy names the brand rather th
 2. **Super admin, roles and permissions.** A super admin can create admins, grant permissions, see all admins, revoke roles, and delete admins. `admin_users.role` already exists with `CHECK (role IN ('owner','staff'))` but **nothing enforces it on any route**. Prerequisite worth doing first: **an admin can change their own password** — there is no such route today, so any account the developer creates keeps a password the developer knows, which defeats the point of the whole feature. See the handover-trust note below.
 3. **Payment escalation / refund flow the customer can start.** Prompted by `OYE-1002`, where money left the customer's account and the order stayed unpaid with no way for them to say so. Needs a customer-initiated "I paid but this says otherwise" path, an admin queue for it, and a refund route. Until it exists, a repeat of that incident is silent.
 
-## 📧 EMAIL 01 IS BUILT; 02, 03 AND 04 ARE NOT (Claude, 2026-09-02, `539e3f8`)
+## ✅ ALL FOUR EMAILS ARE BUILT AND LIVE (Claude, 2026-09-02, through `cbded52`)
+
+01 Payment received, 02 Shipped, 03 Out for delivery and 04 Delivered all match the client's designs and are deployed. **Each was rendered and looked at, not merely compiled** — that is how the `AMOUNT PAID` figure was caught rendering at 11px instead of 24px earlier the same day.
+
+**Two new stages worth of schema:** migration `000017` stores the handover (`delivery_signed_for_by`, `delivery_signed_at`, `delivery_location`); migration `000018` widens the stage constraint for `out_for_delivery` and adds `rider_name`, `rider_contact`, `delivery_window`. Production is on `18:false`.
+
+**`out_for_delivery` is deliberately optional.** `dispatched` can move either to `out_for_delivery` or straight to `delivered`. It describes a Lagos order handed to Oyecouture's own rider; forcing a courier parcel through it would leave international orders parked in a stage nobody can observe. Rider fields are separate from carrier fields on purpose — a courier is a company with a tracking number, a rider is a person with a phone and a time window.
+
+⚠️ **The public tracking timeline maps `out_for_delivery` to `dispatched`.** It is not one of the four customer-facing steps, and `FULFILLMENT_PATHS.indexOf` returns `-1` for anything off that path, which renders **every** step incomplete — a paid, shipped order looking as though nothing had happened to it. If another optional stage is ever added, it needs the same mapping in `web/pages/track/[trackingToken].vue`.
+
+**Both handover and rider fields are rejected by the API on any transition other than their own**, so an order cannot name the rider carrying it, or the person who signed for it, before either has happened. Panels are omitted entirely when nothing was recorded rather than rendering empty.
+
+**Deliberately not built:** the design's **Leave a review** panel (no review system exists; a test asserts it stays absent), product photo thumbnails (`email.Item` has no image URL), and the **Email preferences / Unsubscribe** footer links (a dead unsubscribe link is worse than none).
+
+## 📧 EMAIL 01 DETAIL (Claude, 2026-09-02, `539e3f8`)
 
 **"01 Payment received" now matches the client's design** and was verified by rendering it, not by reading the stylesheet. Announcement strip, centred wordmark over a gold rule, order details, pieces, totals, delivering-to, and a **View your order** button pointing at the customer's own confirmation page with the payment reference appended — without that reference the page cannot verify and reports a failure to someone who has already paid.
 
