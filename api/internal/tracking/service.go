@@ -411,7 +411,10 @@ func legacyOrderStatus(stage Stage) string {
 	switch stage {
 	case StagePaymentConfirmed:
 		return "paid"
-	case StageDispatched:
+	case StageDispatched, StageOutForDelivery:
+		// Out for delivery is still shipped in the coarse status. Falling to the
+		// default below would report in_progress and move a dispatched order
+		// backwards on the orders list.
 		return "shipped"
 	case StageDelivered:
 		return "delivered"
