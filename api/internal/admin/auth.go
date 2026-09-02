@@ -124,6 +124,13 @@ func (service *AuthService) LogOut(requestContext context.Context, token string)
 	return service.store.DeleteSession(requestContext, token)
 }
 
+// passwordMatches reports whether a plaintext password matches a stored hash.
+// bcrypt's comparison is constant time for a given hash, so this leaks nothing
+// beyond the answer itself.
+func passwordMatches(passwordHash string, password string) bool {
+	return bcrypt.CompareHashAndPassword([]byte(passwordHash), []byte(password)) == nil
+}
+
 // HashPassword is used by the admin CLI when creating a user.
 func HashPassword(password string) (string, error) {
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcryptCost)

@@ -85,6 +85,7 @@ func New(applicationConfig config.Config, databasePool *pgxpool.Pool) *http.Serv
 	adminStore := admin.NewPostgresStore(databasePool)
 	adminAuth := admin.NewAuthService(adminStore)
 	adminHandler := admin.NewHandler(adminAuth, applicationConfig.AppEnv == "production")
+	adminTeamHandler := admin.NewTeamHandler(admin.NewTeamService(adminStore))
 
 	// Clear dead sessions once at startup rather than running a scheduler.
 	go func() {
@@ -99,6 +100,23 @@ func New(applicationConfig config.Config, databasePool *pgxpool.Pool) *http.Serv
 	requestMux.HandleFunc("POST /admin/logout", adminHandler.LogOut)
 	requestMux.Handle("GET /admin/me", adminHandler.RequireSession(
 		http.HandlerFunc(adminHandler.Me),
+	))
+	// Any signed-in admin may change their own password; it acts only on the
+	// caller's own account. Everything else on the team desk is owner-only.
+	requestMux.Handle("PATCH /admin/password", adminHandler.RequireSession(
+		http.HandlerFunc(adminTeamHandler.ChangePassword),
+	))
+	requestMux.Handle("GET /admin/team", adminHandler.RequireSession(
+		admin.RequireOwner(http.HandlerFunc(adminTeamHandler.List)),
+	))
+	requestMux.Handle("POST /admin/team", adminHandler.RequireSession(
+		admin.RequireOwner(http.HandlerFunc(adminTeamHandler.Create)),
+	))
+	requestMux.Handle("PATCH /admin/team/{id}", adminHandler.RequireSession(
+		admin.RequireOwner(http.HandlerFunc(adminTeamHandler.Update)),
+	))
+	requestMux.Handle("DELETE /admin/team/{id}", adminHandler.RequireSession(
+		admin.RequireOwner(http.HandlerFunc(adminTeamHandler.Delete)),
 	))
 	requestMux.Handle("GET /admin/settings", adminHandler.RequireSession(
 		http.HandlerFunc(settingsHandler.Get),
