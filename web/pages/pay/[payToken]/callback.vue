@@ -84,6 +84,59 @@ const receiptLink = computed(() =>
     : `/pay/${payToken.value}/receipt`,
 )
 
+// Paystack sends the customer back the instant they finish their side, but a
+// bank transfer or USSD payment is still settling then - order OYE-1002
+// redirected 50 seconds before its transfer cleared. Checking once and calling
+// it a failure told a paying customer their payment had not worked, so the page
+// keeps checking instead. The window is generous because the alternative is
+// telling someone who has been debited that nothing happened.
+const settleWindowMs = 3 * 60 * 1000
+const settlePollMs = 4000
+
+const isSettling = ref(false)
+const hasGivenUpWaiting = ref(false)
+let settlePollTimer: ReturnType<typeof setTimeout> | undefined
+let stopWaitingAt = 0
+
+const checkOnce = async (): Promise<boolean> => {
+  const { result } = await verifyPayment(payToken.value, reference.value)
+  order.value = result.order
+  paymentChannel.value = result.channel ?? ''
+  isPaid.value = result.paid
+
+  return result.paid
+}
+
+const scheduleNextCheck = (): void => {
+  if (Date.now() >= stopWaitingAt) {
+    isSettling.value = false
+    hasGivenUpWaiting.value = true
+    message.value = PAYMENT_COPY.settlingSlowBody
+    return
+  }
+
+  settlePollTimer = setTimeout(() => {
+    void poll()
+  }, settlePollMs)
+}
+
+// A failed check while settling is not news: the reference simply is not
+// payable yet. Only the very first attempt distinguishes a real failure.
+const poll = async (): Promise<void> => {
+  try {
+    if (await checkOnce()) {
+      isSettling.value = false
+      hasGivenUpWaiting.value = false
+      message.value = PAYMENT_COPY.verified
+      return
+    }
+  } catch {
+    // Swallowed deliberately: keep watching rather than reporting failure.
+  }
+
+  scheduleNextCheck()
+}
+
 const verify = async (): Promise<void> => {
   if (!reference.value) {
     isVerifying.value = false
@@ -92,20 +145,33 @@ const verify = async (): Promise<void> => {
   }
 
   isVerifying.value = true
+  hasGivenUpWaiting.value = false
 
   try {
-    const { result } = await verifyPayment(payToken.value, reference.value)
-    isPaid.value = result.paid
-    order.value = result.order
-    paymentChannel.value = result.channel ?? ''
-    message.value = result.paid ? PAYMENT_COPY.verified : result.message || PAYMENT_COPY.pending
+    if (await checkOnce()) {
+      message.value = PAYMENT_COPY.verified
+      return
+    }
+
+    // Not paid yet rather than not paid at all. Start watching.
+    isSettling.value = true
+    message.value = PAYMENT_COPY.settlingBody
+    stopWaitingAt = Date.now() + settleWindowMs
+    scheduleNextCheck()
   } catch {
-    isPaid.value = false
-    message.value = PAYMENT_COPY.failed
+    // The first check erroring is ambiguous: an async payment that has not
+    // reached the provider yet looks the same as a genuine failure. Wait it
+    // out rather than accusing a paying customer of not paying.
+    isSettling.value = true
+    message.value = PAYMENT_COPY.settlingBody
+    stopWaitingAt = Date.now() + settleWindowMs
+    scheduleNextCheck()
   } finally {
     isVerifying.value = false
   }
 }
+
+onBeforeUnmount(() => clearTimeout(settlePollTimer))
 
 onMounted(verify)
 </script>
@@ -116,11 +182,29 @@ onMounted(verify)
          layout below is only honest once the money has actually cleared. -->
     <section v-if="isVerifying || !isPaid" class="confirmation-pending">
       <p class="confirmation-eyebrow">{{ PAYMENT_COPY.breadcrumb }}</p>
-      <h1>{{ isVerifying ? PAYMENT_COPY.verifying : PAYMENT_COPY.pending }}</h1>
+      <h1>
+        <template v-if="isVerifying">{{ PAYMENT_COPY.verifying }}</template>
+        <template v-else-if="isSettling">{{ PAYMENT_COPY.settling }}</template>
+        <template v-else-if="hasGivenUpWaiting">{{ PAYMENT_COPY.settlingSlow }}</template>
+        <template v-else>{{ PAYMENT_COPY.pending }}</template>
+      </h1>
       <p class="confirmation-pending-body">{{ message }}</p>
 
+      <!-- While a transfer is settling there is nothing for the customer to do
+           and nothing to retry: the old "Try again" sent them back to a
+           checkout link Paystack had already closed, which reads as a second
+           failure on top of the first. -->
+      <button
+        v-if="hasGivenUpWaiting"
+        type="button"
+        class="confirmation-button is-primary"
+        @click="verify"
+      >
+        {{ PAYMENT_COPY.checkAgain }}
+      </button>
+
       <NuxtLink
-        v-if="!isVerifying"
+        v-else-if="!isVerifying && !isSettling"
         class="confirmation-button is-primary"
         :to="`/pay/${payToken}`"
       >

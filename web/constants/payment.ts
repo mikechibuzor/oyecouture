@@ -12,6 +12,16 @@ export const PAYMENT_COPY = {
   verified: 'Payment confirmed',
   pending: 'Payment is not complete yet',
   failed: 'The payment could not be verified.',
+  // Bank transfers and USSD settle after Paystack sends the customer back, so
+  // the first check routinely finds nothing. Saying so plainly beats the old
+  // behaviour of declaring failure on a payment that lands seconds later.
+  settling: 'Waiting for your bank',
+  settlingBody:
+    'Transfers and USSD payments take a moment to clear. This page is watching for it and will update on its own.',
+  settlingSlow: 'Still waiting for your bank',
+  settlingSlowBody:
+    'This is taking longer than usual. Your money is safe. If it has left your account, the order will confirm itself and we will email you the receipt.',
+  checkAgain: 'Check again',
   order: 'Order',
   customer: 'Customer',
   items: 'Items',
