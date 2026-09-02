@@ -100,6 +100,9 @@ export interface AdminNavItem {
   readonly label: string
   readonly route?: string
   readonly isPending?: boolean
+  // Hidden from staff. The API refuses these routes for them regardless, so
+  // this keeps the sidebar honest rather than acting as the access control.
+  readonly ownerOnly?: boolean
 }
 
 export interface AdminNavGroup {

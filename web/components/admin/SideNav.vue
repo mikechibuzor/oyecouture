@@ -11,6 +11,7 @@ import {
   X,
 } from 'lucide'
 import { ADMIN_COPY, ADMIN_NAVIGATION } from '~/constants/admin'
+import { AdminRole } from '~/types/team'
 import type { AdminSession } from '~/types/admin'
 
 interface AdminSideNavProps {
@@ -34,6 +35,19 @@ const NAV_ICONS: Readonly<Record<string, IconNode>> = {
   delivery: Truck,
   settings: Settings,
 }
+
+// Staff never see owner-only destinations. The API refuses those routes for
+// them anyway, so this is about not offering a door that will not open.
+const { session } = useAdminSession()
+
+const visibleNavigation = computed(() =>
+  ADMIN_NAVIGATION.map((group) => ({
+    ...group,
+    items: group.items.filter(
+      (item) => !item.ownerOnly || session.value?.role === AdminRole.Owner,
+    ),
+  })).filter((group) => group.items.length > 0),
+)
 
 const closeMobileNavigation = (): void => {
   isMobileOpen.value = false
@@ -104,7 +118,7 @@ const isCurrentRoute = (itemRoute?: string): boolean =>
     </div>
 
     <nav class="admin-sidebar-nav" :aria-label="ADMIN_COPY.navigationLabel">
-      <div v-for="group in ADMIN_NAVIGATION" :key="group.id" class="admin-nav-group">
+      <div v-for="group in visibleNavigation" :key="group.id" class="admin-nav-group">
         <p class="admin-nav-group-label">{{ group.label }}</p>
 
         <ul>

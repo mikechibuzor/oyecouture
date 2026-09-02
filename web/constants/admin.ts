@@ -21,6 +21,7 @@ export const ADMIN_ROUTES = {
   productNew: '/admin/products/new',
   productEdit: (slug: string) => `/admin/products/${encodeURIComponent(slug)}`,
   settings: '/admin/settings',
+  team: '/admin/team',
 } as const
 
 export const ADMIN_API_ROUTES = {
@@ -37,6 +38,9 @@ export const ADMIN_API_ROUTES = {
   deliveryZones: '/admin/delivery-zones',
   deliveryZone: (name: string) => `/admin/delivery-zones/${encodeURIComponent(name)}`,
   homeContent: '/admin/home-content',
+  team: '/admin/team',
+  teamMember: (id: string) => `/admin/team/${encodeURIComponent(id)}`,
+  password: '/admin/password',
   products: '/admin/products',
   productDetail: (slug: string) => `/admin/products/${encodeURIComponent(slug)}`,
   productActive: (slug: string) => `/admin/products/${encodeURIComponent(slug)}/active`,
@@ -87,6 +91,45 @@ export const ADMIN_COPY = {
   deliverySaveFailed: 'Delivery zone could not be saved.',
   deliveryCreateFailed: 'Delivery zone could not be added.',
   closeDeliveryEditor: 'Close delivery editor',
+  teamHeading: 'Team',
+  teamSubheading: 'Manage who can sign in and what they can reach',
+  teamLoading: 'Loading team…',
+  teamLoadFailed: 'The team could not be loaded.',
+  teamEmailLabel: 'Email',
+  teamRoleLabel: 'Role',
+  teamStatusLabel: 'Status',
+  teamAddedLabel: 'Added',
+  teamActiveStatus: 'Active',
+  teamRevokedStatus: 'Revoked',
+  teamRoleOwner: 'Owner',
+  teamRoleStaff: 'Staff',
+  teamRoleOwnerHint: 'Full access, including the team, settings, delivery and prices.',
+  teamRoleStaffHint: 'Orders and fulfilment only.',
+  teamInviteHeading: 'Add an admin',
+  teamTemporaryPasswordLabel: 'Temporary password',
+  teamTemporaryPasswordHint:
+    'At least 12 characters. Share it privately and ask them to change it on their first sign-in.',
+  teamCreate: 'Add admin',
+  teamCreating: 'Adding…',
+  teamCreatedNotice: 'Admin added',
+  teamRevoke: 'Revoke access',
+  teamRestore: 'Restore access',
+  teamDelete: 'Delete',
+  teamSavedNotice: 'Team updated',
+  teamDeletedNotice: 'Admin deleted',
+  teamYou: 'You',
+  teamSelfHint: 'You cannot change your own access.',
+  teamDeleteConfirm:
+    'Delete this admin permanently? Revoking access instead keeps their name on the order history they touched.',
+  passwordHeading: 'Your password',
+  passwordIntro: 'Change the password you use to sign in.',
+  currentPasswordLabel: 'Current password',
+  newPasswordLabel: 'New password',
+  confirmPasswordLabel: 'Confirm new password',
+  passwordMismatch: 'The new passwords do not match.',
+  changePassword: 'Change password',
+  changingPassword: 'Changing…',
+  passwordChangedNotice: 'Password changed',
   settingsHeading: 'Settings',
   settingsSubheading: 'Manage global storefront details',
   settingsLoading: 'Loading settings…',
@@ -346,7 +389,12 @@ export const ADMIN_NAVIGATION: readonly AdminNavGroup[] = [
   {
     id: 'other',
     label: 'Other',
-    items: [{ id: 'settings', label: 'Settings', route: ADMIN_ROUTES.settings }],
+    items: [
+      { id: 'settings', label: 'Settings', route: ADMIN_ROUTES.settings },
+      // Owner-only. Hidden for staff by the sidebar, and refused by the API
+      // regardless, so hiding it is convenience rather than the control.
+      { id: 'team', label: 'Team', route: ADMIN_ROUTES.team, ownerOnly: true },
+    ],
   },
 ]
 
