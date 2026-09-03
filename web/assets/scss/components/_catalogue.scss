@@ -322,7 +322,12 @@ $catalogue-content-width: 92.5rem;
   padding: var(--space-md) 0.125rem 0;
 
   h3 {
-    min-height: 2.8em;
+    // One line, not two. This reserved 2.8em - exactly two lines at this
+    // line-height - so that prices lined up across a row when a name wrapped.
+    // Almost every name is one line, so the common case paid for the rare one
+    // with a blank line above its price. The cost is that a wrapped name now
+    // pushes its own price down, leaving a row slightly ragged.
+    min-height: 1.4em;
     margin: 0.4375rem 0 0;
     font-size: 1.0625rem;
     font-weight: var(--font-weight-medium);
@@ -354,9 +359,9 @@ $catalogue-content-width: 92.5rem;
 }
 
 .product-price {
-  // No top margin: the title above reserves two lines via min-height so prices
-  // stay on one line across a row, and most names use only one of them. Adding
-  // margin on top of that reserved space read as a gap rather than separation.
+  // A deliberate small gap now that the title no longer reserves a second line
+  // to sit in. Without it the price crowds the name.
+  margin-top: var(--space-3xs);
   font-size: 0.9375rem;
   font-weight: var(--font-weight-regular);
   letter-spacing: var(--tracking-snug);

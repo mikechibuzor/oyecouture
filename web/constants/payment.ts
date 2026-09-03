@@ -93,24 +93,3 @@ export const RECEIPT_COPY = {
   receiptFor: (orderNo: string): string => `Receipt for order ${orderNo}.`,
 } as const
 
-// The customer-facing journey. The API tracks eight internal stages; these four
-// are what a customer is told, so workshop states like quality check stay
-// private rather than reading as delay.
-export const CONFIRMATION_STEPS = [
-  {
-    title: 'Payment confirmed',
-    body: 'Your payment cleared successfully and a receipt has been sent to your email.',
-  },
-  {
-    title: 'Measurements & fabric',
-    body: 'A stylist calls you within 24 hours to take measurements and confirm your cloth selection.',
-  },
-  {
-    title: 'With Oyecouture',
-    body: 'Cutting and hand-finishing takes 10 to 14 days, with one fitting before the final press.',
-  },
-  {
-    title: 'Delivered to you',
-    body: 'Boxed and dispatched with tracking. Signature required on arrival.',
-  },
-] as const

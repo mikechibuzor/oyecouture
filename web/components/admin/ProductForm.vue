@@ -18,6 +18,21 @@ const draft = defineModel<AdminProductDraft>({ required: true })
 
 const emit = defineEmits<{ submit: [] }>()
 
+// A category belongs to exactly one section, so changing section invalidates
+// whatever was chosen. Without this the old value is carried over and
+// categoryOptions prepends it, offering Shirts under Suits.
+watch(
+  () => draft.value.section,
+  (section, previousSection) => {
+    if (previousSection === undefined || section === previousSection) {
+      return
+    }
+
+    const options = PRODUCT_CATEGORY_OPTIONS_BY_SECTION[section]
+    draft.value.category = options[0]?.value ?? ''
+  },
+)
+
 const categoryOptions = computed(() => {
   const sectionOptions = PRODUCT_CATEGORY_OPTIONS_BY_SECTION[draft.value.section]
   const hasCurrentCategory = sectionOptions.some(
@@ -67,12 +82,7 @@ const submit = (): void => {
           <input v-model.trim="draft.name" type="text" required autocomplete="off">
         </label>
 
-        <label class="admin-field">
-          <span>{{ ADMIN_COPY.slugLabel }}</span>
-          <input v-model.trim="draft.slug" type="text" autocomplete="off">
-          <small>{{ ADMIN_COPY.slugHint }}</small>
-        </label>
-      </div>
+              </div>
 
       <label class="admin-field admin-field-wide">
         <span>{{ ADMIN_COPY.descriptionLabel }}</span>

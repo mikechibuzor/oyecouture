@@ -161,3 +161,17 @@ $storefront-footer-width: 92.5rem;
     grid-template-columns: minmax(17rem, 1.5fr) repeat(3, minmax(0, 1fr));
   }
 }
+
+// Raster marks rather than icon fonts, so they cannot follow currentColor on
+// hover. Opacity carries the interaction instead, and the border still responds.
+.footer-social-mark {
+  width: 1.0625rem;
+  height: 1.0625rem;
+  opacity: 0.72;
+  transition: opacity var(--duration-quick) var(--ease-standard);
+}
+
+.footer-social-icon:hover .footer-social-mark,
+.footer-social-icon:focus-visible .footer-social-mark {
+  opacity: 1;
+}

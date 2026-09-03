@@ -1,5 +1,8 @@
 <script setup lang="ts">
-import { CONFIRMATION_COPY, CONFIRMATION_STEPS, PAYMENT_COPY } from '~/constants/payment'
+import { CONFIRMATION_COPY, PAYMENT_COPY } from '~/constants/payment'
+import { FULFILLMENT_PATHS, FULFILLMENT_STAGE_LABELS, TRACKING_COPY } from '~/constants/tracking'
+import { FulfillmentStage } from '~/types/tracking'
+import { OrderKind } from '~/types/order'
 import { StorefrontRoute } from '~/types/storefront'
 import type { PaymentOrder } from '~/types/payment'
 
@@ -17,6 +20,24 @@ const reference = computed(() => {
 })
 
 const isVerifying = ref(true)
+// The same stages, labels and wording the order tracker uses, rather than a
+// second set of prose describing the same journey. A customer who lands here
+// and later opens their tracking link sees one story told once.
+const confirmationSteps = computed(() => {
+  const kind = order.value?.kind === OrderKind.Bespoke
+    ? OrderKind.Bespoke
+    : OrderKind.ReadyToWear
+
+  return FULFILLMENT_PATHS[kind].map((stage) => ({
+    stage,
+    label: FULFILLMENT_STAGE_LABELS[stage],
+    // Payment is the only step that has happened by the time this page loads,
+    // so the next one carries the tracker's awaiting-update line.
+    isDone: stage === FulfillmentStage.PaymentConfirmed,
+    isCurrent: stage === FULFILLMENT_PATHS[kind][1],
+  }))
+})
+
 const isPaid = ref(false)
 const message = ref<string>(PAYMENT_COPY.verifying)
 const order = ref<PaymentOrder | null>(null)
@@ -282,14 +303,16 @@ onMounted(verify)
                    is always what happens next, so the states are fixed rather
                    than read from the order. -->
               <li
-                v-for="(step, index) in CONFIRMATION_STEPS"
-                :key="step.title"
-                :class="{ 'is-done': index === 0, 'is-current': index === 1 }"
+                v-for="step in confirmationSteps"
+                :key="step.stage"
+                :class="{ 'is-done': step.isDone, 'is-current': step.isCurrent }"
               >
                 <span class="confirmation-step-marker" aria-hidden="true" />
                 <div>
-                  <p class="confirmation-step-title">{{ step.title }}</p>
-                  <p class="confirmation-step-body">{{ step.body }}</p>
+                  <p class="confirmation-step-title">{{ step.label }}</p>
+                  <p v-if="step.isCurrent" class="confirmation-step-body">
+                    {{ TRACKING_COPY.awaitingUpdate }}
+                  </p>
                 </div>
               </li>
             </ol>

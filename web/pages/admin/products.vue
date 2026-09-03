@@ -29,6 +29,8 @@ type ProductEditorMode = 'create' | 'edit'
 
 const {
   createProduct,
+  deleteProduct,
+  uploadProductImage,
   fetchProducts,
   fetchProduct,
   updateProduct,
@@ -87,6 +89,17 @@ const hasFailed = ref(false)
 const updateError = ref('')
 const updatingSlug = ref<string | null>(null)
 const productEditorMode = ref<ProductEditorMode | null>(null)
+const isDeletingProduct = ref(false)
+
+// Images cannot be attached until the product exists, because the upload
+// endpoint is addressed by slug. They are held here while creating and sent as
+// soon as it is saved, so the owner adds everything in one pass.
+const pendingImages = ref<File[]>([])
+
+const selectPendingImages = (changeEvent: Event): void => {
+  const input = changeEvent.target as HTMLInputElement
+  pendingImages.value = Array.from(input.files ?? [])
+}
 const selectedProductSlug = ref<string | null>(null)
 const selectedProduct = ref<AdminProduct | null>(null)
 const selectedDraft = ref<AdminProductDraft | null>(null)
@@ -522,6 +535,7 @@ const openProductEditor = async (productSlug: string): Promise<void> => {
 
 const openNewProductEditor = (): void => {
   productEditorMode.value = 'create'
+  pendingImages.value = []
   selectedProductSlug.value = null
   selectedProduct.value = null
   selectedDraft.value = createEmptyDraft()
@@ -533,6 +547,7 @@ const openNewProductEditor = (): void => {
 
 const closeProductEditor = (): void => {
   productEditorMode.value = null
+  pendingImages.value = []
   selectedProductSlug.value = null
   selectedProduct.value = null
   selectedDraft.value = null
@@ -566,6 +581,19 @@ const saveSelectedProduct = async (): Promise<void> => {
       return
     }
 
+    // Sequentially and in order: position is assigned on arrival, so firing
+    // these in parallel would shuffle the gallery.
+    let uploadFailed = false
+    if (wasCreatingProduct && pendingImages.value.length > 0) {
+      for (const imageFile of pendingImages.value) {
+        try {
+          await uploadProductImage(savedProduct.slug, imageFile)
+        } catch {
+          uploadFailed = true
+        }
+      }
+    }
+
     productEditorMode.value = 'edit'
     selectedProductSlug.value = savedProduct.slug
     selectedProduct.value = savedProduct
@@ -573,6 +601,15 @@ const saveSelectedProduct = async (): Promise<void> => {
     syncProductInList(savedProduct)
 
     await load()
+
+    // A partial upload keeps the drawer open on the saved product, so the
+    // missing images can be added rather than silently lost.
+    if (uploadFailed) {
+      notifyError(ADMIN_COPY.newProductImagesFailed)
+      pendingImages.value = []
+      return
+    }
+
     closeProductEditor()
     notifySuccess(
       wasCreatingProduct ? ADMIN_COPY.productCreatedNotice : ADMIN_COPY.productUpdatedNotice,
@@ -584,6 +621,34 @@ const saveSelectedProduct = async (): Promise<void> => {
     }
   } finally {
     isEditorSaving.value = false
+  }
+}
+
+const removeSelectedProduct = async (): Promise<void> => {
+  const slug = selectedProductSlug.value
+  if (!slug) {
+    return
+  }
+
+  // eslint-disable-next-line no-alert
+  if (!window.confirm(ADMIN_COPY.productDeleteConfirm)) {
+    return
+  }
+
+  isDeletingProduct.value = true
+
+  try {
+    await deleteProduct(slug)
+    notifySuccess(ADMIN_COPY.productDeletedNotice)
+    closeProductEditor()
+    await load()
+  } catch (deleteError) {
+    if (!(await isExpiredSession(deleteError))) {
+      editorErrorMessage.value = ADMIN_COPY.productDeleteFailed
+      notifyError(ADMIN_COPY.productDeleteFailed)
+    }
+  } finally {
+    isDeletingProduct.value = false
   }
 }
 
@@ -909,13 +974,49 @@ onBeforeUnmount(() => {
               :error-message="editorErrorMessage"
               :success-message="editorSuccessMessage"
               @submit="saveSelectedProduct"
-            />
+            >
+              <!-- Only while creating: once the product exists the image
+                   manager below handles uploads, reordering and removal. -->
+              <template v-if="productEditorMode === 'create'" #extra>
+                <label class="admin-field admin-field-wide">
+                  <span>{{ ADMIN_COPY.newProductImagesLabel }}</span>
+                  <input type="file" accept="image/*" multiple @change="selectPendingImages">
+                  <small>
+                    {{
+                      pendingImages.length > 0
+                        ? ADMIN_COPY.newProductImagesPending(pendingImages.length)
+                        : ADMIN_COPY.newProductImagesHint
+                    }}
+                  </small>
+                </label>
+              </template>
+            </AdminProductForm>
 
             <AdminProductImageManager
               v-if="selectedProduct"
               :product="selectedProduct"
               @updated="handleProductImagesUpdated"
             />
+
+            <!-- Last in the drawer and visually separate, so it is never the
+                 button reached for by habit. -->
+            <section v-if="selectedProduct" class="admin-form-section admin-product-danger">
+              <header class="admin-form-section-head">
+                <h2>{{ ADMIN_COPY.deleteProduct }}</h2>
+                <p>{{ ADMIN_COPY.productDeleteConfirm }}</p>
+              </header>
+
+              <div class="admin-form-actions">
+                <button
+                  type="button"
+                  class="admin-inline-action is-danger"
+                  :disabled="isDeletingProduct"
+                  @click="removeSelectedProduct"
+                >
+                  {{ isDeletingProduct ? ADMIN_COPY.deletingProduct : ADMIN_COPY.deleteProduct }}
+                </button>
+              </div>
+            </section>
           </template>
         </aside>
       </div>

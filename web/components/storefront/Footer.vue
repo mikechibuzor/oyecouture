@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import type { IconNode } from 'lucide'
-import { Camera, Music2 } from 'lucide'
 import {
   STOREFRONT_COPY,
   STOREFRONT_FOOTER_GROUPS,
@@ -19,16 +17,20 @@ const resolveFooterLink = (storefrontRoute: string): string =>
     ? appointmentWhatsAppUrl.value
     : storefrontRoute
 
+// The client's own marks, replacing the lucide stand-ins: Instagram was a
+// generic camera and TikTok a music note, neither of which read as the brand
+// they were standing for, and X had no icon at all.
 const socialIconByPlatform: Readonly<
-  Partial<Record<StorefrontSocialPlatform, IconNode>>
+  Partial<Record<StorefrontSocialPlatform, string>>
 > = {
-  [StorefrontSocialPlatform.Instagram]: Camera,
-  [StorefrontSocialPlatform.TikTok]: Music2,
+  [StorefrontSocialPlatform.Instagram]: '/images/social/instagram-line.png',
+  [StorefrontSocialPlatform.TikTok]: '/images/social/tiktok-fill.png',
+  [StorefrontSocialPlatform.X]: '/images/social/twitter-x-line.png',
 }
 
 const footerSocialLinks = STOREFRONT_SOCIAL_LINKS.map((socialLink) => ({
   ...socialLink,
-  icon: socialIconByPlatform[socialLink.platform],
+  iconSrc: socialIconByPlatform[socialLink.platform],
 }))
 </script>
 
@@ -52,13 +54,15 @@ const footerSocialLinks = STOREFRONT_SOCIAL_LINKS.map((socialLink) => ({
               rel="noopener noreferrer"
               :aria-label="socialLink.label"
             >
-              <StorefrontIcon
-                v-if="socialLink.icon"
-                :icon-node="socialLink.icon"
-                :size="17"
-                :stroke-width="1.6"
-                aria-hidden="true"
-              />
+              <img
+                v-if="socialLink.iconSrc"
+                class="footer-social-mark"
+                :src="socialLink.iconSrc"
+                :alt="''"
+                width="17"
+                height="17"
+                loading="lazy"
+              >
               <span v-else class="footer-social-letter" aria-hidden="true">X</span>
             </a>
           </li>
