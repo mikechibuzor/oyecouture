@@ -39,7 +39,7 @@ const {
 const { session } = useAdminSession()
 const router = useRouter()
 const route = useRoute()
-const { notifySuccess } = useAppNotifications()
+const { notifyError, notifySuccess } = useAppNotifications()
 const { withLoading } = useAppLoading()
 
 // Normalises a query value because Vue Router may expose repeated keys as arrays.
