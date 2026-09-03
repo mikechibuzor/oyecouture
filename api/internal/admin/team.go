@@ -7,11 +7,15 @@ import (
 	"time"
 )
 
+// Role is a defined type rather than a bare string, matching tracking.Stage,
+// so an arbitrary string cannot be passed where a role is expected.
+type Role string
+
 const (
 	// RoleOwner is the super admin: manages the team, settings, delivery and
 	// prices. RoleStaff runs orders and fulfilment and nothing else.
-	RoleOwner = "owner"
-	RoleStaff = "staff"
+	RoleOwner Role = "owner"
+	RoleStaff Role = "staff"
 
 	minimumPasswordLength = 12
 )
@@ -32,7 +36,7 @@ var (
 type TeamMember struct {
 	ID        string    `json:"id"`
 	Email     string    `json:"email"`
-	Role      string    `json:"role"`
+	Role      Role      `json:"role"`
 	Active    bool      `json:"active"`
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
@@ -42,8 +46,8 @@ type TeamMember struct {
 type TeamStore interface {
 	ListMembers(context.Context) ([]TeamMember, error)
 	MemberByID(context.Context, string) (TeamMember, error)
-	CreateMember(context.Context, string, string, string) (TeamMember, error)
-	UpdateMember(context.Context, string, string, bool) (TeamMember, error)
+	CreateMember(context.Context, string, string, Role) (TeamMember, error)
+	UpdateMember(context.Context, string, Role, bool) (TeamMember, error)
 	DeleteMember(context.Context, string) error
 	CountActiveOwners(context.Context) (int, error)
 	PasswordHashByID(context.Context, string) (string, error)
@@ -59,7 +63,7 @@ func NewTeamService(store TeamStore) *TeamService {
 	return &TeamService{store: store}
 }
 
-func validRole(role string) bool {
+func validRole(role Role) bool {
 	return role == RoleOwner || role == RoleStaff
 }
 
@@ -74,7 +78,7 @@ func (service *TeamService) Create(
 	requestContext context.Context,
 	email string,
 	password string,
-	role string,
+	role Role,
 ) (TeamMember, error) {
 	email = strings.ToLower(strings.TrimSpace(email))
 	if email == "" || !strings.Contains(email, "@") {
@@ -104,7 +108,7 @@ func (service *TeamService) Update(
 	requestContext context.Context,
 	actorID string,
 	memberID string,
-	role string,
+	role Role,
 	active bool,
 ) (TeamMember, error) {
 	if !validRole(role) {

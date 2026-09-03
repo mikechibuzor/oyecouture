@@ -195,7 +195,7 @@ func (store *PostgresStore) CreateMember(
 	requestContext context.Context,
 	email string,
 	passwordHash string,
-	role string,
+	role Role,
 ) (TeamMember, error) {
 	const query = `
 		INSERT INTO admin_users (email, password_hash, role)
@@ -221,7 +221,7 @@ func (store *PostgresStore) CreateMember(
 func (store *PostgresStore) UpdateMember(
 	requestContext context.Context,
 	id string,
-	role string,
+	role Role,
 	active bool,
 ) (TeamMember, error) {
 	const query = `

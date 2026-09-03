@@ -511,6 +511,31 @@ export const PRODUCT_CATEGORY_OPTIONS_BY_SECTION: Readonly<
   ],
 }
 
+// The admin path segments the activity log reads back. They mirror
+// ADMIN_API_ROUTES, which builds the same paths going the other way.
+export const ADMIN_AUDIT_RESOURCE = {
+  team: 'team',
+  password: 'password',
+  products: 'products',
+  orders: 'orders',
+  deliveryZones: 'delivery-zones',
+  settings: 'settings',
+  homeContent: 'home-content',
+} as const
+
+export const ADMIN_AUDIT_SEGMENT = {
+  images: 'images',
+  active: 'active',
+  status: 'status',
+  tracking: 'tracking',
+} as const
+
+// Pill tones, shared by the team status column and the activity log result.
+export const ADMIN_PILL_TONE = {
+  positive: 'is-active',
+  muted: 'is-revoked',
+} as const
+
 export const PRODUCT_ACTIVE_LABELS: Readonly<Record<AdminProductActiveFilter, string>> = {
   '': 'All availability',
   'true': 'Visible',

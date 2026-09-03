@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ADMIN_COPY, ADMIN_ROUTES } from '~/constants/admin'
+import { ADMIN_COPY, ADMIN_PILL_TONE, ADMIN_ROUTES } from '~/constants/admin'
+import { HTTP_STATUS } from '~/types/http'
 import { AdminRole } from '~/types/team'
 import type { TeamMember } from '~/types/team'
 import { formatOrderDate } from '~/utils/admin'
@@ -90,7 +91,7 @@ const loadTeam = async (): Promise<void> => {
   try {
     members.value = await fetchTeam()
   } catch (loadError) {
-    if ((loadError as { status?: number } | null)?.status === 401) {
+    if ((loadError as { status?: number } | null)?.status === HTTP_STATUS.unauthorized) {
       session.value = null
       await router.push(ADMIN_ROUTES.login)
       return
@@ -248,7 +249,7 @@ onMounted(loadTeam)
             <td :data-label="ADMIN_COPY.teamStatusLabel">
               <span
                 class="admin-team-status"
-                :class="member.active ? 'is-active' : 'is-revoked'"
+                :class="member.active ? ADMIN_PILL_TONE.positive : ADMIN_PILL_TONE.muted"
               >
                 {{ member.active ? ADMIN_COPY.teamActiveStatus : ADMIN_COPY.teamRevokedStatus }}
               </span>

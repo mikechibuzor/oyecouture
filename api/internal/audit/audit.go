@@ -14,18 +14,18 @@ import (
 
 // Entry is one recorded admin action.
 type Entry struct {
-	ID         string    `json:"id"`
-	ActorEmail string    `json:"actorEmail"`
-	ActorRole  string    `json:"actorRole"`
-	Method     string    `json:"method"`
-	Path       string    `json:"path"`
-	StatusCode int       `json:"statusCode"`
-	OccurredAt time.Time `json:"occurredAt"`
+	ID         string     `json:"id"`
+	ActorEmail string     `json:"actorEmail"`
+	ActorRole  admin.Role `json:"actorRole"`
+	Method     string     `json:"method"`
+	Path       string     `json:"path"`
+	StatusCode int        `json:"statusCode"`
+	OccurredAt time.Time  `json:"occurredAt"`
 }
 
 type Page struct {
 	Entries []Entry `json:"entries"`
-	Total   int      `json:"total"`
+	Total   int     `json:"total"`
 }
 
 // Store persists and reads the log. There is deliberately no update or delete:

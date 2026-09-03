@@ -33,7 +33,7 @@ const (
 type User struct {
 	ID    string
 	Email string
-	Role  string
+	Role  Role
 }
 
 type Session struct {

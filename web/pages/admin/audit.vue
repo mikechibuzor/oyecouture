@@ -1,5 +1,12 @@
 <script setup lang="ts">
-import { ADMIN_COPY, ADMIN_ROUTES } from '~/constants/admin'
+import {
+  ADMIN_AUDIT_RESOURCE,
+  ADMIN_AUDIT_SEGMENT,
+  ADMIN_COPY,
+  ADMIN_PILL_TONE,
+  ADMIN_ROUTES,
+} from '~/constants/admin'
+import { HTTP_STATUS, HttpMethod } from '~/types/http'
 import type { AuditEntry } from '~/types/team'
 import { formatOrderDate } from '~/utils/admin'
 
@@ -31,33 +38,33 @@ const describe = (entry: AuditEntry): string => {
   const [resource, first, second] = path.split('/')
   const method = entry.method
 
-  if (resource === 'team') {
-    if (method === 'POST') return 'Added an admin'
-    if (method === 'PATCH') return 'Changed an admin’s role or access'
-    if (method === 'DELETE') return 'Deleted an admin'
+  if (resource === ADMIN_AUDIT_RESOURCE.team) {
+    if (method === HttpMethod.Post) return 'Added an admin'
+    if (method === HttpMethod.Patch) return 'Changed an admin\u2019s role or access'
+    if (method === HttpMethod.Delete) return 'Deleted an admin'
   }
-  if (resource === 'password') return 'Changed their own password'
-  if (resource === 'products') {
-    if (second === 'images') {
-      if (method === 'POST') return `Uploaded an image to ${first}`
-      if (method === 'DELETE') return `Removed an image from ${first}`
-      if (method === 'PATCH') return `Reordered images on ${first}`
+  if (resource === ADMIN_AUDIT_RESOURCE.password) return 'Changed their own password'
+  if (resource === ADMIN_AUDIT_RESOURCE.products) {
+    if (second === ADMIN_AUDIT_SEGMENT.images) {
+      if (method === HttpMethod.Post) return `Uploaded an image to ${first}`
+      if (method === HttpMethod.Delete) return `Removed an image from ${first}`
+      if (method === HttpMethod.Patch) return `Reordered images on ${first}`
     }
-    if (second === 'active') return `Archived or restored ${first}`
-    if (method === 'POST') return 'Created a product'
-    if (method === 'PUT') return `Edited ${first}`
-    if (method === 'DELETE') return `Deleted ${first}`
+    if (second === ADMIN_AUDIT_SEGMENT.active) return `Archived or restored ${first}`
+    if (method === HttpMethod.Post) return 'Created a product'
+    if (method === HttpMethod.Put) return `Edited ${first}`
+    if (method === HttpMethod.Delete) return `Deleted ${first}`
   }
-  if (resource === 'orders') {
-    if (second === 'status') return `Changed the status of ${first}`
-    if (second === 'tracking') return `Moved ${first} to its next stage`
+  if (resource === ADMIN_AUDIT_RESOURCE.orders) {
+    if (second === ADMIN_AUDIT_SEGMENT.status) return `Changed the status of ${first}`
+    if (second === ADMIN_AUDIT_SEGMENT.tracking) return `Moved ${first} to its next stage`
   }
-  if (resource === 'delivery-zones') {
-    if (method === 'POST') return 'Added a delivery area'
-    if (method === 'PATCH') return `Edited the ${first} delivery area`
+  if (resource === ADMIN_AUDIT_RESOURCE.deliveryZones) {
+    if (method === HttpMethod.Post) return 'Added a delivery area'
+    if (method === HttpMethod.Patch) return `Edited the ${first} delivery area`
   }
-  if (resource === 'settings') return 'Changed storefront settings'
-  if (resource === 'home-content') return 'Edited the homepage content'
+  if (resource === ADMIN_AUDIT_RESOURCE.settings) return 'Changed storefront settings'
+  if (resource === ADMIN_AUDIT_RESOURCE.homeContent) return 'Edited the homepage content'
 
   return `${method} ${entry.path}`
 }
@@ -65,14 +72,20 @@ const describe = (entry: AuditEntry): string => {
 // Grouped rather than shown as a number: the owner cares whether it took
 // effect, not which status code said so.
 const resultOf = (entry: AuditEntry): { label: string, tone: string } => {
-  if (entry.statusCode >= 200 && entry.statusCode < 300) {
-    return { label: ADMIN_COPY.auditResultOk, tone: 'is-active' }
-  }
-  if (entry.statusCode === 401 || entry.statusCode === 403 || entry.statusCode === 409) {
-    return { label: ADMIN_COPY.auditResultRefused, tone: 'is-revoked' }
+  if (entry.statusCode >= HTTP_STATUS.ok && entry.statusCode < HTTP_STATUS.badRequest) {
+    return { label: ADMIN_COPY.auditResultOk, tone: ADMIN_PILL_TONE.positive }
   }
 
-  return { label: ADMIN_COPY.auditResultFailed, tone: 'is-revoked' }
+  const refusals: readonly number[] = [
+    HTTP_STATUS.unauthorized,
+    HTTP_STATUS.forbidden,
+    HTTP_STATUS.conflict,
+  ]
+  if (refusals.includes(entry.statusCode)) {
+    return { label: ADMIN_COPY.auditResultRefused, tone: ADMIN_PILL_TONE.muted }
+  }
+
+  return { label: ADMIN_COPY.auditResultFailed, tone: ADMIN_PILL_TONE.muted }
 }
 
 const load = async (): Promise<void> => {
@@ -84,7 +97,7 @@ const load = async (): Promise<void> => {
     entries.value = page.entries
     total.value = page.total
   } catch (loadError) {
-    if ((loadError as { status?: number } | null)?.status === 401) {
+    if ((loadError as { status?: number } | null)?.status === HTTP_STATUS.unauthorized) {
       session.value = null
       await router.push(ADMIN_ROUTES.login)
       return

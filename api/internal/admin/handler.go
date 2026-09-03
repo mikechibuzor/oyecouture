@@ -44,7 +44,7 @@ type loginRequest struct {
 
 type sessionResponse struct {
 	Email string `json:"email"`
-	Role  string `json:"role"`
+	Role  Role   `json:"role"`
 }
 
 // LogIn authenticates and sets the session cookie.

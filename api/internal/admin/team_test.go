@@ -24,7 +24,7 @@ func newTeamStoreStub() *teamStoreStub {
 	}
 }
 
-func (stub *teamStoreStub) add(id string, role string, active bool) {
+func (stub *teamStoreStub) add(id string, role Role, active bool) {
 	stub.members[id] = TeamMember{
 		ID: id, Email: id + "@example.com", Role: role, Active: active,
 		CreatedAt: time.Now(), UpdatedAt: time.Now(),
@@ -50,13 +50,13 @@ func (stub *teamStoreStub) MemberByID(_ context.Context, id string) (TeamMember,
 }
 
 func (stub *teamStoreStub) CreateMember(
-	_ context.Context, email string, _ string, role string,
+	_ context.Context, email string, _ string, role Role,
 ) (TeamMember, error) {
 	return TeamMember{ID: "new", Email: email, Role: role, Active: true}, nil
 }
 
 func (stub *teamStoreStub) UpdateMember(
-	_ context.Context, id string, role string, active bool,
+	_ context.Context, id string, role Role, active bool,
 ) (TeamMember, error) {
 	stub.updated = true
 	member := stub.members[id]
@@ -269,7 +269,7 @@ func TestCreateRejectsBadInput(t *testing.T) {
 	service := NewTeamService(newTeamStoreStub())
 
 	if _, err := service.Create(
-		context.Background(), "new@example.com", "correct-horse-battery", "superuser",
+		context.Background(), "new@example.com", "correct-horse-battery", Role("superuser"),
 	); !errors.Is(err, ErrInvalidRole) {
 		t.Fatalf("error = %v, want ErrInvalidRole", err)
 	}
