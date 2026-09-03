@@ -2313,65 +2313,24 @@ body.has-admin-drawer {
   font-size: var(--text-sm);
 }
 
-// Team desk. Two-column field grid inside the shared form-section card, so the
-// password and invite forms read as forms rather than a stack of full-width
-// bars, which is how they landed when the markup used classes that did not
-// exist.
-.admin-team-fields {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
-  gap: var(--space-md) var(--space-lg);
-  align-items: start;
-}
-
-// Anything that should not sit in a column: the temporary password with its
-// hint, error messages, and the submit row.
-.admin-team-span {
-  grid-column: 1 / -1;
-}
-
-.admin-team-fields .admin-team-span.admin-field {
-  grid-column: 1 / -1;
-}
-
-.admin-team-list {
-  display: grid;
-  margin: 0;
-  padding: 0;
-  gap: var(--space-xs);
-  list-style: none;
-}
-
-// A row per admin. Grid rather than a table: at narrow widths the columns
-// stack instead of forcing the page to scroll sideways.
-.admin-team-member {
-  display: grid;
-  grid-template-columns: minmax(0, 2fr) auto minmax(8rem, 1fr) auto;
-  align-items: center;
-  padding: var(--space-md);
-  border: 1px solid var(--admin-border);
-  border-radius: 0.5rem;
-  background-color: var(--admin-panel-muted);
-  gap: var(--space-md);
-}
-
-.admin-team-member-email {
+// Team desk. Table-first like Orders and Products, so the admin list is the
+// page and the forms open in a drawer over it.
+.admin-page-actions {
   display: flex;
-  align-items: center;
-  margin: 0;
-  color: var(--color-ink);
-  font-size: 0.9375rem;
+  flex-wrap: wrap;
   gap: var(--space-2xs);
-  overflow-wrap: anywhere;
 }
 
-.admin-team-member-meta {
-  margin: var(--space-3xs) 0 0;
-  color: var(--color-taupe);
-  font-size: 0.8125rem;
+// Row-level controls sit right and stay together when the table scrolls.
+.admin-table-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2xs);
+  white-space: nowrap;
 }
 
 .admin-team-you {
+  margin-left: var(--space-2xs);
   padding: 0.125rem 0.4375rem;
   border-radius: 999px;
   background-color: var(--admin-border);
@@ -2400,23 +2359,6 @@ body.has-admin-drawer {
   &.is-revoked {
     background-color: var(--admin-border);
     color: var(--color-taupe);
-  }
-}
-
-.admin-team-member-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: var(--space-2xs);
-}
-
-@media (max-width: 60rem) {
-  .admin-team-member {
-    grid-template-columns: 1fr;
-    align-items: start;
-  }
-
-  .admin-team-member-actions {
-    justify-content: flex-start;
   }
 }
 

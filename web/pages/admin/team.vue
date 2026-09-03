@@ -16,6 +16,15 @@ const isLoading = ref(true)
 const hasFailed = ref(false)
 const savingMemberId = ref('')
 
+// One drawer, two purposes, matching how products edit: the list stays the
+// page, and anything that needs a form opens over it.
+type TeamDrawer = 'invite' | 'password'
+
+const openDrawer = ref<TeamDrawer | null>(null)
+const drawerElement = ref<HTMLElement | null>(null)
+const drawerCloseButton = ref<HTMLButtonElement | null>(null)
+const isDrawerOpen = computed(() => openDrawer.value !== null)
+
 const inviteForm = reactive({ email: '', password: '', role: AdminRole.Staff })
 const isCreating = ref(false)
 const inviteError = ref('')
@@ -34,11 +43,45 @@ const roleOptions = [
 const roleLabel = (role: AdminRole): string =>
   role === AdminRole.Owner ? ADMIN_COPY.teamRoleOwner : ADMIN_COPY.teamRoleStaff
 
+const drawerTitle = computed(() =>
+  openDrawer.value === 'invite' ? ADMIN_COPY.teamInviteHeading : ADMIN_COPY.passwordHeading,
+)
+
 // The signed-in admin is matched by email: the session carries no id, and the
 // API rejects self-targeted changes regardless, so this only decides whether
 // the controls are offered.
 const isSelf = (member: TeamMember): boolean =>
   member.email.toLowerCase() === (session.value?.email ?? '').toLowerCase()
+
+const closeDrawer = (): void => {
+  openDrawer.value = null
+  inviteError.value = ''
+  passwordError.value = ''
+}
+
+const openInvite = (): void => {
+  inviteForm.email = ''
+  inviteForm.password = ''
+  inviteForm.role = AdminRole.Staff
+  inviteError.value = ''
+  openDrawer.value = 'invite'
+}
+
+const openPasswordChange = (): void => {
+  passwordForm.current = ''
+  passwordForm.next = ''
+  passwordForm.confirm = ''
+  passwordError.value = ''
+  openDrawer.value = 'password'
+}
+
+useModalFocus({
+  isOpen: isDrawerOpen,
+  container: drawerElement,
+  initialFocus: drawerCloseButton,
+  onEscape: closeDrawer,
+  lockScroll: false,
+})
 
 const loadTeam = async (): Promise<void> => {
   isLoading.value = true
@@ -73,10 +116,8 @@ const submitInvite = async (): Promise<void> => {
 
   try {
     await createMember({ ...inviteForm })
-    inviteForm.email = ''
-    inviteForm.password = ''
-    inviteForm.role = AdminRole.Staff
     notifySuccess(ADMIN_COPY.teamCreatedNotice)
+    closeDrawer()
     await loadTeam()
   } catch (createError) {
     inviteError.value = messageFrom(createError, ADMIN_COPY.teamLoadFailed)
@@ -137,10 +178,8 @@ const submitPasswordChange = async (): Promise<void> => {
       currentPassword: passwordForm.current,
       newPassword: passwordForm.next,
     })
-    passwordForm.current = ''
-    passwordForm.next = ''
-    passwordForm.confirm = ''
     notifySuccess(ADMIN_COPY.passwordChangedNotice)
+    closeDrawer()
   } catch (changeError) {
     passwordError.value = messageFrom(changeError, ADMIN_COPY.teamLoadFailed)
     notifyError(passwordError.value)
@@ -159,139 +198,41 @@ onMounted(loadTeam)
         <h1>{{ ADMIN_COPY.teamHeading }}</h1>
         <p class="admin-page-subheading">{{ ADMIN_COPY.teamSubheading }}</p>
       </div>
+
+      <div class="admin-page-actions">
+        <button type="button" class="admin-inline-action" @click="openPasswordChange">
+          {{ ADMIN_COPY.changePassword }}
+        </button>
+        <button type="button" class="admin-inline-action" @click="openInvite">
+          {{ ADMIN_COPY.teamCreate }}
+        </button>
+      </div>
     </header>
 
-    <div class="admin-settings-form">
-      <section class="admin-form-section" aria-labelledby="admin-password-heading">
-        <header class="admin-form-section-head">
-          <h2 id="admin-password-heading">{{ ADMIN_COPY.passwordHeading }}</h2>
-          <p>{{ ADMIN_COPY.passwordIntro }}</p>
-        </header>
+    <p v-if="isLoading" class="admin-orders-message">{{ ADMIN_COPY.teamLoading }}</p>
+    <p v-else-if="hasFailed" class="admin-orders-message" role="alert">
+      {{ ADMIN_COPY.teamLoadFailed }}
+    </p>
 
-        <form class="admin-team-fields" @submit.prevent="submitPasswordChange">
-          <label class="admin-field">
-            <span>{{ ADMIN_COPY.currentPasswordLabel }}</span>
-            <input
-              v-model="passwordForm.current"
-              type="password"
-              autocomplete="current-password"
-              required
-            >
-          </label>
-          <label class="admin-field">
-            <span>{{ ADMIN_COPY.newPasswordLabel }}</span>
-            <input
-              v-model="passwordForm.next"
-              type="password"
-              autocomplete="new-password"
-              minlength="12"
-              required
-            >
-          </label>
-          <label class="admin-field">
-            <span>{{ ADMIN_COPY.confirmPasswordLabel }}</span>
-            <input
-              v-model="passwordForm.confirm"
-              type="password"
-              autocomplete="new-password"
-              minlength="12"
-              required
-            >
-          </label>
+    <div v-else class="admin-table-scroll">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th scope="col">{{ ADMIN_COPY.teamEmailLabel }}</th>
+            <th scope="col">{{ ADMIN_COPY.teamRoleLabel }}</th>
+            <th scope="col">{{ ADMIN_COPY.teamStatusLabel }}</th>
+            <th scope="col">{{ ADMIN_COPY.teamAddedLabel }}</th>
+            <th scope="col"><span class="visually-hidden">Actions</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="member in members" :key="member.id">
+            <td :data-label="ADMIN_COPY.teamEmailLabel">
+              {{ member.email }}
+              <span v-if="isSelf(member)" class="admin-team-you">{{ ADMIN_COPY.teamYou }}</span>
+            </td>
 
-          <p v-if="passwordError" class="admin-detail-error admin-team-span" role="alert">
-            {{ passwordError }}
-          </p>
-
-          <div class="admin-form-actions admin-team-span">
-            <button
-              type="submit"
-              class="admin-inline-action is-primary"
-              :disabled="isChangingPassword"
-            >
-              {{ isChangingPassword ? ADMIN_COPY.changingPassword : ADMIN_COPY.changePassword }}
-            </button>
-          </div>
-        </form>
-      </section>
-
-      <section class="admin-form-section" aria-labelledby="admin-invite-heading">
-        <header class="admin-form-section-head">
-          <h2 id="admin-invite-heading">{{ ADMIN_COPY.teamInviteHeading }}</h2>
-          <p>{{ ADMIN_COPY.teamInviteIntro }}</p>
-        </header>
-
-        <form class="admin-team-fields" @submit.prevent="submitInvite">
-          <label class="admin-field">
-            <span>{{ ADMIN_COPY.teamEmailLabel }}</span>
-            <input v-model.trim="inviteForm.email" type="email" autocomplete="off" required>
-          </label>
-
-          <div class="admin-field">
-            <span>{{ ADMIN_COPY.teamRoleLabel }}</span>
-            <UiSelect
-              v-model="inviteForm.role"
-              :options="roleOptions"
-              :label="ADMIN_COPY.teamRoleLabel"
-            />
-            <small>
-              {{
-                inviteForm.role === AdminRole.Owner
-                  ? ADMIN_COPY.teamRoleOwnerHint
-                  : ADMIN_COPY.teamRoleStaffHint
-              }}
-            </small>
-          </div>
-
-          <label class="admin-field admin-team-span">
-            <span>{{ ADMIN_COPY.teamTemporaryPasswordLabel }}</span>
-            <input v-model="inviteForm.password" type="text" minlength="12" required>
-            <small>{{ ADMIN_COPY.teamTemporaryPasswordHint }}</small>
-          </label>
-
-          <p v-if="inviteError" class="admin-detail-error admin-team-span" role="alert">
-            {{ inviteError }}
-          </p>
-
-          <div class="admin-form-actions admin-team-span">
-            <button type="submit" class="admin-inline-action is-primary" :disabled="isCreating">
-              {{ isCreating ? ADMIN_COPY.teamCreating : ADMIN_COPY.teamCreate }}
-            </button>
-          </div>
-        </form>
-      </section>
-
-      <section class="admin-form-section" aria-labelledby="admin-team-list-heading">
-        <header class="admin-form-section-head">
-          <h2 id="admin-team-list-heading">{{ ADMIN_COPY.teamListHeading }}</h2>
-          <p>{{ ADMIN_COPY.teamListIntro }}</p>
-        </header>
-
-        <p v-if="isLoading" class="admin-orders-message">{{ ADMIN_COPY.teamLoading }}</p>
-        <p v-else-if="hasFailed" class="admin-detail-error" role="alert">
-          {{ ADMIN_COPY.teamLoadFailed }}
-        </p>
-
-        <ul v-else class="admin-team-list">
-          <li v-for="member in members" :key="member.id" class="admin-team-member">
-            <div class="admin-team-member-identity">
-              <p class="admin-team-member-email">
-                {{ member.email }}
-                <span v-if="isSelf(member)" class="admin-team-you">{{ ADMIN_COPY.teamYou }}</span>
-              </p>
-              <p class="admin-team-member-meta">
-                {{ formatOrderDate(member.createdAt) }}
-              </p>
-            </div>
-
-            <span
-              class="admin-team-status"
-              :class="member.active ? 'is-active' : 'is-revoked'"
-            >
-              {{ member.active ? ADMIN_COPY.teamActiveStatus : ADMIN_COPY.teamRevokedStatus }}
-            </span>
-
-            <div class="admin-team-member-role">
+            <td :data-label="ADMIN_COPY.teamRoleLabel">
               <UiSelect
                 v-if="!isSelf(member)"
                 :model-value="member.role"
@@ -301,33 +242,181 @@ onMounted(loadTeam)
                 :disabled="savingMemberId === member.id"
                 @update:model-value="(role) => saveMember(member, role, member.active)"
               />
-              <span v-else class="admin-team-member-meta">{{ roleLabel(member.role) }}</span>
-            </div>
+              <span v-else>{{ roleLabel(member.role) }}</span>
+            </td>
+
+            <td :data-label="ADMIN_COPY.teamStatusLabel">
+              <span
+                class="admin-team-status"
+                :class="member.active ? 'is-active' : 'is-revoked'"
+              >
+                {{ member.active ? ADMIN_COPY.teamActiveStatus : ADMIN_COPY.teamRevokedStatus }}
+              </span>
+            </td>
+
+            <td :data-label="ADMIN_COPY.teamAddedLabel">{{ formatOrderDate(member.createdAt) }}</td>
 
             <!-- Self-targeted controls are omitted rather than disabled: the API
                  refuses them, and an inert button invites the attempt. -->
-            <div v-if="!isSelf(member)" class="admin-team-member-actions">
+            <td class="admin-table-actions">
+              <template v-if="!isSelf(member)">
+                <button
+                  type="button"
+                  class="admin-inline-action"
+                  :disabled="savingMemberId === member.id"
+                  @click="saveMember(member, member.role, !member.active)"
+                >
+                  {{ member.active ? ADMIN_COPY.teamRevoke : ADMIN_COPY.teamRestore }}
+                </button>
+                <button
+                  type="button"
+                  class="admin-inline-action is-danger"
+                  :disabled="savingMemberId === member.id"
+                  @click="removeMember(member)"
+                >
+                  {{ ADMIN_COPY.teamDelete }}
+                </button>
+              </template>
+              <span v-else class="admin-detail-muted">{{ ADMIN_COPY.teamSelfHint }}</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <Teleport to="body">
+      <div
+        v-if="isDrawerOpen"
+        class="admin-drawer-backdrop"
+        role="presentation"
+        @click.self="closeDrawer"
+      >
+        <aside
+          ref="drawerElement"
+          class="admin-drawer"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="admin-team-drawer-title"
+          tabindex="-1"
+        >
+          <header class="admin-drawer-head">
+            <div>
+              <p class="admin-detail-eyebrow">{{ ADMIN_COPY.teamHeading }}</p>
+              <h2 id="admin-team-drawer-title">{{ drawerTitle }}</h2>
+            </div>
+
+            <div class="admin-drawer-actions">
               <button
+                ref="drawerCloseButton"
                 type="button"
                 class="admin-inline-action"
-                :disabled="savingMemberId === member.id"
-                @click="saveMember(member, member.role, !member.active)"
+                @click="closeDrawer"
               >
-                {{ member.active ? ADMIN_COPY.teamRevoke : ADMIN_COPY.teamRestore }}
-              </button>
-              <button
-                type="button"
-                class="admin-inline-action is-danger"
-                :disabled="savingMemberId === member.id"
-                @click="removeMember(member)"
-              >
-                {{ ADMIN_COPY.teamDelete }}
+                {{ ADMIN_COPY.closeProductEditor }}
               </button>
             </div>
-            <p v-else class="admin-team-member-meta">{{ ADMIN_COPY.teamSelfHint }}</p>
-          </li>
-        </ul>
-      </section>
-    </div>
+          </header>
+
+          <form
+            v-if="openDrawer === 'password'"
+            class="admin-settings-form"
+            @submit.prevent="submitPasswordChange"
+          >
+            <section class="admin-form-section">
+              <header class="admin-form-section-head">
+                <h3>{{ ADMIN_COPY.passwordHeading }}</h3>
+                <p>{{ ADMIN_COPY.passwordIntro }}</p>
+              </header>
+
+              <label class="admin-field admin-field-wide">
+                <span>{{ ADMIN_COPY.currentPasswordLabel }}</span>
+                <input
+                  v-model="passwordForm.current"
+                  type="password"
+                  autocomplete="current-password"
+                  required
+                >
+              </label>
+              <label class="admin-field admin-field-wide">
+                <span>{{ ADMIN_COPY.newPasswordLabel }}</span>
+                <input
+                  v-model="passwordForm.next"
+                  type="password"
+                  autocomplete="new-password"
+                  minlength="12"
+                  required
+                >
+              </label>
+              <label class="admin-field admin-field-wide">
+                <span>{{ ADMIN_COPY.confirmPasswordLabel }}</span>
+                <input
+                  v-model="passwordForm.confirm"
+                  type="password"
+                  autocomplete="new-password"
+                  minlength="12"
+                  required
+                >
+              </label>
+            </section>
+
+            <p v-if="passwordError" class="admin-detail-error" role="alert">{{ passwordError }}</p>
+
+            <div class="admin-form-actions">
+              <button
+                type="submit"
+                class="admin-inline-action is-primary"
+                :disabled="isChangingPassword"
+              >
+                {{ isChangingPassword ? ADMIN_COPY.changingPassword : ADMIN_COPY.changePassword }}
+              </button>
+            </div>
+          </form>
+
+          <form v-else class="admin-settings-form" @submit.prevent="submitInvite">
+            <section class="admin-form-section">
+              <header class="admin-form-section-head">
+                <h3>{{ ADMIN_COPY.teamInviteHeading }}</h3>
+                <p>{{ ADMIN_COPY.teamInviteIntro }}</p>
+              </header>
+
+              <label class="admin-field admin-field-wide">
+                <span>{{ ADMIN_COPY.teamEmailLabel }}</span>
+                <input v-model.trim="inviteForm.email" type="email" autocomplete="off" required>
+              </label>
+
+              <div class="admin-field admin-field-wide">
+                <span>{{ ADMIN_COPY.teamRoleLabel }}</span>
+                <UiSelect
+                  v-model="inviteForm.role"
+                  :options="roleOptions"
+                  :label="ADMIN_COPY.teamRoleLabel"
+                />
+                <small>
+                  {{
+                    inviteForm.role === AdminRole.Owner
+                      ? ADMIN_COPY.teamRoleOwnerHint
+                      : ADMIN_COPY.teamRoleStaffHint
+                  }}
+                </small>
+              </div>
+
+              <label class="admin-field admin-field-wide">
+                <span>{{ ADMIN_COPY.teamTemporaryPasswordLabel }}</span>
+                <input v-model="inviteForm.password" type="text" minlength="12" required>
+                <small>{{ ADMIN_COPY.teamTemporaryPasswordHint }}</small>
+              </label>
+            </section>
+
+            <p v-if="inviteError" class="admin-detail-error" role="alert">{{ inviteError }}</p>
+
+            <div class="admin-form-actions">
+              <button type="submit" class="admin-inline-action is-primary" :disabled="isCreating">
+                {{ isCreating ? ADMIN_COPY.teamCreating : ADMIN_COPY.teamCreate }}
+              </button>
+            </div>
+          </form>
+        </aside>
+      </div>
+    </Teleport>
   </div>
 </template>
