@@ -10,6 +10,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/uzor-co/oyecouture/api/internal/admin"
+	"github.com/uzor-co/oyecouture/api/internal/audit"
 	"github.com/uzor-co/oyecouture/api/internal/config"
 	"github.com/uzor-co/oyecouture/api/internal/contact"
 	"github.com/uzor-co/oyecouture/api/internal/delivery"
@@ -87,6 +88,17 @@ func New(applicationConfig config.Config, databasePool *pgxpool.Pool) *http.Serv
 	adminHandler := admin.NewHandler(adminAuth, applicationConfig.AppEnv == "production")
 	adminTeamHandler := admin.NewTeamHandler(admin.NewTeamService(adminStore))
 
+	auditService := audit.NewService(audit.NewPostgresStore(databasePool))
+	auditHandler := audit.NewHandler(auditService)
+
+	// Every authenticated admin route goes through this rather than
+	// RequireSession directly, so a route added later is audited without
+	// anyone remembering to add it. RequireSession is the outer wrapper
+	// because the recorder reads the session it puts in the context.
+	authenticatedAdmin := func(next http.Handler) http.Handler {
+		return adminHandler.RequireSession(auditService.Record(next))
+	}
+
 	// Clear dead sessions once at startup rather than running a scheduler.
 	go func() {
 		cleanupContext, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -98,36 +110,39 @@ func New(applicationConfig config.Config, databasePool *pgxpool.Pool) *http.Serv
 
 	requestMux.HandleFunc("POST /admin/login", adminHandler.LogIn)
 	requestMux.HandleFunc("POST /admin/logout", adminHandler.LogOut)
-	requestMux.Handle("GET /admin/me", adminHandler.RequireSession(
+	requestMux.Handle("GET /admin/me", authenticatedAdmin(
 		http.HandlerFunc(adminHandler.Me),
 	))
 	// Any signed-in admin may change their own password; it acts only on the
 	// caller's own account. Everything else on the team desk is owner-only.
-	requestMux.Handle("PATCH /admin/password", adminHandler.RequireSession(
+	requestMux.Handle("PATCH /admin/password", authenticatedAdmin(
 		http.HandlerFunc(adminTeamHandler.ChangePassword),
 	))
-	requestMux.Handle("GET /admin/team", adminHandler.RequireSession(
+	requestMux.Handle("GET /admin/audit", authenticatedAdmin(
+		admin.RequireOwner(http.HandlerFunc(auditHandler.List)),
+	))
+	requestMux.Handle("GET /admin/team", authenticatedAdmin(
 		admin.RequireOwner(http.HandlerFunc(adminTeamHandler.List)),
 	))
-	requestMux.Handle("POST /admin/team", adminHandler.RequireSession(
+	requestMux.Handle("POST /admin/team", authenticatedAdmin(
 		admin.RequireOwner(http.HandlerFunc(adminTeamHandler.Create)),
 	))
-	requestMux.Handle("PATCH /admin/team/{id}", adminHandler.RequireSession(
+	requestMux.Handle("PATCH /admin/team/{id}", authenticatedAdmin(
 		admin.RequireOwner(http.HandlerFunc(adminTeamHandler.Update)),
 	))
-	requestMux.Handle("DELETE /admin/team/{id}", adminHandler.RequireSession(
+	requestMux.Handle("DELETE /admin/team/{id}", authenticatedAdmin(
 		admin.RequireOwner(http.HandlerFunc(adminTeamHandler.Delete)),
 	))
-	requestMux.Handle("GET /admin/settings", adminHandler.RequireSession(
+	requestMux.Handle("GET /admin/settings", authenticatedAdmin(
 		http.HandlerFunc(settingsHandler.Get),
 	))
-	requestMux.Handle("PATCH /admin/settings", adminHandler.RequireSession(
+	requestMux.Handle("PATCH /admin/settings", authenticatedAdmin(
 		http.HandlerFunc(settingsHandler.Update),
 	))
-	requestMux.Handle("GET /admin/home-content", adminHandler.RequireSession(
+	requestMux.Handle("GET /admin/home-content", authenticatedAdmin(
 		http.HandlerFunc(settingsHandler.GetHomeContent),
 	))
-	requestMux.Handle("PATCH /admin/home-content", adminHandler.RequireSession(
+	requestMux.Handle("PATCH /admin/home-content", authenticatedAdmin(
 		http.HandlerFunc(settingsHandler.UpdateHomeContent),
 	))
 
@@ -145,62 +160,62 @@ func New(applicationConfig config.Config, databasePool *pgxpool.Pool) *http.Serv
 			applicationConfig.R2PublicBase,
 		),
 	)
-	requestMux.Handle("GET /admin/orders", adminHandler.RequireSession(
+	requestMux.Handle("GET /admin/orders", authenticatedAdmin(
 		http.HandlerFunc(adminOrderHandler.List),
 	))
-	requestMux.Handle("GET /admin/orders/metrics", adminHandler.RequireSession(
+	requestMux.Handle("GET /admin/orders/metrics", authenticatedAdmin(
 		http.HandlerFunc(adminOrderHandler.Metrics),
 	))
-	requestMux.Handle("GET /admin/orders/{orderNo}", adminHandler.RequireSession(
+	requestMux.Handle("GET /admin/orders/{orderNo}", authenticatedAdmin(
 		http.HandlerFunc(adminOrderHandler.Detail),
 	))
-	requestMux.Handle("PATCH /admin/orders/{orderNo}/status", adminHandler.RequireSession(
+	requestMux.Handle("PATCH /admin/orders/{orderNo}/status", authenticatedAdmin(
 		http.HandlerFunc(adminOrderHandler.UpdateStatus),
 	))
-	requestMux.Handle("GET /admin/orders/{orderNo}/tracking", adminHandler.RequireSession(
+	requestMux.Handle("GET /admin/orders/{orderNo}/tracking", authenticatedAdmin(
 		http.HandlerFunc(trackingHandler.Admin),
 	))
-	requestMux.Handle("PATCH /admin/orders/{orderNo}/tracking", adminHandler.RequireSession(
+	requestMux.Handle("PATCH /admin/orders/{orderNo}/tracking", authenticatedAdmin(
 		http.HandlerFunc(trackingHandler.Transition),
 	))
-	requestMux.Handle("GET /admin/products", adminHandler.RequireSession(
+	requestMux.Handle("GET /admin/products", authenticatedAdmin(
 		http.HandlerFunc(adminProductHandler.List),
 	))
-	requestMux.Handle("POST /admin/products", adminHandler.RequireSession(
+	requestMux.Handle("POST /admin/products", authenticatedAdmin(
 		http.HandlerFunc(adminProductHandler.Create),
 	))
-	requestMux.Handle("GET /admin/products/{slug}", adminHandler.RequireSession(
+	requestMux.Handle("GET /admin/products/{slug}", authenticatedAdmin(
 		http.HandlerFunc(adminProductHandler.GetBySlug),
 	))
-	requestMux.Handle("PUT /admin/products/{slug}", adminHandler.RequireSession(
+	requestMux.Handle("PUT /admin/products/{slug}", authenticatedAdmin(
 		http.HandlerFunc(adminProductHandler.Update),
 	))
-	requestMux.Handle("DELETE /admin/products/{slug}", adminHandler.RequireSession(
+	requestMux.Handle("DELETE /admin/products/{slug}", authenticatedAdmin(
 		http.HandlerFunc(adminProductHandler.Delete),
 	))
-	requestMux.Handle("PATCH /admin/products/{slug}/active", adminHandler.RequireSession(
+	requestMux.Handle("PATCH /admin/products/{slug}/active", authenticatedAdmin(
 		http.HandlerFunc(adminProductHandler.UpdateActive),
 	))
 	adminDeliveryHandler := delivery.NewAdminHandler(deliveryRepository)
-	requestMux.Handle("GET /admin/delivery-zones", adminHandler.RequireSession(
+	requestMux.Handle("GET /admin/delivery-zones", authenticatedAdmin(
 		http.HandlerFunc(adminDeliveryHandler.List),
 	))
-	requestMux.Handle("POST /admin/delivery-zones", adminHandler.RequireSession(
+	requestMux.Handle("POST /admin/delivery-zones", authenticatedAdmin(
 		http.HandlerFunc(adminDeliveryHandler.Create),
 	))
-	requestMux.Handle("PATCH /admin/delivery-zones/{name}", adminHandler.RequireSession(
+	requestMux.Handle("PATCH /admin/delivery-zones/{name}", authenticatedAdmin(
 		http.HandlerFunc(adminDeliveryHandler.Update),
 	))
-	requestMux.Handle("GET /admin/products/{slug}/images", adminHandler.RequireSession(
+	requestMux.Handle("GET /admin/products/{slug}/images", authenticatedAdmin(
 		http.HandlerFunc(adminProductHandler.Images),
 	))
-	requestMux.Handle("POST /admin/products/{slug}/images", adminHandler.RequireSession(
+	requestMux.Handle("POST /admin/products/{slug}/images", authenticatedAdmin(
 		http.HandlerFunc(adminProductHandler.UploadImage),
 	))
-	requestMux.Handle("PATCH /admin/products/{slug}/images/reorder", adminHandler.RequireSession(
+	requestMux.Handle("PATCH /admin/products/{slug}/images/reorder", authenticatedAdmin(
 		http.HandlerFunc(adminProductHandler.ReorderImages),
 	))
-	requestMux.Handle("DELETE /admin/products/{slug}/images/{imageID}", adminHandler.RequireSession(
+	requestMux.Handle("DELETE /admin/products/{slug}/images/{imageID}", authenticatedAdmin(
 		http.HandlerFunc(adminProductHandler.DeleteImage),
 	))
 

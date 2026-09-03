@@ -151,6 +151,15 @@ func (handler *Handler) RequireSession(next http.Handler) http.Handler {
 	})
 }
 
+// WithSession attaches a session to a context. It exists so packages that run
+// inside RequireSession, such as the audit recorder, can be tested against a
+// realistic request without standing up authentication.
+func WithSession(request *http.Request, session Session) *http.Request {
+	return request.WithContext(
+		context.WithValue(request.Context(), sessionContextKey, session),
+	)
+}
+
 // SessionFrom reads the authenticated session placed by RequireSession.
 func SessionFrom(requestContext context.Context) (Session, bool) {
 	session, ok := requestContext.Value(sessionContextKey).(Session)
