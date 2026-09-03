@@ -69,7 +69,8 @@ const submit = (): void => {
 
         <label class="admin-field">
           <span>{{ ADMIN_COPY.slugLabel }}</span>
-          <input v-model.trim="draft.slug" type="text" required autocomplete="off">
+          <input v-model.trim="draft.slug" type="text" autocomplete="off">
+          <small>{{ ADMIN_COPY.slugHint }}</small>
         </label>
       </div>
 
@@ -148,6 +149,10 @@ const submit = (): void => {
     <p v-if="successMessage" class="admin-detail-muted" role="status">
       {{ successMessage }}
     </p>
+
+    <!-- Lets the create page add fields the editor does not need, such as the
+         images it queues for upload once the product exists. -->
+    <slot name="extra" />
 
     <div class="admin-product-form-actions admin-form-actions">
       <button type="submit" class="admin-inline-action" :disabled="isSaving">

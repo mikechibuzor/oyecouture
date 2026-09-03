@@ -183,6 +183,20 @@ export const ADMIN_COPY = {
   productRestoredNotice: 'Product restored',
   productSaveFailed: 'The product could not be saved.',
   productDuplicateSlug: 'That slug already exists.',
+  slugHint: 'Optional. Left blank, it is made from the name.',
+  deleteProduct: 'Delete product',
+  deletingProduct: 'Deleting…',
+  productDeletedNotice: 'Product deleted',
+  productDeleteFailed: 'The product could not be deleted.',
+  productDeleteConfirm:
+    'Delete this product permanently? Past orders keep the name and price they were sold at, but the product and its images are gone. Archiving instead hides it from the storefront and can be undone.',
+  newProductImagesLabel: 'Images',
+  newProductImagesHint:
+    'Optional. These upload once the product is saved, and can be reordered afterwards.',
+  newProductImagesPending: (count: number) =>
+    `${count} image${count === 1 ? '' : 's'} ready to upload`,
+  newProductImagesFailed:
+    'The product was created but some images did not upload. Add them below.',
   productDetailLoading: 'Loading product…',
   productDetailFailed: 'The product could not be loaded.',
   productImagesHeading: 'Images',

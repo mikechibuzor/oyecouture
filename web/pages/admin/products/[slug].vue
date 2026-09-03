@@ -10,7 +10,8 @@ definePageMeta({ layout: 'admin', middleware: 'admin' })
 
 const route = useRoute()
 const router = useRouter()
-const { fetchProduct, updateProduct } = useAdminProducts()
+const { fetchProduct, updateProduct, deleteProduct } = useAdminProducts()
+const { notifyError, notifySuccess } = useAppNotifications()
 const { session } = useAdminSession()
 
 const productSlug = computed(() => String(route.params.slug ?? ''))
@@ -18,6 +19,29 @@ const productSlug = computed(() => String(route.params.slug ?? ''))
 useHead({ title: `${ADMIN_COPY.productEditHeading} · ${ADMIN_COPY.brand}` })
 
 const product = ref<AdminProduct | null>(null)
+const isDeleting = ref(false)
+
+// Deletion is permanent and the confirmation says so, including what survives:
+// past orders keep the name and price they were sold at. Archiving is offered
+// as the reversible alternative in the same sentence.
+const removeProduct = async (): Promise<void> => {
+  // eslint-disable-next-line no-alert
+  if (!window.confirm(ADMIN_COPY.productDeleteConfirm)) {
+    return
+  }
+
+  isDeleting.value = true
+
+  try {
+    await deleteProduct(productSlug.value)
+    notifySuccess(ADMIN_COPY.productDeletedNotice)
+    await router.push(ADMIN_ROUTES.products)
+  } catch {
+    notifyError(ADMIN_COPY.productDeleteFailed)
+  } finally {
+    isDeleting.value = false
+  }
+}
 const draft = ref<AdminProductDraft | null>(null)
 const isLoading = ref(true)
 const hasFailed = ref(false)
@@ -155,6 +179,26 @@ onMounted(() => {
         :product="product"
         @updated="handleProductImagesUpdated"
       />
+
+      <!-- Kept apart from the save actions and at the end of the page, so it is
+           never the button reached for by habit. -->
+      <section class="admin-form-section admin-product-danger">
+        <header class="admin-form-section-head">
+          <h2>{{ ADMIN_COPY.deleteProduct }}</h2>
+          <p>{{ ADMIN_COPY.productDeleteConfirm }}</p>
+        </header>
+
+        <div class="admin-form-actions">
+          <button
+            type="button"
+            class="admin-inline-action is-danger"
+            :disabled="isDeleting"
+            @click="removeProduct"
+          >
+            {{ isDeleting ? ADMIN_COPY.deletingProduct : ADMIN_COPY.deleteProduct }}
+          </button>
+        </div>
+      </section>
     </template>
   </div>
 </template>

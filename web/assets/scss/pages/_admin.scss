@@ -2433,3 +2433,13 @@ body.has-admin-drawer {
     background-color: #9e3d34;
   }
 }
+
+// The delete panel sits at the end of the editor and reads as a different kind
+// of action from the ones above it.
+.admin-product-danger {
+  border-color: rgb(158 61 52 / 0.3);
+
+  .admin-form-section-head h2 {
+    color: #9e3d34;
+  }
+}

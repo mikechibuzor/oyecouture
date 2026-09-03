@@ -10,7 +10,7 @@ definePageMeta({ layout: 'admin', middleware: 'admin' })
 
 useHead({ title: `${ADMIN_COPY.productNewHeading} · ${ADMIN_COPY.brand}` })
 
-const { createProduct } = useAdminProducts()
+const { createProduct, uploadProductImage } = useAdminProducts()
 const { session } = useAdminSession()
 const router = useRouter()
 
@@ -29,6 +29,16 @@ const draft = ref<AdminProductDraft>({
 const isSaving = ref(false)
 const errorMessage = ref('')
 const successMessage = ref('')
+
+// Images cannot be attached until the product exists, because the upload
+// endpoint is addressed by slug. They are held here and sent immediately after
+// the product is created, so the owner still adds everything in one pass.
+const pendingImages = ref<File[]>([])
+
+const selectPendingImages = (changeEvent: Event): void => {
+  const input = changeEvent.target as HTMLInputElement
+  pendingImages.value = Array.from(input.files ?? [])
+}
 
 const isExpiredSession = async (requestError: unknown): Promise<boolean> => {
   if ((requestError as { status?: number } | null)?.status !== 401) {
@@ -57,7 +67,23 @@ const submit = async (): Promise<void> => {
 
   try {
     const product = await createProduct(draft.value)
-    successMessage.value = ADMIN_COPY.productSaved
+
+    // Uploaded one at a time and in order, because position is assigned on
+    // arrival: firing them in parallel would shuffle the gallery.
+    let uploadFailed = false
+    for (const imageFile of pendingImages.value) {
+      try {
+        await uploadProductImage(product.slug, imageFile)
+      } catch {
+        uploadFailed = true
+      }
+    }
+
+    // The product exists either way, so the owner is sent to its editor rather
+    // than left on a create form. A partial upload is reported there.
+    successMessage.value = uploadFailed
+      ? ADMIN_COPY.newProductImagesFailed
+      : ADMIN_COPY.productSaved
     await router.push(ADMIN_ROUTES.productEdit(product.slug))
   } catch (saveError) {
     if (!(await isExpiredSession(saveError))) {
@@ -88,6 +114,20 @@ const submit = async (): Promise<void> => {
       :error-message="errorMessage"
       :success-message="successMessage"
       @submit="submit"
-    />
+    >
+      <template #extra>
+        <label class="admin-field admin-field-wide">
+          <span>{{ ADMIN_COPY.newProductImagesLabel }}</span>
+          <input type="file" accept="image/*" multiple @change="selectPendingImages">
+          <small>
+            {{
+              pendingImages.length > 0
+                ? ADMIN_COPY.newProductImagesPending(pendingImages.length)
+                : ADMIN_COPY.newProductImagesHint
+            }}
+          </small>
+        </label>
+      </template>
+    </AdminProductForm>
   </div>
 </template>

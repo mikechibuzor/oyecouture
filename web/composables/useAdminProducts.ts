@@ -79,6 +79,15 @@ export const useAdminProducts = () => {
       credentials: 'include',
     })
 
+  // Permanent. Order history survives it: line items snapshot the name and
+  // price sold at, and their product reference is cleared rather than cascaded.
+  const deleteProduct = (slug: string): Promise<void> =>
+    $fetch(ADMIN_API_ROUTES.productDetail(slug), {
+      baseURL: apiBaseUrl,
+      credentials: 'include',
+      method: 'DELETE',
+    })
+
   const uploadProductImage = (slug: string, imageFile: File): Promise<AdminProduct> => {
     const formData = new FormData()
     formData.append('image', imageFile)
@@ -116,6 +125,7 @@ export const useAdminProducts = () => {
     createProduct,
     updateProduct,
     updateProductActive,
+    deleteProduct,
     uploadProductImage,
     reorderProductImages,
     deleteProductImage,
