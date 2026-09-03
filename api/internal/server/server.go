@@ -99,6 +99,14 @@ func New(applicationConfig config.Config, databasePool *pgxpool.Pool) *http.Serv
 		return adminHandler.RequireSession(auditService.Record(next))
 	}
 
+	// Owner-only routes: the catalogue, prices, delivery fees, storefront
+	// settings, the team and this log. Staff run the order desk, which is what
+	// the Team page tells the owner staff means, so the two have to agree.
+	// Refusals are still recorded, because an attempt is worth seeing.
+	ownerOnly := func(next http.Handler) http.Handler {
+		return authenticatedAdmin(admin.RequireOwner(next))
+	}
+
 	// Clear dead sessions once at startup rather than running a scheduler.
 	go func() {
 		cleanupContext, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -118,31 +126,31 @@ func New(applicationConfig config.Config, databasePool *pgxpool.Pool) *http.Serv
 	requestMux.Handle("PATCH /admin/password", authenticatedAdmin(
 		http.HandlerFunc(adminTeamHandler.ChangePassword),
 	))
-	requestMux.Handle("GET /admin/audit", authenticatedAdmin(
-		admin.RequireOwner(http.HandlerFunc(auditHandler.List)),
+	requestMux.Handle("GET /admin/audit", ownerOnly(
+		http.HandlerFunc(auditHandler.List),
 	))
-	requestMux.Handle("GET /admin/team", authenticatedAdmin(
-		admin.RequireOwner(http.HandlerFunc(adminTeamHandler.List)),
+	requestMux.Handle("GET /admin/team", ownerOnly(
+		http.HandlerFunc(adminTeamHandler.List),
 	))
-	requestMux.Handle("POST /admin/team", authenticatedAdmin(
-		admin.RequireOwner(http.HandlerFunc(adminTeamHandler.Create)),
+	requestMux.Handle("POST /admin/team", ownerOnly(
+		http.HandlerFunc(adminTeamHandler.Create),
 	))
-	requestMux.Handle("PATCH /admin/team/{id}", authenticatedAdmin(
-		admin.RequireOwner(http.HandlerFunc(adminTeamHandler.Update)),
+	requestMux.Handle("PATCH /admin/team/{id}", ownerOnly(
+		http.HandlerFunc(adminTeamHandler.Update),
 	))
-	requestMux.Handle("DELETE /admin/team/{id}", authenticatedAdmin(
-		admin.RequireOwner(http.HandlerFunc(adminTeamHandler.Delete)),
+	requestMux.Handle("DELETE /admin/team/{id}", ownerOnly(
+		http.HandlerFunc(adminTeamHandler.Delete),
 	))
-	requestMux.Handle("GET /admin/settings", authenticatedAdmin(
+	requestMux.Handle("GET /admin/settings", ownerOnly(
 		http.HandlerFunc(settingsHandler.Get),
 	))
-	requestMux.Handle("PATCH /admin/settings", authenticatedAdmin(
+	requestMux.Handle("PATCH /admin/settings", ownerOnly(
 		http.HandlerFunc(settingsHandler.Update),
 	))
-	requestMux.Handle("GET /admin/home-content", authenticatedAdmin(
+	requestMux.Handle("GET /admin/home-content", ownerOnly(
 		http.HandlerFunc(settingsHandler.GetHomeContent),
 	))
-	requestMux.Handle("PATCH /admin/home-content", authenticatedAdmin(
+	requestMux.Handle("PATCH /admin/home-content", ownerOnly(
 		http.HandlerFunc(settingsHandler.UpdateHomeContent),
 	))
 
@@ -181,41 +189,41 @@ func New(applicationConfig config.Config, databasePool *pgxpool.Pool) *http.Serv
 	requestMux.Handle("GET /admin/products", authenticatedAdmin(
 		http.HandlerFunc(adminProductHandler.List),
 	))
-	requestMux.Handle("POST /admin/products", authenticatedAdmin(
+	requestMux.Handle("POST /admin/products", ownerOnly(
 		http.HandlerFunc(adminProductHandler.Create),
 	))
 	requestMux.Handle("GET /admin/products/{slug}", authenticatedAdmin(
 		http.HandlerFunc(adminProductHandler.GetBySlug),
 	))
-	requestMux.Handle("PUT /admin/products/{slug}", authenticatedAdmin(
+	requestMux.Handle("PUT /admin/products/{slug}", ownerOnly(
 		http.HandlerFunc(adminProductHandler.Update),
 	))
-	requestMux.Handle("DELETE /admin/products/{slug}", authenticatedAdmin(
+	requestMux.Handle("DELETE /admin/products/{slug}", ownerOnly(
 		http.HandlerFunc(adminProductHandler.Delete),
 	))
-	requestMux.Handle("PATCH /admin/products/{slug}/active", authenticatedAdmin(
+	requestMux.Handle("PATCH /admin/products/{slug}/active", ownerOnly(
 		http.HandlerFunc(adminProductHandler.UpdateActive),
 	))
 	adminDeliveryHandler := delivery.NewAdminHandler(deliveryRepository)
 	requestMux.Handle("GET /admin/delivery-zones", authenticatedAdmin(
 		http.HandlerFunc(adminDeliveryHandler.List),
 	))
-	requestMux.Handle("POST /admin/delivery-zones", authenticatedAdmin(
+	requestMux.Handle("POST /admin/delivery-zones", ownerOnly(
 		http.HandlerFunc(adminDeliveryHandler.Create),
 	))
-	requestMux.Handle("PATCH /admin/delivery-zones/{name}", authenticatedAdmin(
+	requestMux.Handle("PATCH /admin/delivery-zones/{name}", ownerOnly(
 		http.HandlerFunc(adminDeliveryHandler.Update),
 	))
 	requestMux.Handle("GET /admin/products/{slug}/images", authenticatedAdmin(
 		http.HandlerFunc(adminProductHandler.Images),
 	))
-	requestMux.Handle("POST /admin/products/{slug}/images", authenticatedAdmin(
+	requestMux.Handle("POST /admin/products/{slug}/images", ownerOnly(
 		http.HandlerFunc(adminProductHandler.UploadImage),
 	))
-	requestMux.Handle("PATCH /admin/products/{slug}/images/reorder", authenticatedAdmin(
+	requestMux.Handle("PATCH /admin/products/{slug}/images/reorder", ownerOnly(
 		http.HandlerFunc(adminProductHandler.ReorderImages),
 	))
-	requestMux.Handle("DELETE /admin/products/{slug}/images/{imageID}", authenticatedAdmin(
+	requestMux.Handle("DELETE /admin/products/{slug}/images/{imageID}", ownerOnly(
 		http.HandlerFunc(adminProductHandler.DeleteImage),
 	))
 

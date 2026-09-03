@@ -15,16 +15,17 @@ func NewTeamHandler(service *TeamService) *TeamHandler {
 	return &TeamHandler{service: service}
 }
 
-// RequireOwner gates the routes only a super admin may reach. It runs inside
-// RequireSession, so a session is already present; a missing one here means the
-// route was wired without authentication and must fail closed rather than
-// treating an anonymous caller as an owner.
+// RequireOwner gates every route only a super admin may reach: the team, the
+// catalogue and its prices, delivery fees, storefront settings and the activity
+// log. It runs inside RequireSession, so a session is already present; a missing
+// one here means the route was wired without authentication and must fail closed
+// rather than treating an anonymous caller as an owner.
 func RequireOwner(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(responseWriter http.ResponseWriter, request *http.Request) {
 		session, ok := SessionFrom(request.Context())
 		if !ok || session.User.Role != RoleOwner {
 			writeJSON(responseWriter, http.StatusForbidden,
-				map[string]string{"error": "only an owner can manage the team"})
+				map[string]string{"error": "only an owner can do that"})
 			return
 		}
 

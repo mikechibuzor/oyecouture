@@ -3,6 +3,8 @@ package admin
 import (
 	"context"
 	"errors"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 	"time"
 )
@@ -278,5 +280,75 @@ func TestCreateRejectsBadInput(t *testing.T) {
 		context.Background(), "new@example.com", "short", RoleStaff,
 	); !errors.Is(err, ErrWeakPassword) {
 		t.Fatalf("error = %v, want ErrWeakPassword", err)
+	}
+}
+
+// TestRequireOwnerRefusesStaff pins the gate itself. The Team page tells the
+// owner that staff means orders and fulfilment only, and a label promising a
+// restriction the code does not enforce is worse than no roles at all: it
+// invites trust it has not earned.
+func TestRequireOwnerRefusesStaff(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		name       string
+		session    *Session
+		wantStatus int
+		wantReach  bool
+	}{
+		{
+			name:       "an owner passes through",
+			session:    &Session{User: User{ID: "1", Email: "owner@x", Role: RoleOwner}},
+			wantStatus: http.StatusOK,
+			wantReach:  true,
+		},
+		{
+			name:       "staff are refused",
+			session:    &Session{User: User{ID: "2", Email: "staff@x", Role: RoleStaff}},
+			wantStatus: http.StatusForbidden,
+		},
+		{
+			// Fail closed. A route wired without RequireSession must not be
+			// treated as an owner just because no session was found.
+			name:       "no session is refused rather than assumed",
+			session:    nil,
+			wantStatus: http.StatusForbidden,
+		},
+		{
+			name:       "an unrecognised role is refused",
+			session:    &Session{User: User{ID: "3", Email: "odd@x", Role: Role("superuser")}},
+			wantStatus: http.StatusForbidden,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
+
+			reached := false
+			guarded := RequireOwner(http.HandlerFunc(
+				func(responseWriter http.ResponseWriter, _ *http.Request) {
+					reached = true
+					responseWriter.WriteHeader(http.StatusOK)
+				},
+			))
+
+			request := httptest.NewRequest(http.MethodPost, "/admin/products", nil)
+			if testCase.session != nil {
+				request = request.WithContext(
+					context.WithValue(request.Context(), sessionContextKey, *testCase.session),
+				)
+			}
+
+			recorder := httptest.NewRecorder()
+			guarded.ServeHTTP(recorder, request)
+
+			if recorder.Code != testCase.wantStatus {
+				t.Fatalf("status = %d, want %d", recorder.Code, testCase.wantStatus)
+			}
+			if reached != testCase.wantReach {
+				t.Fatalf("handler reached = %v, want %v", reached, testCase.wantReach)
+			}
+		})
 	}
 }

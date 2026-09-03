@@ -414,16 +414,16 @@ export const ADMIN_NAVIGATION: readonly AdminNavGroup[] = [
     label: 'Main',
     items: [
       { id: 'orders', label: 'Orders', route: ADMIN_ROUTES.orders },
-      { id: 'products', label: 'Products', route: ADMIN_ROUTES.products },
-      { id: 'home-content', label: 'Home content', route: ADMIN_ROUTES.homeContent },
-      { id: 'delivery', label: 'Delivery', route: ADMIN_ROUTES.delivery },
+      { id: 'products', label: 'Products', route: ADMIN_ROUTES.products, ownerOnly: true },
+      { id: 'home-content', label: 'Home content', route: ADMIN_ROUTES.homeContent, ownerOnly: true },
+      { id: 'delivery', label: 'Delivery', route: ADMIN_ROUTES.delivery, ownerOnly: true },
     ],
   },
   {
     id: 'other',
     label: 'Other',
     items: [
-      { id: 'settings', label: 'Settings', route: ADMIN_ROUTES.settings },
+      { id: 'settings', label: 'Settings', route: ADMIN_ROUTES.settings, ownerOnly: true },
       // Owner-only. Hidden for staff by the sidebar, and refused by the API
       // regardless, so hiding it is convenience rather than the control.
       { id: 'team', label: 'Team', route: ADMIN_ROUTES.team, ownerOnly: true },
