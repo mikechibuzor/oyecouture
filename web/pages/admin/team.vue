@@ -153,119 +153,145 @@ onMounted(loadTeam)
 </script>
 
 <template>
-  <section class="admin-page">
-    <header class="admin-page-header">
-      <h1>{{ ADMIN_COPY.teamHeading }}</h1>
-      <p>{{ ADMIN_COPY.teamSubheading }}</p>
+  <div class="admin-page">
+    <header class="admin-page-head">
+      <div>
+        <h1>{{ ADMIN_COPY.teamHeading }}</h1>
+        <p class="admin-page-subheading">{{ ADMIN_COPY.teamSubheading }}</p>
+      </div>
     </header>
 
-    <div class="admin-panel">
-      <h2 class="admin-panel-heading">{{ ADMIN_COPY.passwordHeading }}</h2>
-      <p class="admin-panel-intro">{{ ADMIN_COPY.passwordIntro }}</p>
+    <div class="admin-settings-form">
+      <section class="admin-form-section" aria-labelledby="admin-password-heading">
+        <header class="admin-form-section-head">
+          <h2 id="admin-password-heading">{{ ADMIN_COPY.passwordHeading }}</h2>
+          <p>{{ ADMIN_COPY.passwordIntro }}</p>
+        </header>
 
-      <form class="admin-form-grid" @submit.prevent="submitPasswordChange">
-        <label class="admin-field">
-          <span>{{ ADMIN_COPY.currentPasswordLabel }}</span>
-          <input
-            v-model="passwordForm.current"
-            type="password"
-            autocomplete="current-password"
-            required
-          >
-        </label>
-        <label class="admin-field">
-          <span>{{ ADMIN_COPY.newPasswordLabel }}</span>
-          <input
-            v-model="passwordForm.next"
-            type="password"
-            autocomplete="new-password"
-            minlength="12"
-            required
-          >
-        </label>
-        <label class="admin-field">
-          <span>{{ ADMIN_COPY.confirmPasswordLabel }}</span>
-          <input
-            v-model="passwordForm.confirm"
-            type="password"
-            autocomplete="new-password"
-            minlength="12"
-            required
-          >
-        </label>
+        <form class="admin-team-fields" @submit.prevent="submitPasswordChange">
+          <label class="admin-field">
+            <span>{{ ADMIN_COPY.currentPasswordLabel }}</span>
+            <input
+              v-model="passwordForm.current"
+              type="password"
+              autocomplete="current-password"
+              required
+            >
+          </label>
+          <label class="admin-field">
+            <span>{{ ADMIN_COPY.newPasswordLabel }}</span>
+            <input
+              v-model="passwordForm.next"
+              type="password"
+              autocomplete="new-password"
+              minlength="12"
+              required
+            >
+          </label>
+          <label class="admin-field">
+            <span>{{ ADMIN_COPY.confirmPasswordLabel }}</span>
+            <input
+              v-model="passwordForm.confirm"
+              type="password"
+              autocomplete="new-password"
+              minlength="12"
+              required
+            >
+          </label>
 
-        <p v-if="passwordError" class="admin-detail-error" role="alert">{{ passwordError }}</p>
+          <p v-if="passwordError" class="admin-detail-error admin-team-span" role="alert">
+            {{ passwordError }}
+          </p>
 
-        <div class="admin-form-actions">
-          <button type="submit" class="admin-inline-action is-primary" :disabled="isChangingPassword">
-            {{ isChangingPassword ? ADMIN_COPY.changingPassword : ADMIN_COPY.changePassword }}
-          </button>
-        </div>
-      </form>
-    </div>
+          <div class="admin-form-actions admin-team-span">
+            <button
+              type="submit"
+              class="admin-inline-action is-primary"
+              :disabled="isChangingPassword"
+            >
+              {{ isChangingPassword ? ADMIN_COPY.changingPassword : ADMIN_COPY.changePassword }}
+            </button>
+          </div>
+        </form>
+      </section>
 
-    <div class="admin-panel">
-      <h2 class="admin-panel-heading">{{ ADMIN_COPY.teamInviteHeading }}</h2>
+      <section class="admin-form-section" aria-labelledby="admin-invite-heading">
+        <header class="admin-form-section-head">
+          <h2 id="admin-invite-heading">{{ ADMIN_COPY.teamInviteHeading }}</h2>
+          <p>{{ ADMIN_COPY.teamInviteIntro }}</p>
+        </header>
 
-      <form class="admin-form-grid" @submit.prevent="submitInvite">
-        <label class="admin-field">
-          <span>{{ ADMIN_COPY.teamEmailLabel }}</span>
-          <input v-model.trim="inviteForm.email" type="email" required>
-        </label>
-        <label class="admin-field">
-          <span>{{ ADMIN_COPY.teamRoleLabel }}</span>
-          <UiSelect
-            v-model="inviteForm.role"
-            :options="roleOptions"
-            :label="ADMIN_COPY.teamRoleLabel"
-          />
-          <small>
-            {{
-              inviteForm.role === AdminRole.Owner
-                ? ADMIN_COPY.teamRoleOwnerHint
-                : ADMIN_COPY.teamRoleStaffHint
-            }}
-          </small>
-        </label>
-        <label class="admin-field admin-field-wide">
-          <span>{{ ADMIN_COPY.teamTemporaryPasswordLabel }}</span>
-          <input v-model="inviteForm.password" type="text" minlength="12" required>
-          <small>{{ ADMIN_COPY.teamTemporaryPasswordHint }}</small>
-        </label>
+        <form class="admin-team-fields" @submit.prevent="submitInvite">
+          <label class="admin-field">
+            <span>{{ ADMIN_COPY.teamEmailLabel }}</span>
+            <input v-model.trim="inviteForm.email" type="email" autocomplete="off" required>
+          </label>
 
-        <p v-if="inviteError" class="admin-detail-error" role="alert">{{ inviteError }}</p>
+          <div class="admin-field">
+            <span>{{ ADMIN_COPY.teamRoleLabel }}</span>
+            <UiSelect
+              v-model="inviteForm.role"
+              :options="roleOptions"
+              :label="ADMIN_COPY.teamRoleLabel"
+            />
+            <small>
+              {{
+                inviteForm.role === AdminRole.Owner
+                  ? ADMIN_COPY.teamRoleOwnerHint
+                  : ADMIN_COPY.teamRoleStaffHint
+              }}
+            </small>
+          </div>
 
-        <div class="admin-form-actions">
-          <button type="submit" class="admin-inline-action is-primary" :disabled="isCreating">
-            {{ isCreating ? ADMIN_COPY.teamCreating : ADMIN_COPY.teamCreate }}
-          </button>
-        </div>
-      </form>
-    </div>
+          <label class="admin-field admin-team-span">
+            <span>{{ ADMIN_COPY.teamTemporaryPasswordLabel }}</span>
+            <input v-model="inviteForm.password" type="text" minlength="12" required>
+            <small>{{ ADMIN_COPY.teamTemporaryPasswordHint }}</small>
+          </label>
 
-    <p v-if="isLoading" class="admin-empty">{{ ADMIN_COPY.teamLoading }}</p>
-    <p v-else-if="hasFailed" class="admin-detail-error" role="alert">
-      {{ ADMIN_COPY.teamLoadFailed }}
-    </p>
+          <p v-if="inviteError" class="admin-detail-error admin-team-span" role="alert">
+            {{ inviteError }}
+          </p>
 
-    <div v-else class="admin-table-wrapper">
-      <table class="admin-table">
-        <thead>
-          <tr>
-            <th>{{ ADMIN_COPY.teamEmailLabel }}</th>
-            <th>{{ ADMIN_COPY.teamRoleLabel }}</th>
-            <th>{{ ADMIN_COPY.teamStatusLabel }}</th>
-            <th>{{ ADMIN_COPY.teamAddedLabel }}</th>
-            <th aria-hidden="true" />
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="member in members" :key="member.id">
-            <td>
-              {{ member.email }}
-              <small v-if="isSelf(member)" class="admin-table-note">{{ ADMIN_COPY.teamYou }}</small>
-            </td>
-            <td>
+          <div class="admin-form-actions admin-team-span">
+            <button type="submit" class="admin-inline-action is-primary" :disabled="isCreating">
+              {{ isCreating ? ADMIN_COPY.teamCreating : ADMIN_COPY.teamCreate }}
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <section class="admin-form-section" aria-labelledby="admin-team-list-heading">
+        <header class="admin-form-section-head">
+          <h2 id="admin-team-list-heading">{{ ADMIN_COPY.teamListHeading }}</h2>
+          <p>{{ ADMIN_COPY.teamListIntro }}</p>
+        </header>
+
+        <p v-if="isLoading" class="admin-orders-message">{{ ADMIN_COPY.teamLoading }}</p>
+        <p v-else-if="hasFailed" class="admin-detail-error" role="alert">
+          {{ ADMIN_COPY.teamLoadFailed }}
+        </p>
+
+        <ul v-else class="admin-team-list">
+          <li v-for="member in members" :key="member.id" class="admin-team-member">
+            <div class="admin-team-member-identity">
+              <p class="admin-team-member-email">
+                {{ member.email }}
+                <span v-if="isSelf(member)" class="admin-team-you">{{ ADMIN_COPY.teamYou }}</span>
+              </p>
+              <p class="admin-team-member-meta">
+                {{ formatOrderDate(member.createdAt) }}
+              </p>
+            </div>
+
+            <span
+              class="admin-team-status"
+              :class="member.active ? 'is-active' : 'is-revoked'"
+            >
+              {{ member.active ? ADMIN_COPY.teamActiveStatus : ADMIN_COPY.teamRevokedStatus }}
+            </span>
+
+            <div class="admin-team-member-role">
               <UiSelect
                 v-if="!isSelf(member)"
                 :model-value="member.role"
@@ -275,40 +301,33 @@ onMounted(loadTeam)
                 :disabled="savingMemberId === member.id"
                 @update:model-value="(role) => saveMember(member, role, member.active)"
               />
-              <span v-else>{{ roleLabel(member.role) }}</span>
-            </td>
-            <td>
-              <span class="admin-status-pill" :class="member.active ? 'is-positive' : 'is-muted'">
-                {{ member.active ? ADMIN_COPY.teamActiveStatus : ADMIN_COPY.teamRevokedStatus }}
-              </span>
-            </td>
-            <td>{{ formatOrderDate(member.createdAt) }}</td>
-            <td class="admin-table-actions">
-              <!-- Self-targeted controls are omitted rather than disabled: the
-                   API refuses them, and an inert button invites the attempt. -->
-              <template v-if="!isSelf(member)">
-                <button
-                  type="button"
-                  class="admin-inline-action"
-                  :disabled="savingMemberId === member.id"
-                  @click="saveMember(member, member.role, !member.active)"
-                >
-                  {{ member.active ? ADMIN_COPY.teamRevoke : ADMIN_COPY.teamRestore }}
-                </button>
-                <button
-                  type="button"
-                  class="admin-inline-action is-danger"
-                  :disabled="savingMemberId === member.id"
-                  @click="removeMember(member)"
-                >
-                  {{ ADMIN_COPY.teamDelete }}
-                </button>
-              </template>
-              <small v-else class="admin-table-note">{{ ADMIN_COPY.teamSelfHint }}</small>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+              <span v-else class="admin-team-member-meta">{{ roleLabel(member.role) }}</span>
+            </div>
+
+            <!-- Self-targeted controls are omitted rather than disabled: the API
+                 refuses them, and an inert button invites the attempt. -->
+            <div v-if="!isSelf(member)" class="admin-team-member-actions">
+              <button
+                type="button"
+                class="admin-inline-action"
+                :disabled="savingMemberId === member.id"
+                @click="saveMember(member, member.role, !member.active)"
+              >
+                {{ member.active ? ADMIN_COPY.teamRevoke : ADMIN_COPY.teamRestore }}
+              </button>
+              <button
+                type="button"
+                class="admin-inline-action is-danger"
+                :disabled="savingMemberId === member.id"
+                @click="removeMember(member)"
+              >
+                {{ ADMIN_COPY.teamDelete }}
+              </button>
+            </div>
+            <p v-else class="admin-team-member-meta">{{ ADMIN_COPY.teamSelfHint }}</p>
+          </li>
+        </ul>
+      </section>
     </div>
-  </section>
+  </div>
 </template>

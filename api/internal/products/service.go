@@ -49,6 +49,7 @@ type AdminRepository interface {
 	ReorderImages(context.Context, string, []string) (AdminProduct, error)
 	UpdateAdmin(context.Context, string, AdminProductDraft) (AdminProduct, error)
 	UpdateActive(context.Context, string, bool) error
+	DeleteAdmin(context.Context, string) error
 }
 
 // ImageUploader persists uploaded image bytes and returns a public storage key.
@@ -264,6 +265,27 @@ func (service *AdminService) UpdateActive(
 }
 
 // AddImage uploads one image and appends it to the product gallery.
+// Delete removes a product outright.
+//
+// Order history survives this: order_items snapshots the name and price it was
+// sold at, and its product_id is ON DELETE SET NULL, so a past order still
+// reads correctly. product_images cascades, though the uploaded files stay in
+// Cloudinary; nothing here reaches out to remove them.
+//
+// Archiving via UpdateActive remains the gentler option and is what the admin
+// offers first, since a deleted product cannot be brought back.
+func (service *AdminService) Delete(
+	requestContext context.Context,
+	productSlug string,
+) error {
+	productSlug = strings.TrimSpace(productSlug)
+	if !productSlugPattern.MatchString(productSlug) {
+		return ErrInvalidProductSlug
+	}
+
+	return service.productRepository.DeleteAdmin(requestContext, productSlug)
+}
+
 func (service *AdminService) AddImage(
 	requestContext context.Context,
 	productSlug string,
@@ -375,6 +397,13 @@ func normalizeProductDraft(draft AdminProductDraft) (AdminProductDraft, error) {
 	draft.Description = normalizeProductDescription(draft.Description)
 	draft.Tag = strings.TrimSpace(draft.Tag)
 
+	// The slug is optional: leaving it blank derives one from the name. Asking
+	// the owner to invent a URL-safe string for every piece is a technical
+	// detail leaking into a catalogue task, and a hand-typed one is usually
+	// worse than the generated version anyway.
+	if draft.Slug == "" {
+		draft.Slug = slugFromName(draft.Name)
+	}
 	if !productSlugPattern.MatchString(draft.Slug) {
 		return AdminProductDraft{}, ErrInvalidProductSlug
 	}
@@ -394,6 +423,28 @@ func normalizeProductDraft(draft AdminProductDraft) (AdminProductDraft, error) {
 
 	draft.Section = string(section)
 	return draft, nil
+}
+
+// slugFromName builds a URL-safe slug from a product name: lowercase, runs of
+// anything non-alphanumeric collapsed to single hyphens, no leading or trailing
+// hyphen. Returns empty for a name with nothing usable in it, which the caller
+// then rejects as an invalid slug rather than storing something meaningless.
+func slugFromName(name string) string {
+	var builder strings.Builder
+	previousWasHyphen := true
+
+	for _, character := range strings.ToLower(name) {
+		switch {
+		case (character >= 'a' && character <= 'z') || (character >= '0' && character <= '9'):
+			builder.WriteRune(character)
+			previousWasHyphen = false
+		case !previousWasHyphen:
+			builder.WriteByte('-')
+			previousWasHyphen = true
+		}
+	}
+
+	return strings.Trim(builder.String(), "-")
 }
 
 // normalizeProductDescription keeps catalogue prose aligned with the approved

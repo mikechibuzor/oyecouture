@@ -24,6 +24,9 @@ type productReaderStub struct {
 
 // adminProductManagerStub records owner-facing handler inputs.
 type adminProductManagerStub struct {
+	deleteCalled       bool
+	deleteSlug         string
+	deleteError        error
 	listInput          AdminListInput
 	listPage           AdminProductPage
 	listError          error
@@ -160,6 +163,15 @@ func (manager *adminProductManagerStub) UpdateActive(
 	manager.updateActiveSlug = productSlug
 	manager.updateActive = update.Active
 	return manager.updateActiveError
+}
+
+func (manager *adminProductManagerStub) Delete(
+	_ context.Context,
+	productSlug string,
+) error {
+	manager.deleteCalled = true
+	manager.deleteSlug = productSlug
+	return manager.deleteError
 }
 
 // TestHandlerListReturnsTypedEnvelopeAndFilters verifies collection request translation.

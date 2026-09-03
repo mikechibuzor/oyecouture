@@ -21,6 +21,9 @@ type repositoryStub struct {
 
 // adminRepositoryStub records admin service calls and returns controlled results.
 type adminRepositoryStub struct {
+	deleteAdminSlug       string
+	deleteAdminCallCount  int
+	deleteAdminError      error
 	listFilter            AdminListFilter
 	listPage              AdminProductPage
 	listError             error
@@ -163,6 +166,16 @@ func (repository *adminRepositoryStub) UpdateAdmin(
 	repository.updateSlug = productSlug
 	repository.updateDraft = draft
 	return repository.updateProduct, repository.updateError
+}
+
+// DeleteAdmin records the permanent removal.
+func (repository *adminRepositoryStub) DeleteAdmin(
+	_ context.Context,
+	productSlug string,
+) error {
+	repository.deleteAdminCallCount++
+	repository.deleteAdminSlug = productSlug
+	return repository.deleteAdminError
 }
 
 // UpdateActive records the active-state mutation.
@@ -581,5 +594,79 @@ func TestAdminServiceUpdateNormalizesSlugAndDraft(t *testing.T) {
 	}
 	if repository.updateDraft.Section != string(SectionCasualsWomen) {
 		t.Fatalf("expected normalized section, got %q", repository.updateDraft.Section)
+	}
+}
+
+// TestSlugIsDerivedFromNameWhenBlank covers the optional slug. The owner should
+// not have to invent a URL-safe string for every piece, and a hand-typed one is
+// usually worse than the generated version.
+func TestSlugIsDerivedFromNameWhenBlank(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct{ name, productName, wantSlug string }{
+		{name: "spaces become hyphens", productName: "The Sovereign Suit", wantSlug: "the-sovereign-suit"},
+		{name: "punctuation is dropped", productName: "Aso-Oke Two-Piece", wantSlug: "aso-oke-two-piece"},
+		{name: "runs collapse", productName: "Ivory   &   Black Set", wantSlug: "ivory-black-set"},
+		{name: "edges are trimmed", productName: "  Gold Agbada!  ", wantSlug: "gold-agbada"},
+		{name: "digits survive", productName: "Look 12 Kaftan", wantSlug: "look-12-kaftan"},
+		{name: "accents are dropped rather than mangled", productName: "Café Blazer", wantSlug: "caf-blazer"},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
+
+			normalized, err := normalizeProductDraft(AdminProductDraft{
+				Name:        testCase.productName,
+				Section:     string(SectionSuits),
+				Category:    "Two-Piece",
+				Description: "A description.",
+				PriceKobo:   100,
+			})
+			if err != nil {
+				t.Fatalf("normalizeProductDraft() error = %v", err)
+			}
+			if normalized.Slug != testCase.wantSlug {
+				t.Fatalf("slug = %q, want %q", normalized.Slug, testCase.wantSlug)
+			}
+		})
+	}
+}
+
+// TestExplicitSlugIsKept confirms a supplied slug still wins, so existing
+// products and deliberate URLs are untouched by the generator.
+func TestExplicitSlugIsKept(t *testing.T) {
+	t.Parallel()
+
+	normalized, err := normalizeProductDraft(AdminProductDraft{
+		Slug:        "chosen-by-hand",
+		Name:        "Something Else Entirely",
+		Section:     string(SectionSuits),
+		Category:    "Two-Piece",
+		Description: "A description.",
+		PriceKobo:   100,
+	})
+	if err != nil {
+		t.Fatalf("normalizeProductDraft() error = %v", err)
+	}
+	if normalized.Slug != "chosen-by-hand" {
+		t.Fatalf("slug = %q, want it left alone", normalized.Slug)
+	}
+}
+
+// TestNameWithNothingUsableIsRejected keeps a meaningless slug out of the URL
+// space rather than storing an empty or hyphen-only one.
+func TestNameWithNothingUsableIsRejected(t *testing.T) {
+	t.Parallel()
+
+	_, err := normalizeProductDraft(AdminProductDraft{
+		Name:        "!!! ???",
+		Section:     string(SectionSuits),
+		Category:    "Two-Piece",
+		Description: "A description.",
+		PriceKobo:   100,
+	})
+	if !errors.Is(err, ErrInvalidProductSlug) {
+		t.Fatalf("error = %v, want ErrInvalidProductSlug", err)
 	}
 }

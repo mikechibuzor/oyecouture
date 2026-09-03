@@ -52,6 +52,7 @@ type AdminProductManager interface {
 	ReorderImages(context.Context, string, AdminImageReorder) (AdminProduct, error)
 	Update(context.Context, string, AdminProductDraft) (AdminProduct, error)
 	UpdateActive(context.Context, string, AdminActiveUpdate) error
+	Delete(context.Context, string) error
 }
 
 // AdminHandler translates authenticated admin product requests.
@@ -252,6 +253,23 @@ func (handler *AdminHandler) UpdateActive(
 		update,
 	)
 	if err != nil {
+		handler.writeServiceError(responseWriter, err)
+		return
+	}
+
+	responseWriter.WriteHeader(http.StatusNoContent)
+}
+
+// Delete removes a product permanently. Archiving through UpdateActive is the
+// reversible option and is what the admin offers first.
+func (handler *AdminHandler) Delete(
+	responseWriter http.ResponseWriter,
+	request *http.Request,
+) {
+	if err := handler.productManager.Delete(
+		request.Context(),
+		request.PathValue("slug"),
+	); err != nil {
 		handler.writeServiceError(responseWriter, err)
 		return
 	}

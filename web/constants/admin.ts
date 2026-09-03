@@ -106,6 +106,9 @@ export const ADMIN_COPY = {
   teamRoleOwnerHint: 'Full access, including the team, settings, delivery and prices.',
   teamRoleStaffHint: 'Orders and fulfilment only.',
   teamInviteHeading: 'Add an admin',
+  teamInviteIntro: 'They can change this password themselves once they sign in.',
+  teamListHeading: 'Admins',
+  teamListIntro: 'Revoked admins keep their name on the order history they touched.',
   teamTemporaryPasswordLabel: 'Temporary password',
   teamTemporaryPasswordHint:
     'At least 12 characters. Share it privately and ask them to change it on their first sign-in.',

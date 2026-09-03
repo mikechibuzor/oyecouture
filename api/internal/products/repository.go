@@ -256,6 +256,28 @@ func (repository *PostgresRepository) UpdateAdmin(
 }
 
 // UpdateActive changes one product's storefront availability.
+// DeleteAdmin removes a product. product_images cascades with it, and
+// order_items.product_id is ON DELETE SET NULL, so past orders keep the name
+// and price they snapshotted at purchase.
+func (repository *PostgresRepository) DeleteAdmin(
+	requestContext context.Context,
+	productSlug string,
+) error {
+	commandTag, err := repository.databasePool.Exec(
+		requestContext,
+		`DELETE FROM products WHERE slug = $1`,
+		productSlug,
+	)
+	if err != nil {
+		return fmt.Errorf("delete product: %w", err)
+	}
+	if commandTag.RowsAffected() == 0 {
+		return ErrProductNotFound
+	}
+
+	return nil
+}
+
 func (repository *PostgresRepository) UpdateActive(
 	requestContext context.Context,
 	productSlug string,

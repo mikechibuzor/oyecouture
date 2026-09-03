@@ -175,6 +175,9 @@ func New(applicationConfig config.Config, databasePool *pgxpool.Pool) *http.Serv
 	requestMux.Handle("PUT /admin/products/{slug}", adminHandler.RequireSession(
 		http.HandlerFunc(adminProductHandler.Update),
 	))
+	requestMux.Handle("DELETE /admin/products/{slug}", adminHandler.RequireSession(
+		http.HandlerFunc(adminProductHandler.Delete),
+	))
 	requestMux.Handle("PATCH /admin/products/{slug}/active", adminHandler.RequireSession(
 		http.HandlerFunc(adminProductHandler.UpdateActive),
 	))
