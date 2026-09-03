@@ -22,6 +22,7 @@ export const ADMIN_ROUTES = {
   productEdit: (slug: string) => `/admin/products/${encodeURIComponent(slug)}`,
   settings: '/admin/settings',
   team: '/admin/team',
+  audit: '/admin/audit',
 } as const
 
 export const ADMIN_API_ROUTES = {
@@ -41,6 +42,7 @@ export const ADMIN_API_ROUTES = {
   team: '/admin/team',
   teamMember: (id: string) => `/admin/team/${encodeURIComponent(id)}`,
   password: '/admin/password',
+  audit: '/admin/audit',
   products: '/admin/products',
   productDetail: (slug: string) => `/admin/products/${encodeURIComponent(slug)}`,
   productActive: (slug: string) => `/admin/products/${encodeURIComponent(slug)}/active`,
@@ -91,6 +93,20 @@ export const ADMIN_COPY = {
   deliverySaveFailed: 'Delivery zone could not be saved.',
   deliveryCreateFailed: 'Delivery zone could not be added.',
   closeDeliveryEditor: 'Close delivery editor',
+  auditHeading: 'Activity',
+  auditSubheading: 'Every change made through the admin, oldest kept permanently',
+  auditLoading: 'Loading activity…',
+  auditLoadFailed: 'The activity log could not be loaded.',
+  auditEmpty: 'No activity recorded yet.',
+  auditWhoLabel: 'Who',
+  auditActionLabel: 'Action',
+  auditResultLabel: 'Result',
+  auditWhenLabel: 'When',
+  auditResultOk: 'Applied',
+  auditResultRefused: 'Refused',
+  auditResultFailed: 'Failed',
+  auditNote:
+    'This record cannot be edited or deleted by anyone, including whoever built the site.',
   teamHeading: 'Team',
   teamSubheading: 'Manage who can sign in and what they can reach',
   teamLoading: 'Loading team…',
@@ -411,6 +427,7 @@ export const ADMIN_NAVIGATION: readonly AdminNavGroup[] = [
       // Owner-only. Hidden for staff by the sidebar, and refused by the API
       // regardless, so hiding it is convenience rather than the control.
       { id: 'team', label: 'Team', route: ADMIN_ROUTES.team, ownerOnly: true },
+      { id: 'audit', label: 'Activity', route: ADMIN_ROUTES.audit, ownerOnly: true },
     ],
   },
 ]

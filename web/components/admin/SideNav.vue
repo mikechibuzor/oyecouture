@@ -5,6 +5,7 @@ import {
   ClipboardList,
   House,
   Menu,
+  ScrollText,
   Settings,
   Shirt,
   Truck,
@@ -36,6 +37,7 @@ const NAV_ICONS: Readonly<Record<string, IconNode>> = {
   delivery: Truck,
   settings: Settings,
   team: Users,
+  audit: ScrollText,
 }
 
 // Staff never see owner-only destinations. The API refuses those routes for

@@ -29,3 +29,18 @@ export interface PasswordChange {
   readonly currentPassword: string
   readonly newPassword: string
 }
+
+export interface AuditEntry {
+  readonly id: string
+  readonly actorEmail: string
+  readonly actorRole: AdminRole
+  readonly method: string
+  readonly path: string
+  readonly statusCode: number
+  readonly occurredAt: string
+}
+
+export interface AuditPage {
+  readonly entries: readonly AuditEntry[]
+  readonly total: number
+}

@@ -2385,3 +2385,14 @@ body.has-admin-drawer {
     color: #9e3d34;
   }
 }
+
+// The line that tells the owner what this record guarantees. Given prominence
+// because it is the reason the page exists, not a footnote to it.
+.admin-audit-note {
+  margin: 0 0 var(--space-lg);
+  padding: var(--space-md);
+  border-left: 3px solid var(--color-gold);
+  background-color: var(--admin-panel-muted);
+  color: var(--color-ink-soft);
+  font-size: 0.875rem;
+}
