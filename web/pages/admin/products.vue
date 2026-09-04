@@ -834,9 +834,12 @@ onBeforeUnmount(() => {
                   <span v-else class="admin-product-placeholder" aria-hidden="true">
                     {{ product.name.slice(0, 1).toUpperCase() }}
                   </span>
+                  <!-- No slug: it is derived from the name and never set by
+                       hand, so showing it exposes plumbing the owner has no
+                       control over. The columns beside this carry the section,
+                       category and price that actually identify a piece. -->
                   <span class="admin-product-detail">
                     <strong>{{ product.name }}</strong>
-                    <small>{{ product.slug }}</small>
                   </span>
                 </div>
               </td>

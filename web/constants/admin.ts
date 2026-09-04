@@ -62,6 +62,8 @@ export const ADMIN_COPY = {
   loginIntro: 'Sign in to manage orders.',
   emailLabel: 'Email',
   passwordLabel: 'Password',
+  showPassword: 'Show password',
+  hidePassword: 'Hide password',
   loginFailed: 'That email and password did not match.',
   loginThrottled: 'Too many attempts. Wait a few minutes and try again.',
   loginUnreachable: 'Could not reach the server. Check your connection.',

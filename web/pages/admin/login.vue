@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Eye, EyeOff } from 'lucide'
 import { ADMIN_COPY, ADMIN_ROUTES } from '~/constants/admin'
 
 definePageMeta({ layout: 'admin' })
@@ -11,6 +12,8 @@ const router = useRouter()
 
 const email = ref('')
 const password = ref('')
+// Typing a long password blind is the most common reason a sign-in fails twice.
+const isPasswordVisible = ref(false)
 const errorMessage = ref('')
 const isSubmitting = ref(false)
 
@@ -93,13 +96,31 @@ const handleSubmit = async (): Promise<void> => {
 
       <label class="admin-field">
         <span>{{ ADMIN_COPY.passwordLabel }}</span>
-        <input
-          v-model="password"
-          type="password"
-          name="password"
-          autocomplete="current-password"
-          required
-        >
+        <span class="admin-password-field">
+          <input
+            v-model="password"
+            :type="isPasswordVisible ? 'text' : 'password'"
+            name="password"
+            autocomplete="current-password"
+            required
+          >
+          <!-- A button, not a checkbox: it acts immediately and is announced
+               with its state, so a screen reader hears whether the password is
+               currently shown. -->
+          <button
+            type="button"
+            class="admin-password-toggle"
+            :aria-label="isPasswordVisible ? ADMIN_COPY.hidePassword : ADMIN_COPY.showPassword"
+            :aria-pressed="isPasswordVisible"
+            @click="isPasswordVisible = !isPasswordVisible"
+          >
+            <StorefrontIcon
+              :icon-node="isPasswordVisible ? EyeOff : Eye"
+              :size="17"
+              :stroke-width="1.6"
+            />
+          </button>
+        </span>
       </label>
 
       <p v-if="errorMessage" class="admin-login-error" role="alert">

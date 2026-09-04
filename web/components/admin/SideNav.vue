@@ -92,7 +92,17 @@ const isCurrentRoute = (itemRoute?: string): boolean =>
   >
     <div class="admin-sidebar-head">
       <p class="admin-sidebar-brand">
-        <span class="admin-sidebar-mark" aria-hidden="true">O</span>
+        <!-- The real mark rather than the letter O standing in for it. Gold on
+             the dark rail, and decorative because the wordmark beside it
+             already names the brand. -->
+        <img
+          class="admin-sidebar-mark"
+          src="/images/brand/oyecouture-icon-gold.svg"
+          alt=""
+          width="32"
+          height="32"
+          aria-hidden="true"
+        >
         <span class="admin-sidebar-wordmark">{{ ADMIN_COPY.brand }}</span>
       </p>
 

@@ -159,6 +159,10 @@
   width: 2rem;
   height: 2rem;
   flex-shrink: 0;
+  // The icon carries its own shape, so it sits inside the tile rather than
+  // filling it.
+  padding: 0.1875rem;
+  object-fit: contain;
   border: 1px solid rgb(224 207 156 / 38%);
   border-radius: 0.5rem;
   background:
@@ -2395,4 +2399,37 @@ body.has-admin-drawer {
   background-color: var(--admin-panel-muted);
   color: var(--color-ink-soft);
   font-size: 0.875rem;
+}
+
+// Password fields carry a reveal control. The button sits inside the field's
+// box rather than beside it, so the input keeps its full width and the control
+// reads as part of the field.
+.admin-password-field {
+  position: relative;
+  display: block;
+
+  input {
+    width: 100%;
+    padding-right: 2.75rem;
+  }
+}
+
+.admin-password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 0.625rem;
+  display: grid;
+  padding: 0.25rem;
+  border: 0;
+  background: none;
+  color: var(--color-taupe);
+  cursor: pointer;
+  place-items: center;
+  transform: translateY(-50%);
+  transition: color var(--duration-quick) var(--ease-standard);
+
+  &:hover,
+  &:focus-visible {
+    color: var(--color-ink);
+  }
 }
