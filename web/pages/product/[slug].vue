@@ -5,10 +5,12 @@ import {
   PRODUCT_POLICIES,
   PRODUCT_SECTION_NAVIGATION,
 } from '~/constants/products'
+import { PRODUCT_TITLE_SUFFIX, SEO_COPY, SITE } from '~/constants/seo'
 import type { Product } from '~/types/product'
 import { AsyncDataStatus, ProductSize } from '~/types/product'
 import { StorefrontRoute } from '~/types/storefront'
 import { formatProductPrice, getProductErrorMessage } from '~/utils/product'
+import { buildProductSchema, jsonLdScript } from '~/utils/seo'
 
 const route = useRoute()
 
@@ -54,6 +56,48 @@ const sectionNavigation = computed(() =>
 const formattedPrice = computed(() =>
   product.value ? formatProductPrice(product.value.priceKobo) : '',
 )
+
+// A piece's given name rarely contains the word it would be searched for: "The
+// Adire Linen Set" says nothing about being a kaftan. The category carries that,
+// so the title pairs the two.
+const seoTitle = computed(() => {
+  if (!product.value) {
+    return PRODUCT_COPY.productDetail.loading
+  }
+
+  const category = product.value.category?.trim()
+
+  return category
+    ? `${product.value.name} | ${PRODUCT_TITLE_SUFFIX} ${category}`
+    : `${product.value.name} | ${PRODUCT_TITLE_SUFFIX}`
+})
+
+// The product's own description, trimmed to what a search result will show
+// rather than cut off mid-word by the search engine.
+const seoDescription = computed(() => {
+  const description = product.value?.description?.trim()
+  if (!description) {
+    return SEO_COPY.home.description
+  }
+  if (description.length <= 155) {
+    return description
+  }
+
+  return `${description.slice(0, 152).trimEnd()}...`
+})
+
+useStorefrontSeo({
+  title: seoTitle,
+  description: seoDescription,
+  image: computed(() => product.value?.images?.[0]?.url ?? SITE.shareImage),
+})
+
+// Product structured data is what puts the price and availability under the
+// search result. It is only emitted once the product has actually loaded, so a
+// failed request never publishes a price for a piece that is not there.
+useHead(computed(() => ({
+  script: product.value ? [jsonLdScript(buildProductSchema(product.value))] : [],
+})))
 </script>
 
 <template>

@@ -114,8 +114,8 @@ const resetFeedback = (): void => {
   feedbackError.value = ''
 }
 
-useSeoMeta({
-  title: 'Contact | Oyecouture Bespoke',
+useStorefrontSeo({
+  title: 'Contact',
   description:
     "Questions, feedback, a fitting to book, or simply a word about how we're doing. Reach Oyecouture directly.",
 })

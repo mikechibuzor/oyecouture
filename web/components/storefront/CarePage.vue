@@ -20,7 +20,11 @@ const props = withDefaults(defineProps<CarePageProps>(), {
   footnote: '',
 })
 
-useSeoMeta({ title: `${props.heading} | Oyecouture Bespoke`, description: props.intro })
+// The care pages set their own search metadata here rather than page by page,
+// since every one of them is this component with different copy. Going through
+// the shared composable adds the canonical and link-preview tags a bare
+// useSeoMeta leaves out.
+useStorefrontSeo({ title: props.heading, description: props.intro })
 </script>
 
 <template>

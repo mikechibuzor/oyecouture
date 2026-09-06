@@ -5,8 +5,18 @@ import {
   HOME_HERO_IMAGES,
   PRODUCT_COPY,
 } from '~/constants/products'
+import { SEO_COPY } from '~/constants/seo'
 import type { Product } from '~/types/product'
 import { getProductErrorMessage } from '~/utils/product'
+import { buildBusinessSchema, buildWebsiteSchema, jsonLdScript } from '~/utils/seo'
+
+// The homepage title leads with the brand rather than appending it, so a search
+// for the shop's own name matches the front of the title.
+useStorefrontSeo({ ...SEO_COPY.home, bareTitle: true })
+
+useHead({
+  script: [jsonLdScript(buildBusinessSchema()), jsonLdScript(buildWebsiteSchema())],
+})
 
 const { data, error, status } = await useProductList()
 const { data: homeContent } = await useHomeContent()

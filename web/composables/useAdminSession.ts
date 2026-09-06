@@ -17,11 +17,14 @@ export const useAdminSession = () => {
     path: string,
     options: Parameters<typeof $fetch<ResponseBody>>[1] = {},
   ): Promise<ResponseBody> =>
+    // Cast because these paths are on the Go API, not Nitro's own routes. Once
+    // the app has any server route of its own, $fetch widens its return type to
+    // TypedInternalResponse, which does not describe a call sent to baseURL.
     $fetch<ResponseBody>(path, {
       baseURL: apiBaseUrl,
       credentials: 'include',
       ...options,
-    })
+    }) as Promise<ResponseBody>
 
   // Asks the server who we are. A 401 is an answer, not a failure.
   const refresh = async (): Promise<AdminSession | null> => {

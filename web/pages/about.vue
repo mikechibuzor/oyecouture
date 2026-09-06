@@ -9,8 +9,8 @@ import {
   ABOUT_SYMBOL,
 } from '~/constants/about'
 
-useSeoMeta({
-  title: 'About | Oyecouture Bespoke',
+useStorefrontSeo({
+  title: 'About',
   description: ABOUT_HERO.description,
 })
 

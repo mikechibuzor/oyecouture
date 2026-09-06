@@ -4,8 +4,8 @@ import { StorefrontRoute } from '~/types/storefront'
 
 const { appointmentWhatsAppUrl, opensWhatsApp } = await useAppointmentWhatsApp()
 
-useSeoMeta({
-  title: 'Size Guide | Oyecouture Bespoke',
+useStorefrontSeo({
+  title: 'Size Guide',
   description: 'Oyecouture ready-to-wear size charts and made-to-measure guidance.',
 })
 </script>

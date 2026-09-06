@@ -2,3 +2,7 @@ User-agent: *
 Disallow: /admin
 Disallow: /confirm
 Disallow: /pay
+Disallow: /checkout
+Disallow: /track
+
+Sitemap: https://oyecouturebespoke.com/sitemap.xml
