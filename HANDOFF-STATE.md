@@ -4,6 +4,28 @@
 
 ---
 
+## 🔎 SEARCH METADATA SHIPPED — SEARCH CONSOLE STILL NEEDS THE OWNER (Claude, 2026-09-06)
+
+The storefront was **invisible to search**, and it was not a ranking problem. Every commercial page — homepage, all four category pages, every product page — served HTML with **no `<title>` and no meta description**, which is why Google's own result read *"No information is available for this page"*. `sitemap.xml` returned 404, so the 27 product pages were discoverable only through whatever the homepage linked. Fixed in `a45d73d`: titles, descriptions, canonicals, Open Graph, ClothingStore/WebSite/Product structured data, and a sitemap generated from the live API.
+
+**No visible copy changed.** The words customers search (kaftan, agbada, aso-oke, Lagos) sit in the metadata; the hero keeps the brand's voice. Do not "fix" the hero copy for SEO — that separation is deliberate.
+
+**⚠️ The remaining lever needs the owner, not an agent:** verify the domain in **Google Search Console** and submit `https://oyecouturebespoke.com/sitemap.xml`. Nothing in the repo can do this.
+
+**Set expectations honestly with the client.** Brand terms (`oyecouture`, `oyecouturebespoke`) should be won within weeks. Head terms like `kaftan` or `tailoring` are **not** reachable by code and should not be promised; the titles target local/long-tail intent instead.
+
+**Adding a server route changes Nitro's typing.** `web/server/routes/sitemap.xml.ts` is the app's first server route, which makes Nitro generate its internal-routes type map and widens `$fetch` to `TypedInternalResponse`. That broke `useAdminSession.ts`, which calls an **external** baseURL; it now casts, with the reason in a comment. Expect the same if more `$fetch` wrappers are added.
+
+---
+
+## ✅ LOCAL DEV WAS BROKEN FOR EVERY AGENT — USE NODE 22 (Claude, 2026-09-06)
+
+`nuxt typecheck`, `nuxt dev` and `nuxt build` all failed on the Mac with `oxc-walker: could not resolve a parseSync implementation`, and earlier sessions worked around it by treating the Docker build as the only gate. **Cause:** local Node is **v20.12.1**, which cannot `require()` an ESM module; `oxc-walker@1.0.0` does exactly that to load `oxc-parser@0.142.0`, which is `"type": "module"`. The `ERR_REQUIRE_ESM` is swallowed by an empty catch and reported as "not installed".
+
+**Docker uses `node:22-alpine`, which is why production always built fine and no Mac could.** Node 22.23.1 is already installed via nvm. Run local builds with it — `nvm use 22.23.1` — and local typecheck works, which means **a change can now be verified before it is deployed** rather than after.
+
+---
+
 ## ✅ THE 31 AUG "OUTAGE" WAS NEVER AN OUTAGE (Claude, 2026-09-01)
 
 **Do not act on any earlier note in this file claiming the staging server was down.** It was not. On 1 Sep the server reported **29 days of uptime** — it never rebooted and never stopped serving. All five containers were up, migration state `16:false`, disk at 14%, and `/api/healthz` returned ok for both API and database. The client was browsing the storefront normally throughout.
