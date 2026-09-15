@@ -4,6 +4,21 @@
 
 ---
 
+## ⚠️ HOG STAGING SHARES THIS CADDY, LIVE ONLY (Claude, 2026-09-15)
+
+`oyecouture-caddy` now also serves **`hog-staging.82-29-184-79.sslip.io`**. That is the staging site for a separate project, Fantasy by HOG (repo `mikechibuzor/hog`), added on Chibuzor's decision. **Nothing in this repo changed for it**, because a push here auto-deploys and restarts the store.
+
+- **How it was added:** HOG's `deploy/staging/caddy-live.sh` joined the container to the `hog-edge` network and gracefully reloaded this repo's `deploy/Caddyfile` plus HOG's site block. No container restarted, and the storefront, `/api/healthz` and the `www` redirect answered throughout.
+- **The running config is therefore not this repo's Caddyfile.** Reloading Caddy from `deploy/Caddyfile`, a reboot or a Caddy restart each removes HOG staging, and Oyecouture itself is unaffected. HOG re-adds it with its own `caddy-live.sh`; a Caddyfile change here does not need to wait for that.
+- **To be made permanent with Oyecouture's next real release**, since that deploy restarts the containers anyway:
+  - append HOG's `deploy/staging/caddy-site.caddy` to `deploy/Caddyfile`;
+  - in `compose.prod.yaml`, give `caddy` `networks: [default, hog-edge]`, and add a top-level external `hog-edge`.
+
+  That deploy also recreates Caddy, so the store is down for a few seconds.
+- **Only `caddy` should join `hog-edge`.** Compose makes every service name a DNS name on each network the service joins. HOG's services are `hog-api` and `hog-web`, so they cannot shadow the `api` and `web` this Caddyfile proxies to.
+
+---
+
 ## 🔎 SEARCH METADATA SHIPPED — SEARCH CONSOLE STILL NEEDS THE OWNER (Claude, 2026-09-06)
 
 The storefront was **invisible to search**, and it was not a ranking problem. Every commercial page — homepage, all four category pages, every product page — served HTML with **no `<title>` and no meta description**, which is why Google's own result read *"No information is available for this page"*. `sitemap.xml` returned 404, so the 27 product pages were discoverable only through whatever the homepage linked. Fixed in `a45d73d`: titles, descriptions, canonicals, Open Graph, ClothingStore/WebSite/Product structured data, and a sitemap generated from the live API.

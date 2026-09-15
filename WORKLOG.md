@@ -5,6 +5,17 @@ One short entry per work session or meaningful chunk. Format:
 
 ---
 
+## 2026-09-15T18:43:05+01:00 · Claude · HOG staging added to the running Caddy, no code change here
+
+- **Did:** At Chibuzor's request, added `hog-staging.82-29-184-79.sslip.io` (the Fantasy by HOG staging site) to `oyecouture-caddy`. It used HOG's `deploy/staging/caddy-live.sh`: a `docker network connect hog-edge` and a graceful reload. Only these notes were pushed to this repo; they are docs-only, so the auto-deploy does not rebuild.
+- **State:**
+  - Caddy was not restarted.
+  - The storefront returned 200, `/api/healthz` ok and `www` 301, both before and after.
+  - Let's Encrypt issued the HOG certificate.
+  - The running Caddy config is this repo's Caddyfile plus HOG's block.
+- **Next:** Ship the permanent version with the next real Oyecouture release. See HANDOFF-STATE.
+- **Blockers:** None for Oyecouture. A reboot or a Caddy restart drops HOG staging until `caddy-live.sh` is re-run.
+
 ## 2026-09-06T21:55:00+01:00 · Claude · Storefront was invisible to search; metadata built and deployed
 
 - **Did:** Diagnosed why the shop ranked below its own Instagram and Facebook for its own name, and fixed it. Added `constants/seo.ts`, `composables/useStorefrontSeo.ts` (title, description, canonical, Open Graph, Twitter), `utils/seo.ts` (ClothingStore, WebSite and per-product Offer schemas), and `server/routes/sitemap.xml.ts`. Wired the homepage, all four category pages and the product detail page, moved the care pages' metadata into `StorefrontCarePage`, and converted about/contact/size-guide off bare `useSeoMeta` so they gain canonical and link previews.
