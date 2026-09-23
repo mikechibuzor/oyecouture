@@ -33,7 +33,7 @@ export const STOREFRONT_COPY = {
 
 export const BESPOKE_SERVICE_COPY = {
   eyebrow: 'The Bespoke Service',
-  heading: 'Prefer a piece made to a single measure — yours?',
+  heading: 'Prefer a piece made to a single measurement — Yours?',
   action: 'Book an Appointment',
 } as const
 
