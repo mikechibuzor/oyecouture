@@ -50,9 +50,16 @@ func New(applicationConfig config.Config, databasePool *pgxpool.Pool) *http.Serv
 		paymentService, applicationConfig.PaystackSecretKey,
 	)
 	settingsRepository := settings.NewRepository(databasePool)
-	settingsHandler := settings.NewHandler(settingsRepository, settings.SiteSettings{
-		Announcement:   applicationConfig.Announcement,
-		WhatsAppNumber: applicationConfig.WhatsAppNumber,
+	// Attached after the settings repository exists, so order and tracking mail carries the
+	// name the studio set. It is nil-safe: with no provider configured there is no service.
+	emailService = emailService.WithFromOverride(settingsRepository.FromAddress)
+	settingsHandler := settings.NewHandler(settingsRepository, settings.AdminSettings{
+		SiteSettings: settings.SiteSettings{
+			Announcement:   applicationConfig.Announcement,
+			WhatsAppNumber: applicationConfig.WhatsAppNumber,
+			ContactEmail:   applicationConfig.ContactEmail,
+		},
+		NotifyEmail: applicationConfig.OwnerNotifyEmail,
 	}, settings.DefaultHomeContent())
 
 	adminStore := admin.NewPostgresStore(databasePool)
@@ -78,8 +85,11 @@ func New(applicationConfig config.Config, databasePool *pgxpool.Pool) *http.Serv
 	requestMux.HandleFunc("POST /contact", held(contact.NewHandler(contact.NewService(
 		emailProvider(applicationConfig),
 		applicationConfig.EmailFrom,
-		applicationConfig.OwnerNotifyEmail,
-	)).Submit))
+		// Read per enquiry, falling back to the configured address until one is set here.
+		func(requestContext context.Context) (string, error) {
+			return settingsRepository.NotifyEmail(requestContext, applicationConfig.OwnerNotifyEmail)
+		},
+	).WithFromOverride(settingsRepository.FromAddress)).Submit))
 	requestMux.HandleFunc("POST /orders", held(orderHandler.Create))
 	requestMux.HandleFunc("GET /delivery-zones", held(delivery.NewHandler(deliveryRepository).List))
 	requestMux.HandleFunc("GET /payments/{payToken}", held(paymentHandler.Summary))
@@ -152,8 +162,10 @@ func New(applicationConfig config.Config, databasePool *pgxpool.Pool) *http.Serv
 	requestMux.Handle("DELETE /admin/team/{id}", ownerOnly(
 		http.HandlerFunc(adminTeamHandler.Delete),
 	))
+	// The owner-only read, which includes the notification inbox. The public read is
+	// settingsHandler.Get, mounted on /site-settings above.
 	requestMux.Handle("GET /admin/settings", ownerOnly(
-		http.HandlerFunc(settingsHandler.Get),
+		http.HandlerFunc(settingsHandler.GetForAdmin),
 	))
 	requestMux.Handle("PATCH /admin/settings", ownerOnly(
 		http.HandlerFunc(settingsHandler.Update),

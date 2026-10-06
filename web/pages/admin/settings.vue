@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ADMIN_COPY, ADMIN_ROUTES } from '~/constants/admin'
-import type { SiteSettings, SiteSettingsDraft } from '~/types/settings'
+import type { AdminSettings, SiteSettingsDraft } from '~/types/settings'
 
 definePageMeta({ layout: 'admin', middleware: 'admin' })
 
@@ -15,6 +15,9 @@ const { withLoading } = useAppLoading()
 const draft = ref<SiteSettingsDraft>({
   announcement: '',
   whatsappNumber: '',
+  contactEmail: '',
+  notifyEmail: '',
+  fromName: '',
   held: false,
   holdHeadline: '',
   holdMessage: '',
@@ -35,10 +38,13 @@ const isExpiredSession = async (requestError: unknown): Promise<boolean> => {
   return true
 }
 
-const syncDraft = (settings: SiteSettings): void => {
+const syncDraft = (settings: AdminSettings): void => {
   draft.value = {
     announcement: settings.announcement,
     whatsappNumber: settings.whatsappNumber,
+    contactEmail: settings.contactEmail,
+    notifyEmail: settings.notifyEmail,
+    fromName: settings.fromName,
     held: settings.held,
     holdHeadline: settings.holdHeadline,
     holdMessage: settings.holdMessage,
@@ -143,6 +149,48 @@ onMounted(() => {
             autocomplete="tel"
           >
           <small>{{ ADMIN_COPY.whatsappNumberHint }}</small>
+        </label>
+      </section>
+
+      <section class="admin-form-section" aria-labelledby="admin-email-panel-heading">
+        <header class="admin-form-section-head">
+          <h2 id="admin-email-panel-heading">{{ ADMIN_COPY.emailPanelHeading }}</h2>
+          <p>{{ ADMIN_COPY.emailPanelIntro }}</p>
+        </header>
+
+        <label class="admin-field admin-field-wide">
+          <span>{{ ADMIN_COPY.contactEmailLabel }}</span>
+          <input
+            v-model.trim="draft.contactEmail"
+            type="email"
+            maxlength="254"
+            autocomplete="off"
+            inputmode="email"
+          >
+          <small>{{ ADMIN_COPY.contactEmailHint }}</small>
+        </label>
+
+        <label class="admin-field admin-field-wide">
+          <span>{{ ADMIN_COPY.notifyEmailLabel }}</span>
+          <input
+            v-model.trim="draft.notifyEmail"
+            type="email"
+            maxlength="254"
+            autocomplete="off"
+            inputmode="email"
+          >
+          <small>{{ ADMIN_COPY.notifyEmailHint }}</small>
+        </label>
+
+        <label class="admin-field admin-field-wide">
+          <span>{{ ADMIN_COPY.fromNameLabel }}</span>
+          <input
+            v-model.trim="draft.fromName"
+            type="text"
+            maxlength="60"
+            autocomplete="off"
+          >
+          <small>{{ ADMIN_COPY.fromNameHint }}</small>
         </label>
       </section>
 

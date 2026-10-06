@@ -8,6 +8,7 @@ import {
   MessageCircle,
   Star,
 } from 'lucide'
+import { STOREFRONT_COPY } from '~/constants/storefront'
 import { buildWhatsAppUrl } from '~/utils/whatsapp'
 
 interface ContactInfoItem {
@@ -43,8 +44,14 @@ const whatsappHref = computed(() =>
   buildWhatsAppUrl(configuredWhatsAppNumber.value) || undefined,
 )
 
+// The address the studio set in the admin, falling back to the house one if settings cannot
+// be read, so the page never offers an empty mailto link.
+const contactEmail = computed(
+  () => siteSettings.value?.contactEmail?.trim() || STOREFRONT_COPY.contactEmail,
+)
+
 const contactInfo = computed<readonly ContactInfoItem[]>(() => [
-  { label: 'Email', value: 'hello@oyecouturebespoke.com', href: 'mailto:hello@oyecouturebespoke.com' },
+  { label: 'Email', value: contactEmail.value, href: `mailto:${contactEmail.value}` },
   ...(whatsappHref.value
     ? [{ label: 'Phone & WhatsApp', value: displayedPhoneNumber.value, href: whatsappHref.value }]
     : []),
@@ -60,7 +67,7 @@ const contactSocials = computed<readonly ContactSocialLink[]>(() => [
         icon: MessageCircle,
       }]
     : []),
-  { name: 'Email', handle: 'hello@oyecouturebespoke.com', href: 'mailto:hello@oyecouturebespoke.com', icon: Mail },
+  { name: 'Email', handle: contactEmail.value, href: `mailto:${contactEmail.value}`, icon: Mail },
   {
     name: 'Oyecouture',
     handle: 'Book a private fitting',

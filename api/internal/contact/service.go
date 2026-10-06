@@ -27,18 +27,34 @@ var (
 )
 
 type Service struct {
-	provider         email.Provider
-	from             string
-	ownerNotifyEmail string
-	now              func() time.Time
+	provider email.Provider
+	from     string
+	// Resolved per send rather than held, so changing the address in the admin takes effect
+	// on the next enquiry instead of the next deploy.
+	recipient func(context.Context) (string, error)
+	// Optional. Replaces the display name in the From line; nil keeps the configured header.
+	fromOverride func(context.Context, string) string
+	now          func() time.Time
 }
 
-func NewService(provider email.Provider, from string, ownerNotifyEmail string) *Service {
+// WithFromOverride lets the From line carry the name the studio set in the admin. It can only
+// replace the display name, never stop an enquiry being sent.
+func (service *Service) WithFromOverride(override func(context.Context, string) string) *Service {
+	service.fromOverride = override
+
+	return service
+}
+
+func NewService(
+	provider email.Provider,
+	from string,
+	recipient func(context.Context) (string, error),
+) *Service {
 	return &Service{
-		provider:         provider,
-		from:             strings.TrimSpace(from),
-		ownerNotifyEmail: strings.TrimSpace(ownerNotifyEmail),
-		now:              time.Now,
+		provider:  provider,
+		from:      strings.TrimSpace(from),
+		recipient: recipient,
+		now:       time.Now,
 	}
 }
 
@@ -47,13 +63,30 @@ func (service *Service) Submit(ctx context.Context, submission Submission) error
 	if err != nil {
 		return err
 	}
-	if service.provider == nil || service.from == "" || service.ownerNotifyEmail == "" {
+	if service.provider == nil || service.from == "" || service.recipient == nil {
 		return ErrSenderUnavailable
 	}
 
+	// An enquiry with nowhere to go is refused rather than dropped, so the customer is told
+	// to try another way instead of believing it was sent.
+	notifyEmail, err := service.recipient(ctx)
+	if err != nil {
+		return fmt.Errorf("resolve contact recipient: %w", err)
+	}
+	if strings.TrimSpace(notifyEmail) == "" {
+		return ErrSenderUnavailable
+	}
+
+	fromHeader := service.from
+	if service.fromOverride != nil {
+		if composed := strings.TrimSpace(service.fromOverride(ctx, service.from)); composed != "" {
+			fromHeader = composed
+		}
+	}
+
 	_, _, err = service.provider.Send(ctx, email.Message{
-		From:           service.from,
-		To:             service.ownerNotifyEmail,
+		From:           fromHeader,
+		To:             strings.TrimSpace(notifyEmail),
 		Subject:        contactSubject(cleanSubmission),
 		HTML:           contactHTML(cleanSubmission),
 		Text:           contactText(cleanSubmission),

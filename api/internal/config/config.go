@@ -9,6 +9,8 @@ const (
 	defaultAPIAddress   = ":8080"
 	defaultDatabaseURL  = "postgres://oye:oye@localhost:5432/oyecouture?sslmode=disable"
 	defaultOwnerEmail   = "iwuagwuchibuzor@gmail.com"
+	// Printed on the contact page until the owner sets one in the admin.
+	defaultContactEmail = "hello@oyecouture.com"
 	defaultWebBaseURL   = "http://localhost:3000"
 	defaultAnnouncement = "COMPLIMENTARY TAILORING CONSULTATION · WORLDWIDE DELIVERY · BE EXCLUSIVE"
 	// Origin-relative so product image URLs work in any environment without
@@ -24,6 +26,7 @@ type Config struct {
 	CloudinaryCloudName string
 	CloudinaryFolder    string
 	DatabaseURL         string
+	ContactEmail        string
 	EmailFrom           string
 	EmailProvider       string
 	OwnerNotifyEmail    string
@@ -46,6 +49,7 @@ func Load() Config {
 		CloudinaryCloudName: os.Getenv("CLOUDINARY_CLOUD_NAME"),
 		CloudinaryFolder:    valueOrDefault(os.Getenv("CLOUDINARY_FOLDER"), "oyecouture"),
 		DatabaseURL:         valueOrDefault(os.Getenv("DATABASE_URL"), defaultDatabaseURL),
+		ContactEmail:        valueOrDefault(os.Getenv("CONTACT_EMAIL"), defaultContactEmail),
 		EmailFrom:           os.Getenv("EMAIL_FROM"),
 		EmailProvider:       valueOrDefault(os.Getenv("EMAIL_PROVIDER"), "sendbyte"),
 		OwnerNotifyEmail:    valueOrDefault(os.Getenv("OWNER_NOTIFY_EMAIL"), defaultOwnerEmail),

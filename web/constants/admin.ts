@@ -345,6 +345,17 @@ export const ADMIN_COPY = {
   customerTrackingLink: 'Customer tracking link',
   settingsPanelHeading: 'Storefront essentials',
   settingsPanelIntro: 'Keep the global announcement and primary customer contact current.',
+  emailPanelHeading: 'Email',
+  emailPanelIntro:
+    'Where customers write to you, where their messages land, and the name they see them come from.',
+  contactEmailLabel: 'Public contact address',
+  contactEmailHint: 'Shown on the contact page for customers to write to.',
+  notifyEmailLabel: 'Send enquiries to',
+  notifyEmailHint:
+    'Where contact-form messages are delivered. Not shown to anyone. Leave it empty to keep using the address set on the server.',
+  fromNameLabel: 'Sender name',
+  fromNameHint:
+    'The name on order, tracking and enquiry emails. The sending address itself cannot be changed here — it has to stay the one verified with the email provider.',
   holdPanelHeading: 'Shop availability',
   holdPanelIntro:
     'Close the shop to visitors without taking anything down. While it is closed every page shows the holding page below, and nothing new can be ordered. You stay signed in and keep seeing the real shop, so you can carry on checking it.',

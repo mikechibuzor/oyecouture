@@ -15,6 +15,9 @@ export const STOREFRONT_COPY = {
   announcement:
     'COMPLIMENTARY TAILORING CONSULTATION · WORLDWIDE DELIVERY · BE EXCLUSIVE',
   announcementLabel: 'Store announcement',
+  // Fallback only. The live address is set in the admin and read from site settings; this
+  // stands in when the API cannot be reached.
+  contactEmail: 'hello@oyecouturebespoke.com',
   brandAlt: 'Oyecouture Bespoke',
   brandLogoPath: '/images/brand/oyecouture-logo.png',
   navigationLabel: 'Primary navigation',

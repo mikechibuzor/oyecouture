@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/mail"
 	"strings"
 
 	"github.com/jackc/pgx/v5"
@@ -20,6 +21,9 @@ const (
 	keySiteHeld       = "site_held"
 	keyHoldHeadline   = "hold_headline"
 	keyHoldMessage    = "hold_message"
+	keyContactEmail   = "contact_email"
+	keyNotifyEmail    = "notify_email"
+	keyFromName       = "from_name"
 
 	heldTrue = "true"
 
@@ -27,6 +31,8 @@ const (
 	maximumAnnouncementChars = 180
 	maximumHoldHeadlineChars = 70
 	maximumHoldMessageChars  = 220
+	maximumEmailChars        = 254
+	maximumFromNameChars     = 60
 	maximumHomeTextChars     = 320
 	maximumHomePathChars     = 420
 	maximumHomeTiles         = 6
@@ -34,15 +40,30 @@ const (
 
 var ErrInvalidSettings = errors.New("invalid settings")
 
-// SiteSettings is what the storefront reads on every page. The hold fields are public
-// on purpose: while the shop is held the holding page is the only thing drawn, and it
-// needs its own words.
+// SiteSettings is what the storefront reads on every page, and therefore what any visitor
+// can read. Everything here is meant to be published. The hold fields are public on purpose:
+// while the shop is held the holding page is the only thing drawn, and it needs its own words.
 type SiteSettings struct {
 	Announcement   string `json:"announcement"`
 	WhatsAppNumber string `json:"whatsappNumber"`
-	Held           bool   `json:"held"`
-	HoldHeadline   string `json:"holdHeadline"`
-	HoldMessage    string `json:"holdMessage"`
+	// The address printed on the contact page for customers to write to.
+	ContactEmail string `json:"contactEmail"`
+	Held         bool   `json:"held"`
+	HoldHeadline string `json:"holdHeadline"`
+	HoldMessage  string `json:"holdMessage"`
+}
+
+// AdminSettings is the same settings plus the ones only the owner may see. It exists because
+// the public and admin reads shared one payload: putting the notification inbox on
+// SiteSettings would publish it to every visitor and every scraper.
+type AdminSettings struct {
+	SiteSettings
+	// Where enquiries are delivered. Private: the customer writes to ContactEmail, which may
+	// be a different address entirely.
+	NotifyEmail string `json:"notifyEmail"`
+	// The name recipients see in the From line of order, tracking and enquiry emails. The
+	// address itself is not editable: it has to stay the one verified with the email provider.
+	FromName string `json:"fromName"`
 }
 
 type HomeContent struct {
@@ -123,14 +144,16 @@ func NewRepository(pool *pgxpool.Pool) *Repository {
 	return &Repository{pool: pool}
 }
 
+// Get reads every setting, including the owner-only ones. Callers serving the public decide
+// what to publish by handing back only the embedded SiteSettings.
 func (repository *Repository) Get(
 	requestContext context.Context,
-	defaults SiteSettings,
-) (SiteSettings, error) {
+	defaults AdminSettings,
+) (AdminSettings, error) {
 	const query = `
 		SELECT key, value
 		FROM settings
-		WHERE key IN ($1, $2, $3, $4, $5)`
+		WHERE key IN ($1, $2, $3, $4, $5, $6, $7, $8)`
 
 	rows, err := repository.pool.Query(
 		requestContext,
@@ -140,9 +163,12 @@ func (repository *Repository) Get(
 		keySiteHeld,
 		keyHoldHeadline,
 		keyHoldMessage,
+		keyContactEmail,
+		keyNotifyEmail,
+		keyFromName,
 	)
 	if err != nil {
-		return SiteSettings{}, fmt.Errorf("query settings: %w", err)
+		return AdminSettings{}, fmt.Errorf("query settings: %w", err)
 	}
 	defer rows.Close()
 
@@ -151,7 +177,7 @@ func (repository *Repository) Get(
 		var key string
 		var value string
 		if err := rows.Scan(&key, &value); err != nil {
-			return SiteSettings{}, fmt.Errorf("scan setting: %w", err)
+			return AdminSettings{}, fmt.Errorf("scan setting: %w", err)
 		}
 
 		switch key {
@@ -165,25 +191,56 @@ func (repository *Repository) Get(
 			currentSettings.HoldHeadline = value
 		case keyHoldMessage:
 			currentSettings.HoldMessage = value
+		case keyContactEmail:
+			currentSettings.ContactEmail = value
+		case keyNotifyEmail:
+			currentSettings.NotifyEmail = value
+		case keyFromName:
+			currentSettings.FromName = value
 		}
 	}
 
 	return currentSettings, rows.Err()
 }
 
+// NotifyEmail resolves where an enquiry should be delivered, reading only what the sender
+// needs. The contact service calls it per send, so changing the address in the admin takes
+// effect on the next enquiry rather than the next deploy.
+func (repository *Repository) NotifyEmail(
+	requestContext context.Context,
+	fallback string,
+) (string, error) {
+	const query = `SELECT value FROM settings WHERE key = $1`
+
+	var storedValue string
+	err := repository.pool.QueryRow(requestContext, query, keyNotifyEmail).Scan(&storedValue)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return fallback, nil
+	}
+	if err != nil {
+		return "", fmt.Errorf("query notify email: %w", err)
+	}
+
+	if strings.TrimSpace(storedValue) == "" {
+		return fallback, nil
+	}
+
+	return strings.TrimSpace(storedValue), nil
+}
+
 func (repository *Repository) Update(
 	requestContext context.Context,
-	update SiteSettings,
-	defaults SiteSettings,
-) (SiteSettings, error) {
+	update AdminSettings,
+	defaults AdminSettings,
+) (AdminSettings, error) {
 	normalizedUpdate, err := normalize(update)
 	if err != nil {
-		return SiteSettings{}, err
+		return AdminSettings{}, err
 	}
 
 	const query = `
 		INSERT INTO settings (key, value)
-		VALUES ($1, $2), ($3, $4), ($5, $6), ($7, $8), ($9, $10)
+		VALUES ($1, $2), ($3, $4), ($5, $6), ($7, $8), ($9, $10), ($11, $12), ($13, $14), ($15, $16)
 		ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`
 
 	if _, err := repository.pool.Exec(
@@ -199,8 +256,14 @@ func (repository *Repository) Update(
 		normalizedUpdate.HoldHeadline,
 		keyHoldMessage,
 		normalizedUpdate.HoldMessage,
+		keyContactEmail,
+		normalizedUpdate.ContactEmail,
+		keyNotifyEmail,
+		normalizedUpdate.NotifyEmail,
+		keyFromName,
+		normalizedUpdate.FromName,
 	); err != nil {
-		return SiteSettings{}, fmt.Errorf("update settings: %w", err)
+		return AdminSettings{}, fmt.Errorf("update settings: %w", err)
 	}
 
 	return repository.Get(requestContext, defaults)
@@ -262,16 +325,16 @@ func (repository *Repository) UpdateHomeContent(
 	return repository.GetHomeContent(requestContext, defaults)
 }
 
-func normalize(update SiteSettings) (SiteSettings, error) {
+func normalize(update AdminSettings) (AdminSettings, error) {
 	announcement := strings.TrimSpace(update.Announcement)
 	whatsAppNumber := strings.TrimSpace(update.WhatsAppNumber)
 
 	if len([]rune(announcement)) > maximumAnnouncementChars {
-		return SiteSettings{}, ErrInvalidSettings
+		return AdminSettings{}, ErrInvalidSettings
 	}
 
 	if whatsAppNumber != "" && len(digitsOnly(whatsAppNumber)) < 8 {
-		return SiteSettings{}, ErrInvalidSettings
+		return AdminSettings{}, ErrInvalidSettings
 	}
 
 	holdHeadline := strings.TrimSpace(update.HoldHeadline)
@@ -279,21 +342,49 @@ func normalize(update SiteSettings) (SiteSettings, error) {
 
 	if len([]rune(holdHeadline)) > maximumHoldHeadlineChars ||
 		len([]rune(holdMessage)) > maximumHoldMessageChars {
-		return SiteSettings{}, ErrInvalidSettings
+		return AdminSettings{}, ErrInvalidSettings
 	}
 
 	// A hold with no headline would draw an empty page, so the shop may only be held
 	// once there is something to say on it.
 	if update.Held && holdHeadline == "" {
-		return SiteSettings{}, ErrInvalidSettings
+		return AdminSettings{}, ErrInvalidSettings
 	}
 
-	return SiteSettings{
-		Announcement:   announcement,
-		WhatsAppNumber: whatsAppNumber,
-		Held:           update.Held,
-		HoldHeadline:   holdHeadline,
-		HoldMessage:    holdMessage,
+	contactEmail := strings.TrimSpace(update.ContactEmail)
+	notifyEmail := strings.TrimSpace(update.NotifyEmail)
+
+	// Either may be cleared, which falls back to the configured default rather than sending
+	// nowhere. A value that is present must be a real address, or enquiries vanish silently.
+	for _, address := range []string{contactEmail, notifyEmail} {
+		if address == "" {
+			continue
+		}
+		if len(address) > maximumEmailChars {
+			return AdminSettings{}, ErrInvalidSettings
+		}
+		parsed, err := mail.ParseAddress(address)
+		if err != nil || parsed.Address != address {
+			return AdminSettings{}, ErrInvalidSettings
+		}
+	}
+
+	fromName := strings.TrimSpace(update.FromName)
+	if len([]rune(fromName)) > maximumFromNameChars {
+		return AdminSettings{}, ErrInvalidSettings
+	}
+
+	return AdminSettings{
+		SiteSettings: SiteSettings{
+			Announcement:   announcement,
+			WhatsAppNumber: whatsAppNumber,
+			ContactEmail:   contactEmail,
+			Held:           update.Held,
+			HoldHeadline:   holdHeadline,
+			HoldMessage:    holdMessage,
+		},
+		NotifyEmail: notifyEmail,
+		FromName:    fromName,
 	}, nil
 }
 
@@ -409,11 +500,11 @@ func digitsOnly(value string) string {
 
 type Handler struct {
 	repository   *Repository
-	defaults     SiteSettings
+	defaults     AdminSettings
 	homeDefaults HomeContent
 }
 
-func NewHandler(repository *Repository, defaults SiteSettings, homeDefaults HomeContent) *Handler {
+func NewHandler(repository *Repository, defaults AdminSettings, homeDefaults HomeContent) *Handler {
 	return &Handler{repository: repository, defaults: defaults, homeDefaults: homeDefaults}
 }
 
@@ -426,7 +517,22 @@ type errorResponse struct {
 	Error errorDetail `json:"error"`
 }
 
+// Get serves the storefront. It returns only the embedded SiteSettings, so the owner's
+// notification inbox is never part of a public response.
 func (handler *Handler) Get(responseWriter http.ResponseWriter, request *http.Request) {
+	currentSettings, err := handler.repository.Get(request.Context(), handler.defaults)
+	if err != nil {
+		log.Printf("get settings: %v", err)
+		writeError(responseWriter, http.StatusInternalServerError, "internal_error", "settings could not be loaded")
+		return
+	}
+
+	writeJSON(responseWriter, http.StatusOK, currentSettings.SiteSettings)
+}
+
+// GetForAdmin serves the settings screen, which may see everything. It is mounted behind
+// ownerOnly; mounting it publicly would publish the notification inbox.
+func (handler *Handler) GetForAdmin(responseWriter http.ResponseWriter, request *http.Request) {
 	currentSettings, err := handler.repository.Get(request.Context(), handler.defaults)
 	if err != nil {
 		log.Printf("get settings: %v", err)
@@ -438,7 +544,7 @@ func (handler *Handler) Get(responseWriter http.ResponseWriter, request *http.Re
 }
 
 func (handler *Handler) Update(responseWriter http.ResponseWriter, request *http.Request) {
-	var update SiteSettings
+	var update AdminSettings
 
 	decoder := json.NewDecoder(http.MaxBytesReader(responseWriter, request.Body, maximumRequestBytes))
 	decoder.DisallowUnknownFields()
@@ -511,4 +617,46 @@ func writeJSON(responseWriter http.ResponseWriter, statusCode int, payload any) 
 	if err := json.NewEncoder(responseWriter).Encode(payload); err != nil {
 		log.Printf("encode settings response: %v", err)
 	}
+}
+
+// FromAddress composes the From header for outgoing mail.
+//
+// Only the display name is editable. The address stays exactly as configured, because it is
+// the one verified with the email provider and mail sent from anything else is rejected or
+// lands in spam.
+//
+// Every failure returns the configured header unchanged. An order confirmation must not fail
+// to send because a settings read did, so this can only ever improve the From line, never
+// prevent one.
+func (repository *Repository) FromAddress(
+	requestContext context.Context,
+	configured string,
+) string {
+	const query = `SELECT value FROM settings WHERE key = $1`
+
+	var storedName string
+	if err := repository.pool.QueryRow(requestContext, query, keyFromName).Scan(&storedName); err != nil {
+		if !errors.Is(err, pgx.ErrNoRows) {
+			log.Printf("read from name: %v", err)
+		}
+
+		return configured
+	}
+
+	return ComposeFrom(strings.TrimSpace(storedName), configured)
+}
+
+// ComposeFrom puts a display name in front of the configured address, leaving the address
+// alone. It is separate from the read so the rule can be tested without a database.
+func ComposeFrom(displayName string, configured string) string {
+	if displayName == "" {
+		return configured
+	}
+
+	parsed, err := mail.ParseAddress(configured)
+	if err != nil {
+		return configured
+	}
+
+	return (&mail.Address{Name: displayName, Address: parsed.Address}).String()
 }

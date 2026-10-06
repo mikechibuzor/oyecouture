@@ -1,18 +1,29 @@
+/** What any visitor can read. Everything here is published on the storefront. */
 export interface SiteSettings {
   readonly announcement: string
   readonly whatsappNumber: string
+  readonly contactEmail: string
   readonly held: boolean
   readonly holdHeadline: string
   readonly holdMessage: string
 }
 
+/**
+ * What the settings screen reads and writes. It carries the owner-only fields as well, and is
+ * only ever returned by the authenticated admin endpoint.
+ */
 export interface SiteSettingsDraft {
   announcement: string
   whatsappNumber: string
+  contactEmail: string
+  notifyEmail: string
+  fromName: string
   held: boolean
   holdHeadline: string
   holdMessage: string
 }
+
+export type AdminSettings = SiteSettingsDraft
 
 export interface HomeContent {
   readonly hero: HomeHeroContent

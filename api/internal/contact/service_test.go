@@ -23,9 +23,15 @@ func (provider *stubProvider) Send(
 	return email.SendResult{MessageID: "msg_123"}, nil, provider.err
 }
 
+// staticRecipient is the old fixed-address behaviour, for the cases that do not care where
+// the enquiry goes.
+func staticRecipient(address string) func(context.Context) (string, error) {
+	return func(context.Context) (string, error) { return address, nil }
+}
+
 func TestServiceSubmitSendsContactEmail(t *testing.T) {
 	provider := &stubProvider{}
-	service := NewService(provider, "Oyecouture <orders@example.com>", "owner@example.com")
+	service := NewService(provider, "Oyecouture <orders@example.com>", staticRecipient("owner@example.com"))
 
 	err := service.Submit(context.Background(), Submission{
 		Name:    " Chibuzor ",
@@ -53,7 +59,7 @@ func TestServiceSubmitSendsContactEmail(t *testing.T) {
 }
 
 func TestServiceSubmitRejectsInvalidSubmission(t *testing.T) {
-	service := NewService(&stubProvider{}, "from@example.com", "owner@example.com")
+	service := NewService(&stubProvider{}, "from@example.com", staticRecipient("owner@example.com"))
 
 	err := service.Submit(context.Background(), Submission{
 		Name:    "Chibuzor",
@@ -66,7 +72,7 @@ func TestServiceSubmitRejectsInvalidSubmission(t *testing.T) {
 }
 
 func TestServiceSubmitRequiresSenderConfiguration(t *testing.T) {
-	service := NewService(nil, "", "owner@example.com")
+	service := NewService(nil, "", staticRecipient("owner@example.com"))
 
 	err := service.Submit(context.Background(), Submission{
 		Name:    "Chibuzor",

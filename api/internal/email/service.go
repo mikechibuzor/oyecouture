@@ -17,7 +17,10 @@ type Service struct {
 	repository Repository
 	provider   Provider
 	from       string
-	siteURL    string
+	// Optional. Lets the studio change the name recipients see without a deploy; nil keeps
+	// the configured header.
+	fromOverride func(context.Context, string) string
+	siteURL      string
 }
 
 // NewService wires the email repository and provider into the notification service.
@@ -28,6 +31,36 @@ func NewService(repository Repository, provider Provider, from string, siteURL s
 		from:       strings.TrimSpace(from),
 		siteURL:    strings.TrimRight(siteURL, "/"),
 	}
+}
+
+// WithFromOverride lets the From line be composed per send from the studio's settings.
+//
+// It is deliberately not a constructor argument: every guard in this service checks that
+// `from` is configured, and an order confirmation that failed to send because a settings
+// read failed would be far worse than one sent under the configured name. The override can
+// only replace the display name, never prevent a send.
+func (service *Service) WithFromOverride(override func(context.Context, string) string) *Service {
+	if service == nil {
+		return nil
+	}
+	service.fromOverride = override
+
+	return service
+}
+
+// fromHeader is the From line for one message: the studio's name when it has set one, and
+// the configured header whenever it has not or anything went wrong resolving it.
+func (service *Service) fromHeader(requestContext context.Context) string {
+	if service.fromOverride == nil {
+		return service.from
+	}
+
+	composed := strings.TrimSpace(service.fromOverride(requestContext, service.from))
+	if composed == "" {
+		return service.from
+	}
+
+	return composed
 }
 
 // RunFulfillmentWorker delivers due order-progress emails until shutdown.
@@ -86,7 +119,7 @@ func (service *Service) deliverQueuedEvent(
 	}
 
 	result, providerPayload, err := service.provider.Send(requestContext, Message{
-		From:           service.from,
+		From:           service.fromHeader(requestContext),
 		To:             event.RecipientEmail,
 		Subject:        event.Subject,
 		HTML:           htmlBody,
@@ -164,7 +197,7 @@ func (service *Service) send(
 	}
 
 	result, providerPayload, err := service.provider.Send(requestContext, Message{
-		From:           service.from,
+		From:           service.fromHeader(requestContext),
 		To:             order.Email,
 		Subject:        subject,
 		HTML:           htmlBody,
