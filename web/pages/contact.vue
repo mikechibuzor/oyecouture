@@ -44,7 +44,7 @@ const whatsappHref = computed(() =>
 )
 
 const contactInfo = computed<readonly ContactInfoItem[]>(() => [
-  { label: 'Email', value: 'hello@oyecouture.com', href: 'mailto:hello@oyecouture.com' },
+  { label: 'Email', value: 'hello@oyecouturebespoke.com', href: 'mailto:hello@oyecouturebespoke.com' },
   ...(whatsappHref.value
     ? [{ label: 'Phone & WhatsApp', value: displayedPhoneNumber.value, href: whatsappHref.value }]
     : []),
@@ -60,7 +60,7 @@ const contactSocials = computed<readonly ContactSocialLink[]>(() => [
         icon: MessageCircle,
       }]
     : []),
-  { name: 'Email', handle: 'hello@oyecouture.com', href: 'mailto:hello@oyecouture.com', icon: Mail },
+  { name: 'Email', handle: 'hello@oyecouturebespoke.com', href: 'mailto:hello@oyecouturebespoke.com', icon: Mail },
   {
     name: 'Oyecouture',
     handle: 'Book a private fitting',
