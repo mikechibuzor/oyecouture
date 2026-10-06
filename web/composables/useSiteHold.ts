@@ -18,8 +18,8 @@ import type { SiteSettings } from '~/types/settings'
 export const useSiteHold = async () => {
   const apiBaseUrl = useApiBaseUrl()
   const forwardedCookies = import.meta.server ? useRequestHeaders(['cookie']) : undefined
-  const { data: settings } = await useSiteSettings()
   const isHeld = useState('site-held', () => false)
+  const { data: settings } = await useSiteSettings()
 
   // Only ask who the visitor is when the answer changes what they see. The admin session
   // cookie is HttpOnly, so on the server it has to be forwarded by hand.
