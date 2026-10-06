@@ -55,22 +55,36 @@ func New(applicationConfig config.Config, databasePool *pgxpool.Pool) *http.Serv
 		WhatsAppNumber: applicationConfig.WhatsAppNumber,
 	}, settings.DefaultHomeContent())
 
+	adminStore := admin.NewPostgresStore(databasePool)
+	adminAuth := admin.NewAuthService(adminStore)
+	adminHandler := admin.NewHandler(adminAuth, applicationConfig.AppEnv == "production")
+
+	// While the shop is held every visitor-facing route answers 404, so the storefront
+	// cannot be read around the holding page: hiding the pages alone would still hand
+	// the whole catalogue to anyone who asked /products.
+	//
+	// Three things stay open. /admin, because it is how the hold is lifted. /site-settings,
+	// because the holding page is drawn from it. And the Paystack webhook, because it is
+	// Paystack's server calling rather than a visitor: refusing it would take a customer's
+	// money and leave their order unpaid, which no amount of holding the shop should do.
+	held := holdGate(adminHandler.HasSession, settingsRepository.Held)
+
 	requestMux := http.NewServeMux()
 	requestMux.Handle("GET /healthz", health.NewHandler(databasePool))
 	requestMux.HandleFunc("GET /site-settings", settingsHandler.Get)
-	requestMux.HandleFunc("GET /home-content", settingsHandler.GetHomeContent)
-	requestMux.HandleFunc("GET /products", productHandler.List)
-	requestMux.HandleFunc("GET /products/{slug}", productHandler.GetBySlug)
-	requestMux.HandleFunc("POST /contact", contact.NewHandler(contact.NewService(
+	requestMux.HandleFunc("GET /home-content", held(settingsHandler.GetHomeContent))
+	requestMux.HandleFunc("GET /products", held(productHandler.List))
+	requestMux.HandleFunc("GET /products/{slug}", held(productHandler.GetBySlug))
+	requestMux.HandleFunc("POST /contact", held(contact.NewHandler(contact.NewService(
 		emailProvider(applicationConfig),
 		applicationConfig.EmailFrom,
 		applicationConfig.OwnerNotifyEmail,
-	)).Submit)
-	requestMux.HandleFunc("POST /orders", orderHandler.Create)
-	requestMux.HandleFunc("GET /delivery-zones", delivery.NewHandler(deliveryRepository).List)
-	requestMux.HandleFunc("GET /payments/{payToken}", paymentHandler.Summary)
-	requestMux.HandleFunc("POST /payments/{payToken}/initialize", paymentHandler.Initialize)
-	requestMux.HandleFunc("POST /payments/{payToken}/verify", paymentHandler.Verify)
+	)).Submit))
+	requestMux.HandleFunc("POST /orders", held(orderHandler.Create))
+	requestMux.HandleFunc("GET /delivery-zones", held(delivery.NewHandler(deliveryRepository).List))
+	requestMux.HandleFunc("GET /payments/{payToken}", held(paymentHandler.Summary))
+	requestMux.HandleFunc("POST /payments/{payToken}/initialize", held(paymentHandler.Initialize))
+	requestMux.HandleFunc("POST /payments/{payToken}/verify", held(paymentHandler.Verify))
 	requestMux.HandleFunc("POST /webhooks/paystack", paystackWebhookHandler.Handle)
 
 	trackingService := tracking.NewService(
@@ -79,13 +93,10 @@ func New(applicationConfig config.Config, databasePool *pgxpool.Pool) *http.Serv
 		applicationConfig.WebBaseURL,
 	)
 	trackingHandler := tracking.NewHandler(trackingService)
-	requestMux.HandleFunc("GET /tracking/{trackingToken}", trackingHandler.Public)
+	requestMux.HandleFunc("GET /tracking/{trackingToken}", held(trackingHandler.Public))
 
 	// Ghost admin. Unlinked from the storefront and gated by a session cookie;
 	// every route below RequireSession is unreachable without signing in.
-	adminStore := admin.NewPostgresStore(databasePool)
-	adminAuth := admin.NewAuthService(adminStore)
-	adminHandler := admin.NewHandler(adminAuth, applicationConfig.AppEnv == "production")
 	adminTeamHandler := admin.NewTeamHandler(admin.NewTeamService(adminStore))
 
 	auditService := audit.NewService(audit.NewPostgresStore(databasePool))
@@ -322,4 +333,52 @@ func isAllowedOrigin(requestOrigin string, allowedOrigin string, appEnv string) 
 
 	return parsedOrigin.Scheme == "http" &&
 		(parsedOrigin.Hostname() == "localhost" || parsedOrigin.Hostname() == "127.0.0.1")
+}
+
+// writeHeldResponse answers a visitor-facing route while the shop is held. It is the same
+// shape as every other error this API returns, so the storefront's existing handling of a
+// missing resource covers it without a special case.
+func writeHeldResponse(responseWriter http.ResponseWriter) {
+	responseWriter.Header().Set("Content-Type", "application/json")
+	responseWriter.Header().Set("Cache-Control", "no-store")
+	responseWriter.WriteHeader(http.StatusNotFound)
+
+	if _, err := responseWriter.Write([]byte(
+		`{"error":{"code":"not_found","message":"not found"}}`,
+	)); err != nil {
+		log.Printf("write held response: %v", err)
+	}
+}
+
+// holdGate wraps a visitor-facing route so it answers 404 while the shop is held.
+//
+// A signed-in admin passes straight through, so the real shop stays reviewable at its own
+// address while it is closed to everyone else.
+//
+// A failed hold check lets the request through rather than refusing it. The alternative is
+// that a database hiccup closes a working shop, which is the worse of the two failures: the
+// hold exists to be turned on deliberately, not by accident.
+func holdGate(
+	hasSession func(*http.Request) bool,
+	isHeld func(context.Context) (bool, error),
+) func(http.HandlerFunc) http.HandlerFunc {
+	return func(next http.HandlerFunc) http.HandlerFunc {
+		return func(responseWriter http.ResponseWriter, request *http.Request) {
+			if hasSession(request) {
+				next(responseWriter, request)
+				return
+			}
+
+			shopIsHeld, err := isHeld(request.Context())
+			if err != nil {
+				log.Printf("check site hold: %v", err)
+			}
+			if shopIsHeld {
+				writeHeldResponse(responseWriter)
+				return
+			}
+
+			next(responseWriter, request)
+		}
+	}
 }

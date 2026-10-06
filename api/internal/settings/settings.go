@@ -17,9 +17,16 @@ const (
 	keyAnnouncement   = "announcement"
 	keyHomeContent    = "home_content"
 	keyWhatsAppNumber = "whatsapp_number"
+	keySiteHeld       = "site_held"
+	keyHoldHeadline   = "hold_headline"
+	keyHoldMessage    = "hold_message"
+
+	heldTrue = "true"
 
 	maximumRequestBytes      = 32 << 10
 	maximumAnnouncementChars = 180
+	maximumHoldHeadlineChars = 70
+	maximumHoldMessageChars  = 220
 	maximumHomeTextChars     = 320
 	maximumHomePathChars     = 420
 	maximumHomeTiles         = 6
@@ -27,9 +34,15 @@ const (
 
 var ErrInvalidSettings = errors.New("invalid settings")
 
+// SiteSettings is what the storefront reads on every page. The hold fields are public
+// on purpose: while the shop is held the holding page is the only thing drawn, and it
+// needs its own words.
 type SiteSettings struct {
 	Announcement   string `json:"announcement"`
 	WhatsAppNumber string `json:"whatsappNumber"`
+	Held           bool   `json:"held"`
+	HoldHeadline   string `json:"holdHeadline"`
+	HoldMessage    string `json:"holdMessage"`
 }
 
 type HomeContent struct {
@@ -117,9 +130,17 @@ func (repository *Repository) Get(
 	const query = `
 		SELECT key, value
 		FROM settings
-		WHERE key IN ($1, $2)`
+		WHERE key IN ($1, $2, $3, $4, $5)`
 
-	rows, err := repository.pool.Query(requestContext, query, keyAnnouncement, keyWhatsAppNumber)
+	rows, err := repository.pool.Query(
+		requestContext,
+		query,
+		keyAnnouncement,
+		keyWhatsAppNumber,
+		keySiteHeld,
+		keyHoldHeadline,
+		keyHoldMessage,
+	)
 	if err != nil {
 		return SiteSettings{}, fmt.Errorf("query settings: %w", err)
 	}
@@ -138,6 +159,12 @@ func (repository *Repository) Get(
 			currentSettings.Announcement = value
 		case keyWhatsAppNumber:
 			currentSettings.WhatsAppNumber = value
+		case keySiteHeld:
+			currentSettings.Held = value == heldTrue
+		case keyHoldHeadline:
+			currentSettings.HoldHeadline = value
+		case keyHoldMessage:
+			currentSettings.HoldMessage = value
 		}
 	}
 
@@ -156,7 +183,7 @@ func (repository *Repository) Update(
 
 	const query = `
 		INSERT INTO settings (key, value)
-		VALUES ($1, $2), ($3, $4)
+		VALUES ($1, $2), ($3, $4), ($5, $6), ($7, $8), ($9, $10)
 		ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`
 
 	if _, err := repository.pool.Exec(
@@ -166,6 +193,12 @@ func (repository *Repository) Update(
 		normalizedUpdate.Announcement,
 		keyWhatsAppNumber,
 		normalizedUpdate.WhatsAppNumber,
+		keySiteHeld,
+		boolAsSetting(normalizedUpdate.Held),
+		keyHoldHeadline,
+		normalizedUpdate.HoldHeadline,
+		keyHoldMessage,
+		normalizedUpdate.HoldMessage,
 	); err != nil {
 		return SiteSettings{}, fmt.Errorf("update settings: %w", err)
 	}
@@ -241,10 +274,53 @@ func normalize(update SiteSettings) (SiteSettings, error) {
 		return SiteSettings{}, ErrInvalidSettings
 	}
 
+	holdHeadline := strings.TrimSpace(update.HoldHeadline)
+	holdMessage := strings.TrimSpace(update.HoldMessage)
+
+	if len([]rune(holdHeadline)) > maximumHoldHeadlineChars ||
+		len([]rune(holdMessage)) > maximumHoldMessageChars {
+		return SiteSettings{}, ErrInvalidSettings
+	}
+
+	// A hold with no headline would draw an empty page, so the shop may only be held
+	// once there is something to say on it.
+	if update.Held && holdHeadline == "" {
+		return SiteSettings{}, ErrInvalidSettings
+	}
+
 	return SiteSettings{
 		Announcement:   announcement,
 		WhatsAppNumber: whatsAppNumber,
+		Held:           update.Held,
+		HoldHeadline:   holdHeadline,
+		HoldMessage:    holdMessage,
 	}, nil
+}
+
+// boolAsSetting stores the flag as the text this table holds for every other value.
+func boolAsSetting(value bool) string {
+	if value {
+		return heldTrue
+	}
+
+	return "false"
+}
+
+// Held reports whether the shop is currently held, reading only the one flag the gate
+// needs rather than the whole settings row.
+func (repository *Repository) Held(requestContext context.Context) (bool, error) {
+	const query = `SELECT value FROM settings WHERE key = $1`
+
+	var storedValue string
+	err := repository.pool.QueryRow(requestContext, query, keySiteHeld).Scan(&storedValue)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return false, nil
+	}
+	if err != nil {
+		return false, fmt.Errorf("query site hold: %w", err)
+	}
+
+	return storedValue == heldTrue, nil
 }
 
 func normalizeHomeContent(update HomeContent) (HomeContent, error) {

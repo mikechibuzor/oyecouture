@@ -13,6 +13,9 @@ import { FULFILLMENT_STAGE_LABELS } from '~/constants/tracking'
 
 export const ADMIN_ROUTES = {
   login: '/admin/login',
+  // Everything the ghost admin serves sits under this prefix, which is also how the hold
+  // gate recognises the one area it must never hold.
+  base: '/admin',
   orders: '/admin',
   delivery: '/admin/delivery',
   homeContent: '/admin/home-content',
@@ -342,6 +345,17 @@ export const ADMIN_COPY = {
   customerTrackingLink: 'Customer tracking link',
   settingsPanelHeading: 'Storefront essentials',
   settingsPanelIntro: 'Keep the global announcement and primary customer contact current.',
+  holdPanelHeading: 'Shop availability',
+  holdPanelIntro:
+    'Close the shop to visitors without taking anything down. While it is closed every page shows the holding page below, and nothing new can be ordered. You stay signed in and keep seeing the real shop, so you can carry on checking it.',
+  holdToggleLabel: 'Close the shop to visitors',
+  holdToggleHint:
+    'Turning this off reopens the shop immediately — there is nothing to deploy. Payments already taken are unaffected.',
+  holdHeadlineLabel: 'Holding headline',
+  holdHeadlineHint: 'The one line visitors read. Required before the shop can be closed.',
+  holdMessageLabel: 'Holding message',
+  holdMessageHint: 'A sentence under the headline. Leave it empty for the headline alone.',
+  holdHeadlineRequired: 'Write a holding headline before closing the shop.',
   deliveryDetailsHeading: 'Area details',
   deliveryDetailsIntro: 'Name the delivery area and set the fee shown at checkout.',
   deliveryVisibilityHeading: 'Checkout visibility',

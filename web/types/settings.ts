@@ -1,11 +1,17 @@
 export interface SiteSettings {
   readonly announcement: string
   readonly whatsappNumber: string
+  readonly held: boolean
+  readonly holdHeadline: string
+  readonly holdMessage: string
 }
 
 export interface SiteSettingsDraft {
   announcement: string
   whatsappNumber: string
+  held: boolean
+  holdHeadline: string
+  holdMessage: string
 }
 
 export interface HomeContent {

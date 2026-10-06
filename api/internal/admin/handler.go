@@ -160,6 +160,22 @@ func WithSession(request *http.Request, session Session) *http.Request {
 	)
 }
 
+// HasSession reports whether a request carries a valid admin session, without writing a
+// response. The hold gate uses it so the studio keeps seeing the real shop at its own
+// address while visitors see the holding page.
+func (handler *Handler) HasSession(request *http.Request) bool {
+	cookie, err := request.Cookie(SessionCookie)
+	if err != nil {
+		return false
+	}
+
+	if _, err := handler.authService.Authenticate(request.Context(), cookie.Value); err != nil {
+		return false
+	}
+
+	return true
+}
+
 // SessionFrom reads the authenticated session placed by RequireSession.
 func SessionFrom(requestContext context.Context) (Session, bool) {
 	session, ok := requestContext.Value(sessionContextKey).(Session)

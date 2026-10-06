@@ -8,6 +8,10 @@ export const defaultSiteSettings = (): SiteSettings => {
   return {
     announcement: STOREFRONT_COPY.announcement,
     whatsappNumber: String(runtimeConfig.public.whatsappNumber ?? ''),
+    // An unreachable API must never close the shop by accident, so the fallback is open.
+    held: false,
+    holdHeadline: '',
+    holdMessage: '',
   }
 }
 
