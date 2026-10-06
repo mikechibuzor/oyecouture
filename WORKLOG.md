@@ -5,6 +5,30 @@ One short entry per work session or meaningful chunk. Format:
 
 ---
 
+## 2026-10-06 · Claude · Shop availability toggle, and the bespoke heading asks the question
+
+- **Did:** (1) Changed the bespoke band heading to "Would you like to have a bespoke piece?"
+  (`9829d20`). The band already carries "Book an Appointment" as its action, so the heading only
+  had to pose the question; the old line also repeated the measure wording the size guide and
+  measurements pages already make. The About page passes its own heading and is untouched.
+  (2) Built the shop availability hold (`9990012`), ported from Fantasy by HOG: an owner-only
+  toggle plus editable headline and message in Settings, a gate on every visitor-facing API
+  route, a holding page on the brand's own tokens, and migration 23 seeding the three keys off.
+- **State:** Both committed; the copy change is **pushed**, the hold is **committed but not
+  pushed and not deployed** — migration 23 has not run anywhere. `go build`, `go vet`, the full
+  Go suite, `nuxt typecheck` and a production Nuxt build all pass on Node 22. `holdGate` is a
+  plain function with five unit tests: open, held, admin bypass, failed read (stays open), and
+  held-despite-error (stays closed).
+- **Decision worth knowing:** Chibuzor chose "fully dark". I held everything a person can reach
+  but left `POST /webhooks/paystack` open, because it is Paystack's server rather than a visitor
+  — blocking it would charge a customer and leave their order unpaid. Flagged to him; one line
+  in `server.go` if he wants it blocked too.
+- **Next:** Run it against a live stack and a browser — nothing here has been exercised beyond
+  compilation. Toggle the hold, confirm a visitor is held, an admin is not, and the webhook still
+  answers.
+- **Blockers:** No local Postgres was running, so no end-to-end check was possible. A deploy here
+  restarts the containers and needs Chibuzor's go-ahead.
+
 ## 2026-09-15T18:43:05+01:00 · Claude · HOG staging added to the running Caddy, no code change here
 
 - **Did:** At Chibuzor's request, added `hog-staging.82-29-184-79.sslip.io` (the Fantasy by HOG staging site) to `oyecouture-caddy`. It used HOG's `deploy/staging/caddy-live.sh`: a `docker network connect hog-edge` and a graceful reload. Only these notes were pushed to this repo; they are docs-only, so the auto-deploy does not rebuild.

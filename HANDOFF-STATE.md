@@ -4,6 +4,38 @@
 
 ---
 
+## Shop availability — built and committed, NOT deployed (Claude, 2026-10-06)
+
+The owner can close the shop to visitors from **Settings → Shop availability**, and write the
+holding page's headline and message there. Commit `9990012`. **Migration 23 has not run on
+production**, so nothing is live yet.
+
+- **What is held:** every visitor-facing route answers 404 — `/home-content`, `/products`,
+  `/products/{slug}`, `/contact`, `/orders`, `/delivery-zones`, `/payments/*`, `/tracking/*`.
+  Hiding pages alone would still have handed the catalogue to anyone who asked `/products`.
+- **What stays open, deliberately:** `/admin` (how the hold is lifted), `/site-settings` (the
+  holding page is drawn from it), `/healthz`, and **`POST /webhooks/paystack`**. Chibuzor asked
+  for "fully dark"; the webhook is the one carve-out, because it is Paystack's server calling,
+  not a visitor — blocking it would take a customer's money and leave the order unpaid. **If he
+  wants it blocked too it is one line in `server.go`.**
+- **Admin bypass:** `admin.Handler.HasSession` is a non-writing session check; a signed-in admin
+  passes straight through, so the real shop stays reviewable at its own address.
+- **Fails open.** A failed hold read leaves the shop open and logs. A database hiccup must not
+  close a working shop. `holdGate` is a plain function and all five paths are unit-tested in
+  `api/internal/server/hold_test.go`.
+- **A hold with no headline is refused** by `normalize`, and the admin blocks the save first, so
+  the holding page can never be drawn empty.
+- **Checked:** `go build`, `go vet`, full Go suite, `nuxt typecheck` and a production Nuxt build
+  all pass on Node 22. **Not yet checked against a running stack or a browser** — no local
+  Postgres was up.
+- **Single next action:** stand the stack up (`docker compose up -d postgres`, run the API so
+  migration 23 applies, then `npm run dev`), toggle the hold in the admin, and confirm three
+  things in a browser: a visitor sees the holding page, a signed-in admin still sees the shop,
+  and `POST /webhooks/paystack` still answers while held. Only then deploy — and a deploy here
+  restarts the containers, so it needs Chibuzor's go-ahead.
+
+---
+
 ## ⚠️ HOG STAGING SHARES THIS CADDY, LIVE ONLY (Claude, 2026-09-15)
 
 `oyecouture-caddy` now also serves **`hog-staging.82-29-184-79.sslip.io`**. That is the staging site for a separate project, Fantasy by HOG (repo `mikechibuzor/hog`), added on Chibuzor's decision. **Nothing in this repo changed for it**, because a push here auto-deploys and restarts the store.
