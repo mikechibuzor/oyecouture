@@ -4,7 +4,7 @@
 
 ---
 
-## Shop availability — built, tested against a running stack, NOT deployed (Claude, 2026-10-06)
+## Shop availability — LIVE in production (Claude, 2026-10-06)
 
 The owner can close the shop to visitors from **Settings → Shop availability**, and write the
 holding page's headline and message there. Commit `9990012`. **Migration 23 has not run on
@@ -49,8 +49,21 @@ production**, so nothing is live yet.
   `DELETE /admin/team/{id}` (`store.go:251`) errors. The team desk therefore cannot remove a real
   admin. Worth fixing on its own: either keep the actor as recorded text, or let the trigger
   allow that one nulling UPDATE.
-- **Single next action:** deploy, on Chibuzor's go-ahead — a deploy here restarts the containers
-  and briefly takes the store down. Migration 23 runs on API start.
+- **Deployed as `72b577b`**, on Chibuzor's go-ahead. Pushed to main; the server's 5-minute
+  autodeploy cron pulled and rebuilt both images. Verified afterwards: storefront 200,
+  `/api/products` 200, `/api/healthz` ok, **migration version 23, dirty f**, api and web
+  recreated. The hold fields are live on `/api/site-settings` and **the shop is open**
+  (`held: false`) — nothing was held in production, only the switch was shipped.
+- **Caddy was not restarted** (`Up 5 weeks`), so the HOG site blocks it also serves survived:
+  `fantasybyhog.com` 200, HOG staging 200, the `www` redirect 301.
+- **The holding page has never been turned on in production.** The mechanism was proved end to
+  end locally; in production only its wiring is confirmed. The first real hold will be the first
+  time visitors see that page.
+- **Note, not a defect:** `SiteHold`'s scoped CSS is inlined into every page because the
+  component is referenced from `app.vue`. About a kilobyte, constant. Not worth chasing unless
+  page weight becomes a concern.
+- **Single next action:** none outstanding for this feature. The admin-delete bug above is the
+  next thing worth picking up.
 
 ---
 
