@@ -4,7 +4,7 @@
 
 ---
 
-## Shop availability — built and committed, NOT deployed (Claude, 2026-10-06)
+## Shop availability — built, tested against a running stack, NOT deployed (Claude, 2026-10-06)
 
 The owner can close the shop to visitors from **Settings → Shop availability**, and write the
 holding page's headline and message there. Commit `9990012`. **Migration 23 has not run on
@@ -25,14 +25,32 @@ production**, so nothing is live yet.
   `api/internal/server/hold_test.go`.
 - **A hold with no headline is refused** by `normalize`, and the admin blocks the save first, so
   the holding page can never be drawn empty.
-- **Checked:** `go build`, `go vet`, full Go suite, `nuxt typecheck` and a production Nuxt build
-  all pass on Node 22. **Not yet checked against a running stack or a browser** — no local
-  Postgres was up.
-- **Single next action:** stand the stack up (`docker compose up -d postgres`, run the API so
-  migration 23 applies, then `npm run dev`), toggle the hold in the admin, and confirm three
-  things in a browser: a visitor sees the holding page, a signed-in admin still sees the shop,
-  and `POST /webhooks/paystack` still answers while held. Only then deploy — and a deploy here
-  restarts the containers, so it needs Chibuzor's go-ahead.
+- **Run end to end against a live stack** (local Homebrew Postgres 15 on 5432, not Docker —
+  the Docker daemon was not running and `oye`/`oyecouture` already existed locally). Migration 23
+  applied 16 -> 23 clean and seeded the hold off. Verified: a visitor gets 404 on every
+  visitor-facing route while an admin gets 200 on the same URL in the same moment
+  (`/products/regent` was the control); the storefront renders the holding page with no
+  storefront markup leaking into it; `/admin/login` is never held; `/site-settings`, `/healthz`
+  and `POST /webhooks/paystack` all stay reachable, the webhook answering 401 from Paystack's own
+  signature check rather than 404 from the gate; a hold with no headline is refused 400 and
+  leaves the shop open; and turning the switch off in the admin UI reopened the shop on the next
+  request.
+- **Two faults the live run found, both fixed in `043a2a3`**, neither visible to typecheck or
+  build: `useState` sat after the first await in `useSiteHold` (500 on every storefront page),
+  and the availability checkbox computed to 2x18 pixels because the shared `.admin-field` rule
+  strips a control's native appearance and `width: auto` cannot then recover a size.
+- **Local test state cleaned up:** the throwaway `holdtest@oyecouture.local` account is
+  deactivated with its password rotated to a value nobody holds, and sign-in returns 401. It
+  could not be deleted — see the bug below. The `announcement` and `whatsapp_number` rows the
+  test wrote were removed, so the dev database holds what it did before plus migration 23.
+- **Bug found while cleaning up, unrelated to this work and NOT fixed:** deleting an admin fails
+  for anyone who has ever done an audited action. `admin_audit_log.actor_admin_id` is
+  `ON DELETE SET NULL`, and the append-only trigger refuses the UPDATE that cascade performs, so
+  `DELETE /admin/team/{id}` (`store.go:251`) errors. The team desk therefore cannot remove a real
+  admin. Worth fixing on its own: either keep the actor as recorded text, or let the trigger
+  allow that one nulling UPDATE.
+- **Single next action:** deploy, on Chibuzor's go-ahead — a deploy here restarts the containers
+  and briefly takes the store down. Migration 23 runs on API start.
 
 ---
 
