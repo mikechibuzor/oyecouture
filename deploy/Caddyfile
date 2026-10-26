@@ -49,9 +49,9 @@ www.{$SITE_HOST} {
 #
 # These blocks used to live only in the running configuration, loaded by HOG's
 # deploy/production/caddy-live.sh and never written anywhere. That held until the
-# server rebooted on 2026-10-18: Caddy came back from this file, which did not
+# server rebooted on 2026-10-17: Caddy came back from this file, which did not
 # mention HOG, so fantasybyhog.com had no site and no certificate and answered
-# ERR_SSL_PROTOCOL_ERROR. It stayed down for eight days before anyone noticed,
+# ERR_SSL_PROTOCOL_ERROR. It stayed down for nine days before anyone noticed,
 # because nothing here watches a site this file did not know about.
 #
 # They are in the file now so a restart brings HOG back with everything else. The
