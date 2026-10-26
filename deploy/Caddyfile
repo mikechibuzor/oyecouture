@@ -43,3 +43,98 @@ www.{$SITE_HOST} {
 		}
 	}
 }
+
+# ---------------------------------------------------------------------------
+# Fantasy by HOG shares this Caddy.
+#
+# These blocks used to live only in the running configuration, loaded by HOG's
+# deploy/production/caddy-live.sh and never written anywhere. That held until the
+# server rebooted on 2026-10-18: Caddy came back from this file, which did not
+# mention HOG, so fantasybyhog.com had no site and no certificate and answered
+# ERR_SSL_PROTOCOL_ERROR. It stayed down for eight days before anyone noticed,
+# because nothing here watches a site this file did not know about.
+#
+# They are in the file now so a restart brings HOG back with everything else. The
+# caddy service joins hog-edge in compose.prod.yaml, which is how these names
+# resolve; HOG's own services are hog-prod-* and hog-staging-*, so they cannot
+# shadow the api and web this file proxies to above.
+#
+# Changing a HOG hostname means editing this file, not HOG's. HOG keeps the
+# originals in deploy/production/caddy-site.caddy and deploy/staging/caddy-site.caddy.
+# ---------------------------------------------------------------------------
+
+www.fantasybyhog.com {
+	redir https://fantasybyhog.com{uri} permanent
+}
+
+fantasybyhog.com {
+	encode zstd gzip
+
+	request_body {
+		max_size 25MB
+	}
+
+	handle_path /api/* {
+		reverse_proxy hog-prod-api:8080
+	}
+
+	handle /media/* {
+		reverse_proxy hog-prod-api:8080
+	}
+
+	handle {
+		reverse_proxy hog-prod-web:3000
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		X-Frame-Options "SAMEORIGIN"
+		-Server
+	}
+
+	log {
+		output file /var/log/caddy/hog.log {
+			roll_size 10MiB
+			roll_keep 5
+		}
+	}
+}
+
+# HOG staging. Public, but kept out of search results.
+hog-staging.82-29-184-79.sslip.io {
+	encode zstd gzip
+
+	request_body {
+		max_size 25MB
+	}
+
+	handle_path /api/* {
+		reverse_proxy hog-staging-api:8080
+	}
+
+	handle /media/* {
+		reverse_proxy hog-staging-api:8080
+	}
+
+	handle {
+		reverse_proxy hog-staging-web:3000
+	}
+
+	header {
+		X-Robots-Tag "noindex, nofollow"
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		X-Frame-Options "SAMEORIGIN"
+		-Server
+	}
+
+	log {
+		output file /var/log/caddy/hog-staging.log {
+			roll_size 10MiB
+			roll_keep 5
+		}
+	}
+}

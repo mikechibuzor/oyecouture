@@ -37,6 +37,15 @@ if printf '%s' "$POSTGRES_PASSWORD_VALUE" | grep -q '[/@:?#]'; then
   exit 1
 fi
 
+# Caddy joins hog-edge to reach Fantasy by HOG's containers, which share this proxy. The
+# network is declared external, so compose refuses to start the stack when it is missing
+# rather than creating it. Creating it here keeps a deploy of this shop from failing over
+# a network that belongs to another project; HOG's containers join the same one by name.
+if ! docker network inspect hog-edge >/dev/null 2>&1; then
+  echo "==> Creating the hog-edge network"
+  docker network create hog-edge >/dev/null
+fi
+
 echo "==> Building images"
 docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" build
 

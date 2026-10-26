@@ -21,6 +21,12 @@ services:
     depends_on:
       - web
       - api
+    # default reaches this project's own api and web. hog-edge reaches Fantasy by HOG's
+    # containers, which share this Caddy; without it the HOG blocks in deploy/Caddyfile
+    # would resolve to nothing and those sites would 502 after any recreate.
+    networks:
+      - default
+      - hog-edge
 
   web:
     build:
@@ -114,6 +120,13 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+
+networks:
+  # Created by deploy.sh if it is missing, so a deploy never fails on its absence.
+  # Fantasy by HOG's stack joins the same network from its own compose project.
+  hog-edge:
+    external: true
+    name: hog-edge
 
 volumes:
   postgres-data:
