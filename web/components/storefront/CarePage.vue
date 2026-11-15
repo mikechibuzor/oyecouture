@@ -1,11 +1,8 @@
 <script setup lang="ts">
 import { PRODUCT_COPY } from '~/constants/products'
+import { CareBlockKind } from '~/types/policy'
+import type { CareSection } from '~/types/policy'
 import { StorefrontRoute } from '~/types/storefront'
-
-interface CareSection {
-  readonly title: string
-  readonly body: string
-}
 
 interface CarePageProps {
   breadcrumb: string
@@ -44,7 +41,13 @@ useStorefrontSeo({ title: props.heading, description: props.intro })
     <section class="care-body">
       <article v-for="section in sections" :key="section.title" class="care-section">
         <h2>{{ section.title }}</h2>
-        <p>{{ section.body }}</p>
+
+        <template v-for="(block, index) in section.blocks" :key="index">
+          <p v-if="block.kind === CareBlockKind.Paragraph">{{ block.text }}</p>
+          <ul v-else class="care-list">
+            <li v-for="item in block.items" :key="item">{{ item }}</li>
+          </ul>
+        </template>
       </article>
 
       <p v-if="footnote" class="care-footnote">{{ footnote }}</p>

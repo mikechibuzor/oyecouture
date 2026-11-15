@@ -1,3 +1,4 @@
+import { DELIVERY_TERMS } from '~/constants/policies'
 import type {
   CatalogueFilterOption,
   CategoryFilterOption,
@@ -338,12 +339,20 @@ export const PRODUCT_POLICIES: readonly ProductPolicy[] = [
     title: 'Shipping & Delivery',
     intro:
       'Every Oyecouture piece is made to order, so delivery works differently than off-the-shelf fashion.',
+    // The three figures below come from DELIVERY_TERMS rather than being typed
+    // here, because the policy page states them too. They had already drifted:
+    // this page promised delivery "after work is completed" while the client's
+    // policy says "after dispatch", which is a later moment and a different
+    // promise.
     lines: [
-      { label: 'Production time:', text: '3 week or less from confirmed measurements and payment.' },
-      { label: 'Within Nigeria:', text: '1–3 working days after work is completed' },
+      {
+        label: 'Production time:',
+        text: `${DELIVERY_TERMS.production} from confirmed measurements and payment.`,
+      },
+      { label: 'Within Nigeria:', text: DELIVERY_TERMS.domestic },
       {
         label: 'International:',
-        text: 'We deliver worldwide. It could take 5-7 days to get delivered to doorstep',
+        text: `We deliver worldwide, estimated at ${DELIVERY_TERMS.international}.`,
       },
       {
         label: 'Tracking:',
@@ -355,7 +364,7 @@ export const PRODUCT_POLICIES: readonly ProductPolicy[] = [
       },
     ],
     footnote:
-      'Need it sooner? We can expedite production for an additional 20% of the piece’s price. If you’re working to a date, such as a wedding or event, let us know when you order and we’ll prioritise your piece.',
+      `Need it sooner? We can expedite production for an additional ${DELIVERY_TERMS.expediteSurcharge} of the piece’s price. If you’re working to a date, such as a wedding or event, let us know when you order and we’ll prioritise your piece.`,
   },
   {
     id: 'returns',
