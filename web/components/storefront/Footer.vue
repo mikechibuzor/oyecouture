@@ -2,6 +2,7 @@
 import {
   STOREFRONT_COPY,
   STOREFRONT_FOOTER_GROUPS,
+  STOREFRONT_LEGAL_LINKS,
   STOREFRONT_SOCIAL_LINKS,
   isInternalStorefrontRoute,
 } from '~/constants/storefront'
@@ -90,6 +91,12 @@ const footerSocialLinks = STOREFRONT_SOCIAL_LINKS.map((socialLink) => ({
 
     <div class="storefront-footer-bottom">
       <p>{{ STOREFRONT_COPY.footer.copyright }}</p>
+
+      <nav :aria-label="STOREFRONT_COPY.footer.legalNavigationLabel">
+        <NuxtLink v-for="legalLink in STOREFRONT_LEGAL_LINKS" :key="legalLink.to" :to="legalLink.to">
+          {{ legalLink.label }}
+        </NuxtLink>
+      </nav>
     </div>
   </footer>
 </template>

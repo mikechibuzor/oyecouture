@@ -131,6 +131,14 @@ export const STOREFRONT_FOOTER_GROUPS = [
   },
 ] as const satisfies readonly StorefrontFooterGroup[]
 
+// The legal row beside the copyright. Separate from the footer groups above
+// because it is not a place to browse: these are the terms the sale is made
+// under, and a customer paying by card is entitled to find them from any page.
+export const STOREFRONT_LEGAL_LINKS = [
+  { label: 'Terms & Conditions', to: StorefrontRoute.Terms },
+  { label: 'Privacy Policy', to: StorefrontRoute.Legal },
+] as const
+
 export const STOREFRONT_SOCIAL_LINKS = [
   {
     platform: StorefrontSocialPlatform.Instagram,
